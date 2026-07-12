@@ -1,0 +1,96 @@
+.analysis-tool {
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+    padding: 1.6rem;
+    max-width: 96rem;
+    height: 100%;
+    overflow-y: auto;
+
+    &__price-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--general-section-1);
+        border-radius: 0.4rem;
+        padding: 1.6rem;
+    }
+
+    &__price {
+        font-size: var(--text-size-m);
+        font-weight: var(--text-weight-bold);
+        color: var(--text-general);
+    }
+
+    &__current-digit {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 4rem;
+        min-height: 4rem;
+        border-radius: 0.4rem;
+        font-size: var(--text-size-m);
+        font-weight: var(--text-weight-bold);
+        color: var(--brand-primary);
+    }
+
+    &__window-row {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+    }
+
+    &__window-label {
+        font-size: var(--text-size-xs);
+        color: var(--text-general);
+    }
+
+    &__window-input {
+        width: 10rem;
+        padding: 0.8rem 1rem;
+        border: 1px solid var(--border-normal);
+        border-radius: 0.4rem;
+        background: var(--general-main-1);
+        color: var(--text-general);
+        font-size: var(--text-size-xs);
+    }
+
+    &__window-hint {
+        font-size: var(--text-size-xxxxs);
+        color: var(--text-less-prominent);
+    }
+
+    &__section {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+    }
+
+    &__section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: var(--text-size-xs);
+        font-weight: var(--text-weight-bold);
+        color: var(--text-general);
+    }
+
+    &__progress {
+        font-size: var(--text-size-xxxxs);
+        color: var(--text-less-prominent);
+        font-weight: var(--text-weight-normal);
+    }
+
+    &__error {
+        color: var(--text-loss-danger);
+        font-size: var(--text-size-xs);
+        background: var(--status-warning-transparent);
+        padding: 0.8rem 1.2rem;
+        border-radius: 0.4rem;
+    }
+
+    &__loading {
+        color: var(--text-less-prominent);
+        font-size: var(--text-size-xs);
+    }
+}

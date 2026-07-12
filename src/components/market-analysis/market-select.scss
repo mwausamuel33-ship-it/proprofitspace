@@ -1,0 +1,41 @@
+.market-select {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    width: 100%;
+
+    &__label {
+        font-size: var(--text-size-xs);
+        color: var(--text-general);
+        font-weight: var(--text-weight-bold);
+    }
+
+    &__control {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    &__input {
+        width: 100%;
+        appearance: none;
+        background: var(--general-main-1);
+        border: 1px solid var(--border-normal);
+        border-radius: 0.4rem;
+        padding: 1.2rem 3.6rem 1.2rem 1.2rem;
+        font-size: var(--text-size-s);
+        color: var(--text-general);
+        cursor: pointer;
+
+        &:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+    }
+
+    &__chevron {
+        position: absolute;
+        right: 1.2rem;
+        pointer-events: none;
+    }
+}

@@ -1,0 +1,114 @@
+.trading-bots {
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+    padding: 1.6rem;
+    height: 100%;
+    overflow-y: auto;
+
+    &__search {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        max-width: 40rem;
+        padding: 1rem 1.4rem;
+        border: 1px solid var(--border-normal);
+        border-radius: 2.4rem;
+        background: var(--general-main-1);
+    }
+
+    &__search-input {
+        border: none;
+        outline: none;
+        background: transparent;
+        color: var(--text-general);
+        font-size: var(--text-size-xs);
+        width: 100%;
+    }
+
+    &__note {
+        font-size: var(--text-size-xxxxs);
+        color: var(--text-general);
+        background: var(--general-section-1);
+        padding: 0.8rem 1.2rem;
+        border-radius: 0.4rem;
+    }
+
+    &__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr));
+        gap: 1.6rem;
+    }
+
+    &__card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        border: 1px solid var(--border-normal);
+        border-radius: 0.8rem;
+        padding: 1.6rem;
+        background: var(--general-main-1);
+    }
+
+    &__badge {
+        position: absolute;
+        top: 1.2rem;
+        right: 1.2rem;
+        background: var(--status-warning);
+        color: var(--text-colored-background, #fff);
+        font-size: var(--text-size-xxxxs);
+        font-weight: var(--text-weight-bold);
+        padding: 0.2rem 0.8rem;
+        border-radius: 0.4rem;
+    }
+
+    &__card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    &__icon {
+        font-size: 2rem;
+    }
+
+    &__name {
+        font-size: var(--text-size-s);
+        font-weight: var(--text-weight-bold);
+        color: var(--text-general);
+        margin: 0;
+    }
+
+    &__rating {
+        display: flex;
+        gap: 0.2rem;
+    }
+
+    &__description {
+        font-size: var(--text-size-xxxxs);
+        color: var(--text-less-prominent);
+        flex-grow: 1;
+        margin: 0;
+    }
+
+    &__load-button {
+        border: none;
+        border-radius: 0.4rem;
+        padding: 1.2rem;
+        background: var(--brand-primary);
+        color: var(--text-colored-background, #fff);
+        font-size: var(--text-size-xs);
+        font-weight: var(--text-weight-bold);
+        cursor: pointer;
+
+        &:hover {
+            opacity: 0.9;
+        }
+    }
+
+    &__empty {
+        color: var(--text-less-prominent);
+        font-size: var(--text-size-xs);
+    }
+}

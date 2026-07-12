@@ -1,0 +1,46 @@
+.digit-gauges {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+
+    &__item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.2rem;
+    }
+
+    &__track {
+        stroke: var(--border-normal);
+    }
+
+    &__bar {
+        stroke: var(--brand-primary);
+        stroke-linecap: round;
+        transition: stroke-dashoffset 0.3s ease;
+    }
+
+    &__ring--current &__bar {
+        stroke: var(--status-danger);
+    }
+
+    &__digit {
+        font-size: 1.3rem;
+        font-weight: var(--text-weight-bold);
+        fill: var(--text-general);
+    }
+
+    &__pct {
+        font-size: 0.85rem;
+        fill: var(--text-less-prominent);
+    }
+
+    &__marker {
+        color: var(--status-danger);
+        font-size: 1rem;
+        line-height: 1;
+        margin-top: -0.2rem;
+    }
+}

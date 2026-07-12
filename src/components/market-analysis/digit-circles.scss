@@ -1,0 +1,85 @@
+.digit-circles {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+
+    &__item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+        min-width: 5.6rem;
+    }
+
+    &__circle {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 6.4rem;
+        height: 6.4rem;
+        border-radius: 50%;
+        border: 2px solid var(--border-normal);
+        background: var(--general-main-1);
+        transition:
+            border-color 0.2s ease,
+            background-color 0.2s ease,
+            color 0.2s ease;
+
+        &--current {
+            border-color: var(--brand-primary);
+            border-width: 3px;
+            box-shadow: 0 0 0 2px var(--brand-primary, #3b82f6) inset;
+        }
+
+        &--most {
+            background: var(--status-success);
+            border-color: var(--status-success);
+
+            .digit-circles__digit,
+            .digit-circles__pct {
+                color: var(--text-colored-background, #fff);
+            }
+        }
+
+        &--least {
+            background: var(--status-danger);
+            border-color: var(--status-danger);
+
+            .digit-circles__digit,
+            .digit-circles__pct {
+                color: var(--text-colored-background, #fff);
+            }
+        }
+    }
+
+    &__digit {
+        font-size: var(--text-size-sm);
+        font-weight: var(--text-weight-bold);
+        line-height: 1;
+        color: var(--text-general);
+    }
+
+    &__pct {
+        font-size: var(--text-size-xxxxs);
+        color: var(--text-less-prominent);
+        margin-top: 0.2rem;
+    }
+
+    &__label {
+        font-size: var(--text-size-xxxxs);
+        color: var(--text-less-prominent);
+        text-transform: lowercase;
+    }
+
+    &--sm &__circle {
+        width: 4.8rem;
+        height: 4.8rem;
+    }
+
+    &--sm &__digit {
+        font-size: var(--text-size-xs);
+    }
+}

@@ -1,0 +1,37 @@
+.even-odd-bars {
+    display: flex;
+    width: 100%;
+    height: 5.6rem;
+    border-radius: 0.4rem;
+    overflow: hidden;
+    gap: 0.2rem;
+
+    &__bar {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-width: 6rem;
+        transition: flex-grow 0.3s ease;
+
+        &--even {
+            background: var(--status-success);
+        }
+
+        &--odd {
+            background: var(--status-danger);
+        }
+    }
+
+    &__label {
+        color: var(--text-colored-background, #fff);
+        font-size: var(--text-size-xs);
+        font-weight: var(--text-weight-bold);
+    }
+
+    &__value {
+        color: var(--text-colored-background, #fff);
+        font-size: var(--text-size-xxs);
+        opacity: 0.9;
+    }
+}

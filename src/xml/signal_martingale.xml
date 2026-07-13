@@ -1,0 +1,145 @@
+<xml xmlns="http://www.w3.org/1999/xhtml" is_dbot="true" collection="false">
+  <variables>
+    <variable type="" id="v_stake" islocal="false" iscloud="false">stake</variable>
+    <variable type="" id="v_stakeW" islocal="false" iscloud="false">stakeW</variable>
+    <variable type="" id="v_stoploss" islocal="false" iscloud="false">stoploss</variable>
+    <variable type="" id="v_takeprofit" islocal="false" iscloud="false">takeprofit</variable>
+    <variable type="" id="v_durationticks" islocal="false" iscloud="false">durationticks</variable>
+    <variable type="" id="v_martingale" islocal="false" iscloud="false">martingaleAfterLoss</variable>
+    <variable type="" id="v_text2" islocal="false" iscloud="false">text2</variable>
+  </variables>
+  <block type="trade_definition" id="td1" deletable="false" x="0" y="0">
+    <statement name="TRADE_OPTIONS">
+      <block type="trade_definition_market" id="m1" deletable="false" movable="false">
+        <field name="MARKET_LIST">synthetic_index</field>
+        <field name="SUBMARKET_LIST">random_index</field>
+        <field name="SYMBOL_LIST">1HZ75V</field>
+        <next>
+          <block type="trade_definition_tradetype" id="m2" deletable="false" movable="false">
+            <field name="TRADETYPECAT_LIST">digits</field>
+            <field name="TRADETYPE_LIST">overunder</field>
+            <next>
+              <block type="trade_definition_contracttype" id="m3" deletable="false" movable="false">
+                <field name="TYPE_LIST">both</field>
+                <next>
+                  <block type="trade_definition_candleinterval" id="m4" deletable="false" movable="false">
+                    <field name="CANDLEINTERVAL_LIST">60</field>
+                    <next>
+                      <block type="trade_definition_restartbuysell" id="m5" deletable="false" movable="false">
+                        <field name="TIME_MACHINE_ENABLED">FALSE</field>
+                        <next>
+                          <block type="trade_definition_restartonerror" id="m6" deletable="false" movable="false">
+                            <field name="RESTARTONERROR">TRUE</field>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+    <statement name="SUBMARKET">
+      <block type="trade_definition_tradeoptions" id="opt1" deletable="false" movable="false">
+        <mutation has_first_barrier="false" has_second_barrier="false" has_prediction="true"></mutation>
+        <field name="DURATIONTYPE_LIST">t</field>
+        <value name="DURATION" strategy_value="durationticks">
+          <shadow type="math_number_positive" id="opt_dur_shadow"><field name="NUM">2</field></shadow>
+        </value>
+        <value name="AMOUNT" strategy_value="stake">
+          <shadow type="math_number_positive" id="opt_amt_shadow"><field name="NUM">2.97</field></shadow>
+        </value>
+      </block>
+    </statement>
+  </block>
+  <block type="before_purchase" id="bp1" deletable="false" x="0" y="500">
+    <statement name="BEFOREPURCHASE_STACK">
+      <block type="purchase" id="bp_purchase">
+        <field name="PURCHASE_LIST">DIGITOVER</field>
+      </block>
+    </statement>
+  </block>
+  <block type="during_purchase" id="dp1" deletable="false" x="0" y="850"></block>
+  <block type="after_purchase" id="ap1" deletable="false" x="0" y="1050">
+    <statement name="AFTERPURCHASE_STACK">
+      <block type="controls_if" id="ap_if">
+        <mutation else="1"></mutation>
+        <value name="IF0">
+          <block type="contract_check_result" id="ap_win"><field name="CHECK_RESULT">win</field></block>
+        </value>
+        <statement name="DO0">
+          <block type="variables_set" id="ap_win_reset">
+            <field name="VAR" id="v_stake">stake</field>
+            <value name="VALUE"><block type="variables_get" id="ap_win_reset_v"><field name="VAR" id="v_stakeW">stakeW</field></block></value>
+          </block>
+        </statement>
+        <statement name="ELSE">
+          <block type="variables_set" id="ap_loss_bump">
+            <field name="VAR" id="v_stake">stake</field>
+            <value name="VALUE">
+              <block type="math_arithmetic" id="ap_loss_bump_v">
+                <field name="OP">MULTIPLY</field>
+                <value name="A"><block type="variables_get" id="ap_loss_bump_a"><field name="VAR" id="v_stake">stake</field></block></value>
+                <value name="B"><block type="variables_get" id="ap_loss_bump_b"><field name="VAR" id="v_martingale">martingaleAfterLoss</field></block></value>
+              </block>
+            </value>
+          </block>
+        </statement>
+        <next>
+          <block type="variables_set" id="ap_text2">
+            <field name="VAR" id="v_text2">text2</field>
+            <value name="VALUE">
+              <block type="text_join" id="ap_text2_join">
+                <mutation items="2"></mutation>
+                <value name="ADD0"><block type="text" id="ap_text2_lit"><field name="TEXT">Trade settled. Next stake: </field></block></value>
+                <value name="ADD1"><block type="variables_get" id="ap_text2_stake"><field name="VAR" id="v_stake">stake</field></block></value>
+              </block>
+            </value>
+            <next>
+              <block type="notify" id="ap_notify">
+                <field name="NOTIFICATION_TYPE">info</field>
+                <field name="SOUND">silence</field>
+                <value name="MESSAGE"><block type="variables_get" id="ap_notify_msg"><field name="VAR" id="v_text2">text2</field></block></value>
+                <next>
+                  <block type="controls_if" id="ap_continue_check">
+                    <value name="IF0">
+                      <block type="logic_operation" id="ap_continue_and">
+                        <field name="OP">AND</field>
+                        <value name="A">
+                          <block type="logic_compare" id="ap_continue_tp">
+                            <field name="OP">LT</field>
+                            <value name="A"><block type="total_profit" id="ap_continue_tp_a"></block></value>
+                            <value name="B"><block type="variables_get" id="ap_continue_tp_b"><field name="VAR" id="v_takeprofit">takeprofit</field></block></value>
+                          </block>
+                        </value>
+                        <value name="B">
+                          <block type="logic_compare" id="ap_continue_sl">
+                            <field name="OP">GT</field>
+                            <value name="A"><block type="total_profit" id="ap_continue_sl_a"></block></value>
+                            <value name="B">
+                              <block type="math_arithmetic" id="ap_continue_sl_b">
+                                <field name="OP">MINUS</field>
+                                <value name="A"><block type="math_number" id="ap_continue_sl_zero"><field name="NUM">0</field></block></value>
+                                <value name="B"><block type="variables_get" id="ap_continue_sl_sl"><field name="VAR" id="v_stoploss">stoploss</field></block></value>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                    <statement name="DO0">
+                      <block type="trade_again" id="ap_trade_again"></block>
+                    </statement>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+  </block>
+</xml>

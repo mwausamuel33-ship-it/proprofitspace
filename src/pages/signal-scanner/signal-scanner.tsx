@@ -16,13 +16,25 @@ const SignalScanner = observer(() => {
     };
 
     const handleLoadAndTrade = async (signal: typeof signals[0]) => {
+        quick_strategy.setSelectedStrategy('SIGNAL_MARTINGALE');
         quick_strategy.setValue('symbol', signal.symbol);
-        quick_strategy.setValue('tradetype', signal.contract_type);
+        quick_strategy.setValue('market', 'synthetic_index');
+        quick_strategy.setValue('submarket', 'random_index');
+        quick_strategy.setValue('tradetypecat', 'digits');
+        quick_strategy.setValue('tradetype', signal.contract_type === 'DIGITOVER' || signal.contract_type === 'DIGITUNDER' ? 'overunder' : 'evenodd');
+        quick_strategy.setValue('type', signal.contract_type === 'DIGITOVER' || signal.contract_type === 'DIGITUNDER' ? 'overunder' : 'evenodd');
         if (signal.contract_type === 'DIGITOVER' || signal.contract_type === 'DIGITUNDER') {
             quick_strategy.setValue('last_digit_prediction', String(signal.barrier));
         }
         quick_strategy.setFormVisibility(true);
         window.location.hash = 'bot_builder';
+
+        setTimeout(() => {
+            const form = document.querySelector('.qs__form');
+            if (form) {
+                form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+            }
+        }, 800);
     };
 
     const signal_type_label = (sig: typeof signals[0]) => {

@@ -156,13 +156,28 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     onSubmit = async (data: TFormData) => {
         const { contracts_for } = ApiHelpers?.instance ?? {};
         if (!contracts_for) return;
-        const market = await contracts_for.getMarketBySymbol(data.symbol);
-        const submarket = await contracts_for.getSubmarketBySymbol(data.symbol);
-        const trade_type_cat = await contracts_for.getTradeTypeCategoryByTradeType(data.tradetype);
+        let market = data.market as string | undefined;
+        let submarket = data.submarket as string | undefined;
+        let trade_type_cat = data.tradetypecat as string | undefined;
+        const signal_contract_type = data.tradetype as string;
         const selected_strategy = STRATEGIES()[this.selected_strategy];
         this.selected_strategy_for_notofy = this.selected_strategy;
-        // Persist the selected strategy for notifications in localStorage
         storeSetting('selected_strategy_for_notofy', this.selected_strategy);
+
+        if (this.selected_strategy === 'signal_martingale') {
+            market = market || 'synthetic_index';
+            submarket = submarket || 'random_index';
+            if (signal_contract_type === 'DIGITOVER' || signal_contract_type === 'DIGITUNDER') {
+                trade_type_cat = 'digits';
+            } else if (signal_contract_type === 'DIGITEVEN' || signal_contract_type === 'DIGITODD') {
+                trade_type_cat = 'digits';
+            }
+        } else {
+            market = await contracts_for.getMarketBySymbol(data.symbol);
+            submarket = await contracts_for.getSubmarketBySymbol(data.symbol);
+            trade_type_cat = await contracts_for.getTradeTypeCategoryByTradeType(data.tradetype);
+        }
+
         const strategy_xml = await import(/* webpackChunkName: `[request]` */ `../xml/${selected_strategy.name}.xml`);
         const strategy_dom = window.Blockly.utils.xml.textToDom(strategy_xml.default);
         addDynamicBlockToDOM('PREDICTION', 'last_digit_prediction', trade_type_cat, strategy_dom);
@@ -200,6 +215,27 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             growthrate: growth_rate ? growth_rate.toString() : undefined,
         };
 
+        if (this.selected_strategy === 'signal_martingale') {
+            let mapped_tradetype = 'overunder';
+            let purchase_type = '';
+            if (signal_contract_type === 'DIGITOVER') {
+                mapped_tradetype = 'overunder';
+                purchase_type = 'OVER';
+            } else if (signal_contract_type === 'DIGITUNDER') {
+                mapped_tradetype = 'overunder';
+                purchase_type = 'UNDER';
+            } else if (signal_contract_type === 'DIGITEVEN') {
+                mapped_tradetype = 'evenodd';
+                purchase_type = 'EVEN';
+            } else if (signal_contract_type === 'DIGITODD') {
+                mapped_tradetype = 'evenodd';
+                purchase_type = 'ODD';
+            }
+            fields_to_update.tradetypecat = 'digits';
+            fields_to_update.type = mapped_tradetype;
+            fields_to_update.purchase = purchase_type;
+        }
+
         Object.keys(fields_to_update).forEach(key => {
             const value = fields_to_update[key as keyof typeof fields_to_update];
 
@@ -212,7 +248,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
 
         const { derivWorkspace: workspace } = Blockly;
 
-        if (action === 'RUN') {
+        if (action === 'RUN' || this.selected_strategy === 'signal_martingale') {
             workspace
                 ?.waitForBlockEvent({
                     block_type: 'trade_definition',

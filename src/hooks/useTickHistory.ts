@@ -3,8 +3,11 @@ import { api_base } from '@/external/bot-skeleton';
 
 const MAX_HISTORY = 5000;
 
+type TTick = { quote: number; epoch: number };
+
 type TUseTickHistoryResult = {
     prices: number[];
+    times: number[];
     current_price: number | null;
     is_loading: boolean;
     error: string | null;
@@ -16,7 +19,7 @@ type TUseTickHistoryResult = {
  * disturbs other consumers of the shared websocket connection (e.g. a running bot).
  */
 export const useTickHistory = (symbol: string, count = 1000): TUseTickHistoryResult => {
-    const [prices, setPrices] = useState<number[]>([]);
+    const [ticks, setTicks] = useState<TTick[]>([]);
     const [is_loading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const subscription_id_ref = useRef<string | null>(null);
@@ -28,7 +31,7 @@ export const useTickHistory = (symbol: string, count = 1000): TUseTickHistoryRes
         let cancelled = false;
         setIsLoading(true);
         setError(null);
-        setPrices([]);
+        setTicks([]);
 
         const cleanup = async () => {
             if (message_sub_ref.current) {
@@ -73,7 +76,13 @@ export const useTickHistory = (symbol: string, count = 1000): TUseTickHistoryRes
                 }
 
                 const history_prices: string[] = response?.history?.prices || [];
-                setPrices(history_prices.map((p: string) => Number(p)));
+                const history_times: (string | number)[] = response?.history?.times || [];
+                setTicks(
+                    history_prices.map((p: string, i: number) => ({
+                        quote: Number(p),
+                        epoch: Number(history_times[i]) || 0,
+                    }))
+                );
                 if (response?.subscription?.id) {
                     subscription_id_ref.current = response.subscription.id;
                 }
@@ -84,8 +93,9 @@ export const useTickHistory = (symbol: string, count = 1000): TUseTickHistoryRes
                     if (data?.msg_type === 'tick' && data?.tick?.symbol === symbol) {
                         if (data.tick?.id) subscription_id_ref.current = data.tick.id;
                         const quote = Number(data.tick.quote);
-                        setPrices(prev => {
-                            const next = [...prev, quote];
+                        const epoch = Number(data.tick.epoch) || Math.floor(Date.now() / 1000);
+                        setTicks(prev => {
+                            const next = [...prev, { quote, epoch }];
                             return next.length > MAX_HISTORY ? next.slice(-MAX_HISTORY) : next;
                         });
                     }
@@ -107,8 +117,12 @@ export const useTickHistory = (symbol: string, count = 1000): TUseTickHistoryRes
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [symbol, count]);
 
+    const prices = ticks.map(t => t.quote);
+    const times = ticks.map(t => t.epoch);
+
     return {
         prices,
+        times,
         current_price: prices.length ? prices[prices.length - 1] : null,
         is_loading,
         error,

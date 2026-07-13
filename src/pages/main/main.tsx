@@ -37,6 +37,7 @@ import {
     LabelPairedCircleDotCaptionFillIcon,
     LabelPairedObjectsColumnCaptionRegularIcon,
     LabelPairedPuzzlePieceTwoCaptionBoldIcon,
+    LabelPairedSearchCaptionRegularIcon,
 } from '@deriv/quill-icons/LabelPaired';
 import { LegacyGuide1pxIcon } from '@deriv/quill-icons/Legacy';
 import { Localize, localize } from '@deriv-com/translations';
@@ -51,6 +52,7 @@ const ChartWrapper = lazy(() => import('../chart/chart-wrapper'));
 const Tutorial = lazy(() => import('../tutorials'));
 const TradingBots = lazy(() => import('../trading-bots'));
 const AnalysisTool = lazy(() => import('../analysis-tool'));
+const SignalScanner = lazy(() => import('../signal-scanner'));
 const BulkTrader = lazy(() => import('../bulk-trader'));
 
 const AppWrapper = observer(() => {
@@ -84,7 +86,7 @@ const AppWrapper = observer(() => {
     const { clear } = summary_card;
     const { DASHBOARD, BOT_BUILDER } = DBOT_TABS;
     const init_render = React.useRef(true);
-    const hash = ['dashboard', 'bot_builder', 'chart', 'trading_bots', 'analysis_tool', 'bulk_trader', 'tutorial'];
+    const hash = ['dashboard', 'bot_builder', 'chart', 'trading_bots', 'analysis_tool', 'signal_scanner', 'bulk_trader', 'tutorial'];
     const { isDesktop } = useDevice();
     const location = useLocation();
     const navigate = useNavigate();
@@ -470,6 +472,25 @@ const AppWrapper = observer(() => {
                                     fallback={<ChunkLoader message={localize('Please wait, loading analysis tool...')} />}
                                 >
                                     <AnalysisTool />
+                                </Suspense>
+                            </div>
+                            <div
+                                label={
+                                    <>
+                                        <LabelPairedSearchCaptionRegularIcon
+                                            height='24px'
+                                            width='24px'
+                                            fill='var(--text-general)'
+                                        />
+                                        <Localize i18n_default_text='Signal Scanner' />
+                                    </>
+                                }
+                                id='id-signal-scanner'
+                            >
+                                <Suspense
+                                    fallback={<ChunkLoader message={localize('Please wait, loading signal scanner...')} />}
+                                >
+                                    <SignalScanner />
                                 </Suspense>
                             </div>
                             <div

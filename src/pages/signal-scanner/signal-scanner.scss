@@ -1,0 +1,172 @@
+.signal-scanner {
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+    padding: 1.6rem;
+    max-width: 120rem;
+    height: 100%;
+    overflow-y: auto;
+
+    &__header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1.6rem;
+        background: var(--general-section-1);
+        border-radius: 0.4rem;
+        padding: 1.6rem;
+    }
+
+    &__title {
+        font-size: var(--text-size-m);
+        font-weight: var(--text-weight-bold);
+        color: var(--text-general);
+        margin: 0;
+    }
+
+    &__subtitle {
+        font-size: var(--text-size-xs);
+        color: var(--text-general);
+        margin: 0.4rem 0 0;
+    }
+
+    &__status {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+    }
+
+    &__scanning-pill {
+        font-size: var(--text-size-xxxxs);
+        font-weight: var(--text-weight-bold);
+        padding: 0.2rem 0.8rem;
+        border-radius: 1rem;
+        background: var(--status-warning-transparent);
+        color: var(--status-warning);
+        text-transform: uppercase;
+    }
+
+    &__last-scan {
+        font-size: var(--text-size-xs);
+        color: var(--text-less-prominent);
+    }
+
+    &__empty {
+        background: var(--general-section-1);
+        border-radius: 0.4rem;
+        padding: 3.2rem;
+        text-align: center;
+        font-size: var(--text-size-xs);
+        color: var(--text-general);
+    }
+
+    &__table-wrapper {
+        background: var(--general-section-1);
+        border-radius: 0.8rem;
+        padding: 1.6rem;
+        border: 1px solid var(--border-normal);
+        overflow-x: auto;
+    }
+
+    &__table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--text-size-xs);
+        color: var(--text-general);
+    }
+
+    &__table th {
+        text-align: left;
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-normal);
+        color: var(--text-less-prominent);
+        font-weight: var(--text-weight-bold);
+        white-space: nowrap;
+    }
+
+    &__table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-normal);
+        vertical-align: middle;
+    }
+
+    &__table tr:last-child td {
+        border-bottom: none;
+    }
+
+    &__cell-market {
+        font-weight: var(--text-weight-bold);
+        white-space: nowrap;
+    }
+
+    &__signal-badge {
+        display: inline-block;
+        font-size: var(--text-size-xxxxs);
+        font-weight: var(--text-weight-bold);
+        padding: 0.2rem 0.8rem;
+        border-radius: 1rem;
+        text-transform: uppercase;
+
+        &--over {
+            background: var(--status-success-transparent, rgba(4, 180, 110, 0.12));
+            color: var(--status-success);
+        }
+
+        &--under {
+            background: var(--status-danger-transparent, rgba(255, 68, 79, 0.12));
+            color: var(--status-danger);
+        }
+
+        &--even {
+            background: var(--status-success-transparent, rgba(4, 180, 110, 0.12));
+            color: var(--status-success);
+        }
+
+        &--odd {
+            background: var(--status-danger-transparent, rgba(255, 68, 79, 0.12));
+            color: var(--status-danger);
+        }
+    }
+
+    &__cell-digits {
+        min-width: 12rem;
+    }
+
+    &__digit-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+    }
+
+    &__digit-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: var(--general-main-1);
+        border-radius: 0.4rem;
+        padding: 0.2rem 0.6rem;
+    }
+
+    &__digit-value {
+        font-weight: var(--text-weight-bold);
+        color: var(--text-general);
+    }
+
+    &__digit-pct {
+        color: var(--text-less-prominent);
+    }
+
+    &__confidence {
+        font-size: var(--text-size-xs);
+        color: var(--text-less-prominent);
+    }
+
+    &__cell-time {
+        white-space: nowrap;
+        color: var(--text-less-prominent);
+    }
+
+    &__trade-btn {
+        white-space: nowrap;
+    }
+}

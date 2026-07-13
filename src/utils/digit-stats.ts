@@ -85,3 +85,16 @@ export const getSyntheticMarkets = (): { symbol: string; display_name: string }[
         }))
         .sort((a, b) => a.display_name.localeCompare(b.display_name));
 };
+
+export const getScannableMarkets = (): { symbol: string; display_name: string }[] => {
+    const symbols = api_base?.active_symbols || [];
+    const SCANNABLE_SUBMARKETS = new Set(['random_index', 'jump_index']);
+
+    return symbols
+        .filter((s: any) => s.market === 'synthetic_index' && SCANNABLE_SUBMARKETS.has(s.submarket))
+        .map((s: any) => ({
+            symbol: s.symbol || s.underlying_symbol,
+            display_name: s.display_name || s.symbol,
+        }))
+        .sort((a, b) => a.display_name.localeCompare(b.display_name));
+};

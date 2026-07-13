@@ -93,4 +93,35 @@
         color: var(--text-less-prominent);
         font-size: var(--text-size-xs);
     }
+
+    &__barrier-picker {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        font-size: var(--text-size-xxxxs);
+        font-weight: var(--text-weight-normal);
+        color: var(--text-less-prominent);
+    }
+
+    &__barrier-select {
+        padding: 0.4rem 0.8rem;
+        border: 1px solid var(--border-normal);
+        border-radius: 0.4rem;
+        background: var(--general-main-1);
+        color: var(--text-general);
+        font-size: var(--text-size-xs);
+    }
+
+    &__signal-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(28rem, 1fr));
+        gap: 1.2rem;
+    }
+
+    &__disclaimer {
+        font-size: var(--text-size-xxxxs);
+        color: var(--text-less-prominent);
+        line-height: 1.5;
+        margin: 0;
+    }
 }

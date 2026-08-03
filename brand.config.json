@@ -1,40 +1,40 @@
 {
-    "brand_name": "YourBrand",
-    "brand_domain": "yourbrand.com",
+    "brand_name": "ProProfitSpace",
+    "brand_domain": "proprofitspace.com",
     "brand_hostname": {
-        "staging": "staging.yourbrand.com/dashboard",
-        "production": "yourbrand.com/dashboard"
+        "staging": "staging.proprofitspace.com/dashboard",
+        "production": "proprofitspace.com/dashboard"
     },
-    "domain_name": "YourBrand.com",
+    "domain_name": "ProProfitSpace.com",
     "colors": {
-        "primary": "#000000",
-        "secondary": "#64748b",
-        "tertiary": "#8b5cf6",
-        "success": "#10b981",
-        "danger": "#ef4444",
-        "warning": "#f59e0b",
-        "info": "#0ea5e9",
-        "neutral": "#6b7280",
-        "black": "#0f172a",
+        "primary": "#00d4ff",
+        "secondary": "#7c3aed",
+        "tertiary": "#06b6d4",
+        "success": "#00ff9d",
+        "danger": "#ff3366",
+        "warning": "#ffaa00",
+        "info": "#00d4ff",
+        "neutral": "#94a3b8",
+        "black": "#0a0e1a",
         "white": "#ffffff",
         "grey": {
-            "50": "#f8fafc",
-            "100": "#f1f5f9",
-            "200": "#e2e8f0",
-            "300": "#cbd5e1",
-            "400": "#94a3b8",
-            "500": "#64748b",
-            "600": "#475569",
-            "700": "#334155",
-            "800": "#1e293b",
-            "900": "#0f172a"
+            "50": "#f0f9ff",
+            "100": "#e0f2fe",
+            "200": "#bae6fd",
+            "300": "#7dd3fc",
+            "400": "#38bdf8",
+            "500": "#0ea5e9",
+            "600": "#0284c7",
+            "700": "#0369a1",
+            "800": "#075985",
+            "900": "#0c4a6e"
         }
     },
     "typography": {
         "font_family": {
-            "primary": "Inter",
-            "secondary": "Georgia, 'Times New Roman', Times, serif",
-            "monospace": "'Courier New', Courier, monospace"
+            "primary": "Inter, system-ui, -apple-system, sans-serif",
+            "secondary": "Geist, 'SF Pro Display', system-ui, sans-serif",
+            "monospace": "'JetBrains Mono', 'Fira Code', 'Courier New', monospace"
         },
         "font_sizes": {
             "xs": "0.75rem",
@@ -48,30 +48,9 @@
         }
     },
     "color_variants": {
-        "light_variants": [
-            100,
-            200,
-            300,
-            400,
-            500
-        ],
-        "dark_variants": [
-            600,
-            700,
-            800,
-            900
-        ],
-        "opacity_variants": [
-            10,
-            20,
-            30,
-            40,
-            50,
-            60,
-            70,
-            80,
-            90
-        ]
+        "light_variants": [100, 200, 300, 400, 500],
+        "dark_variants": [600, 700, 800, 900],
+        "opacity_variants": [10, 20, 30, 40, 50, 60, 70, 80, 90]
     },
     "theme_config": {
         "enable_dynamic_themes": true,
@@ -79,17 +58,17 @@
         "css_variable_prefix": "--brand"
     },
     "platform": {
-        "name": "proprofitspace",
+        "name": "ProProfitSpace",
         "footer": {
             "enable_language_settings": false,
             "enable_theme_toggle": true
         },
         "hostname": {
             "production": {
-                "com": "bot.yourbrand.com"
+                "com": "app.proprofitspace.com"
             },
             "staging": {
-                "com": "staging-bot.yourbrand.com"
+                "com": "staging.proprofitspace.com"
             }
         },
         "auth2_url": {

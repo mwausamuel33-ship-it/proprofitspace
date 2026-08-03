@@ -468,7 +468,7 @@ export default class LoadModalStore {
         const {
             strategy_id = window.Blockly.utils.idGenerator.genUid(),
             convertedDom,
-            block_string,
+            block_string: _block_string,
         } = window.Blockly.xmlValues;
         const derivWorkspace = window.Blockly.derivWorkspace;
 
@@ -536,7 +536,7 @@ export default class LoadModalStore {
         /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
         /* [/AI] */
 
-        const result = await load({ ...load_options, show_snackbar: false });
+        const _result = await load({ ...load_options, show_snackbar: false });
         /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
         /* [/AI] */
     };

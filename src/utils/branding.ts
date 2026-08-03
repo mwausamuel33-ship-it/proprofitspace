@@ -12,5 +12,5 @@ export const LOGO_CANDIDATES = ['/logo.png', '/logo.jpg', '/logo.jpeg', '/logo.w
  * preview name (PREVIEW_BRANDING) is handled separately via the preview-app-name store.
  */
 export function getAppName(): string {
-    return process.env.NEXT_PUBLIC_DERIV_APP_NAME || brandConfig?.platform?.name || 'Deriv Bot';
+    return process.env.NEXT_PUBLIC_DERIV_APP_NAME || brandConfig?.platform?.name || 'ProProfitSpace';
 }

@@ -19,12 +19,18 @@ const DigitCircles = ({
 }: TDigitCirclesProps) => {
     return (
         <div className={classNames('digit-circles', `digit-circles--${size}`)}>
-            {stats.map(({ digit, percentage }) => {
+            {stats.map(({ digit, percentage, is_hot, is_cold, streak }) => {
                 const is_current = digit === current_digit;
                 const is_most = digit === most_frequent_digit;
                 const is_least = digit === least_frequent_digit && !is_most;
                 return (
-                    <div className='digit-circles__item' key={digit}>
+                    <div
+                        className={classNames('digit-circles__item', {
+                            'digit-circles__item--hot': is_hot,
+                            'digit-circles__item--cold': is_cold,
+                        })}
+                        key={digit}
+                    >
                         <div
                             className={classNames('digit-circles__circle', {
                                 'digit-circles__circle--current': is_current,
@@ -39,6 +45,9 @@ const DigitCircles = ({
                             <span className='digit-circles__label'>
                                 {is_most ? 'most' : is_least ? 'least' : 'current'}
                             </span>
+                        )}
+                        {streak > 0 && (
+                            <span className='digit-circles__streak'>🔥{streak}</span>
                         )}
                     </div>
                 );

@@ -72,7 +72,7 @@ const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) =
 
     const is_connection_opened = !!chart_api?.api;
 
-    const handleStateChange: TStateChangeListener = (state, options) => {
+    const handleStateChange: TStateChangeListener = (state, _options) => {
         /* [AI] - Analytics removed - rudderstack event call removed */
         // Handle state changes: INITIAL, READY, SCROLL_TO_LEFT
         /* [/AI] */

@@ -78,7 +78,7 @@ export const useMultiMarketScanner = (
         }
     };
 
-    const evaluateMarket = (symbol: string, prices: number[], times: number[]): TScanResult => {
+    const evaluateMarket = (symbol: string, prices: number[], _times: number[]): TScanResult => {
         const decimals = getDecimalPlacesLocal(symbol);
         const digits = prices.map(p => getLastDigit(p, decimals));
         const sample_size = digits.length;

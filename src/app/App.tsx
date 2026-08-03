@@ -5,6 +5,7 @@ import { cleanupUrl, handleOAuthCallback } from '@/external/deriv-core';
 import ChunkLoader from '@/components/loader/chunk-loader';
 import LocalStorageSyncWrapper from '@/components/localStorage-sync-wrapper';
 import RoutePromptDialog from '@/components/route-prompt-dialog';
+import { NotificationProvider } from '@/components/notifications/notifications';
 import { useAccountSwitching } from '@/hooks/useAccountSwitching';
 import { useLanguageFromURL } from '@/hooks/useLanguageFromURL';
 import { StoreProvider } from '@/hooks/useStore';
@@ -45,7 +46,9 @@ const router = createBrowserRouter(
                                 <LocalStorageSyncWrapper>
                                     <RoutePromptDialog />
                                     <CoreStoreProvider>
-                                        <Layout />
+                                        <NotificationProvider>
+                                            <Layout />
+                                        </NotificationProvider>
                                     </CoreStoreProvider>
                                 </LocalStorageSyncWrapper>
                             </StoreProvider>

@@ -64,7 +64,7 @@ const FormWrapper = observer(
         setSelectedTradeType,
     }: TDesktopFormWrapper) => {
         const scroll_ref = React.useRef<HTMLDivElement & SVGSVGElement>(null);
-        const { submitForm, isValid, setFieldValue, validateForm, values } = useFormikContext<TFormValues>();
+        const { submitForm, isValid, setFieldValue, validateForm, values: _values } = useFormikContext<TFormValues>();
         const { quick_strategy } = useStore();
         const { selected_strategy, onSubmit, is_stop_bot_dialog_open } = quick_strategy;
         const { handleSubmit } = useQsSubmitHandler();

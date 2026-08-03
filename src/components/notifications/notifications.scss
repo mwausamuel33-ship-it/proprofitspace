@@ -1,0 +1,114 @@
+.pps-notifications {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    max-width: 360px;
+    width: calc(100vw - 2rem);
+    pointer-events: none;
+
+    @media (max-width: 768px) {
+        top: auto;
+        bottom: 1rem;
+        right: 1rem;
+        left: 1rem;
+        max-width: none;
+    }
+}
+
+.pps-notification {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    padding: 1rem;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--BORDER_RADIUS_2);
+    box-shadow: var(--glass-shadow);
+    cursor: pointer;
+    pointer-events: auto;
+    animation: slide-in-right var(--duration-normal) var(--ease-out-expo);
+    transition: all var(--duration-normal) var(--ease-out-expo);
+
+    &:hover {
+        border-color: var(--glass-border-hover);
+        box-shadow: var(--glass-shadow-hover);
+    }
+
+    &--success {
+        border-left: 3px solid var(--brand-success);
+    }
+
+    &--error {
+        border-left: 3px solid var(--brand-danger);
+    }
+
+    &--warning {
+        border-left: 3px solid var(--brand-warning);
+    }
+
+    &--info {
+        border-left: 3px solid var(--brand-primary);
+    }
+
+    &--signal {
+        border-left: 3px solid var(--brand-secondary);
+    }
+
+    &__icon {
+        font-size: 1.2rem;
+        flex-shrink: 0;
+        margin-top: 0.1rem;
+    }
+
+    &__content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    &__title {
+        font-size: var(--text-size-xs);
+        font-weight: 700;
+        color: var(--text-prominent);
+        display: block;
+    }
+
+    &__message {
+        font-size: var(--text-size-xxs);
+        color: var(--text-less-prominent);
+        margin: 0.2rem 0 0;
+        line-height: 1.4;
+    }
+
+    &__close {
+        background: transparent;
+        border: none;
+        color: var(--text-less-prominent);
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+        flex-shrink: 0;
+        transition: color var(--duration-fast);
+
+        &:hover {
+            color: var(--text-prominent);
+        }
+    }
+}
+
+@keyframes slide-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

@@ -11,6 +11,12 @@
         align-items: center;
         gap: 0.4rem;
         min-width: 5.6rem;
+        position: relative;
+        transition: transform var(--duration-fast) var(--ease-out-expo);
+
+        &:hover {
+            transform: translateY(-2px);
+        }
     }
 
     &__circle {
@@ -23,20 +29,19 @@
         border-radius: 50%;
         border: 2px solid var(--border-normal);
         background: var(--general-main-1);
-        transition:
-            border-color 0.2s ease,
-            background-color 0.2s ease,
-            color 0.2s ease;
+        transition: all var(--duration-normal) var(--ease-out-expo);
+        position: relative;
 
         &--current {
             border-color: var(--brand-primary);
             border-width: 3px;
-            box-shadow: 0 0 0 2px var(--brand-primary, #3b82f6) inset;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15), var(--glow-primary);
         }
 
         &--most {
-            background: var(--status-success);
-            border-color: var(--status-success);
+            background: linear-gradient(135deg, var(--brand-success), #10b981);
+            border-color: var(--brand-success);
+            box-shadow: var(--glow-success);
 
             .digit-circles__digit,
             .digit-circles__pct {
@@ -45,8 +50,9 @@
         }
 
         &--least {
-            background: var(--status-danger);
-            border-color: var(--status-danger);
+            background: linear-gradient(135deg, var(--brand-danger), #e11d48);
+            border-color: var(--brand-danger);
+            box-shadow: var(--glow-danger);
 
             .digit-circles__digit,
             .digit-circles__pct {
@@ -57,21 +63,51 @@
 
     &__digit {
         font-size: var(--text-size-sm);
-        font-weight: var(--text-weight-bold);
+        font-weight: 800;
         line-height: 1;
-        color: var(--text-general);
+        color: var(--text-prominent);
+        font-family: var(--brand-font-monospace);
     }
 
     &__pct {
         font-size: var(--text-size-xxxxs);
         color: var(--text-less-prominent);
         margin-top: 0.2rem;
+        font-family: var(--brand-font-monospace);
     }
 
     &__label {
         font-size: var(--text-size-xxxxs);
         color: var(--text-less-prominent);
         text-transform: lowercase;
+        font-weight: 600;
+    }
+
+    &__streak {
+        position: absolute;
+        top: -0.4rem;
+        right: -0.4rem;
+        font-size: 0.65rem;
+        background: var(--brand-warning);
+        color: var(--text-colored-background);
+        border-radius: 50%;
+        width: 1.2rem;
+        height: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    &--hot &__circle {
+        border-color: rgba(0, 255, 157, 0.4);
+        background: rgba(0, 255, 157, 0.08);
+    }
+
+    &--cold &__circle {
+        border-color: rgba(255, 51, 102, 0.3);
+        background: rgba(255, 51, 102, 0.05);
     }
 
     &--sm &__circle {

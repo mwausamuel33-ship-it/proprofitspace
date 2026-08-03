@@ -131,11 +131,6 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     }, [is_stop_button_visible, is_stop_button_disabled]);
     const show_overlay = should_show_overlay && is_contract_completed;
 
-    // Fix TypeScript error by ensuring active_tab is a number
-    // Use a fallback to dashboard if active_tab is undefined
-    const safeActiveTab = typeof active_tab === 'number' ? active_tab : DBOT_TABS.DASHBOARD;
-
-    // Function to determine tooltip alignment based on run panel position
     const determineTooltipAlignment = (): string => {
         // Force tooltip to always appear on top for mobile devices
         if (isMobile) {

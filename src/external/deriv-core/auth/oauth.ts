@@ -253,7 +253,7 @@ export async function handleOAuthCallback(
 /**
  * Clean OAuth parameters from the URL using history.replaceState.
  */
-export function cleanupUrl(baseUrl: string): void {
+export function cleanupUrl(_baseUrl: string): void {
   if (typeof window === 'undefined') return;
 
   const url = new URL(window.location.href);

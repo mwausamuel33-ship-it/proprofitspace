@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import classNames from 'classnames';
 import { useMultiMarketScanner } from '@/hooks/useMultiMarketScanner';
@@ -43,81 +42,101 @@ const SignalScanner = observer(() => {
         return sig.label;
     };
 
+    // Sort signals by confidence (highest first)
+    const sorted_signals = [...signals].sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+
     return (
-        <div className='signal-scanner'>
-            <div className='signal-scanner__header'>
+        <div className='pps-signal-scanner'>
+            <div className='pps-signal-scanner__header'>
                 <div>
-                    <h2 className='signal-scanner__title'>
-                        <Localize i18n_default_text='Signal Scanner' />
+                    <h2 className='pps-signal-scanner__title'>
+                        <Localize i18n_default_text='Live Market Scanner' />
                     </h2>
-                    <p className='signal-scanner__subtitle'>
-                        <Localize i18n_default_text='Scanning Volatility and Jump indices for threshold signals' />
+                    <p className='pps-signal-scanner__subtitle'>
+                        <Localize i18n_default_text='Continuously ranking all synthetic indices by opportunity strength' />
                     </p>
                 </div>
-                <div className='signal-scanner__status'>
+                <div className='pps-signal-scanner__status'>
                     {is_scanning && (
-                        <span className='signal-scanner__scanning-pill'>
+                        <span className='pps-signal-scanner__scanning-pill'>
+                            <span className='pps-signal-scanner__scanning-dot' />
                             <Localize i18n_default_text='Scanning...' />
                         </span>
                     )}
                     {last_scan && (
-                        <span className='signal-scanner__last-scan'>
+                        <span className='pps-signal-scanner__last-scan'>
                             <Localize i18n_default_text='Last scan: {{time}}' values={{ time: formatTime(last_scan) }} />
                         </span>
                     )}
                 </div>
             </div>
 
-            {signals.length === 0 ? (
-                <div className='signal-scanner__empty'>
+            {sorted_signals.length === 0 ? (
+                <div className='pps-signal-scanner__empty'>
+                    <div className='pps-signal-scanner__empty-icon'>🔍</div>
                     <p>
                         <Localize i18n_default_text='No signals detected yet. The scanner checks all Volatility and Jump indices every 25 seconds.' />
                     </p>
                 </div>
             ) : (
-                <div className='signal-scanner__table-wrapper'>
-                    <table className='signal-scanner__table'>
+                <div className='pps-signal-scanner__table-wrapper'>
+                    <table className='pps-signal-scanner__table'>
                         <thead>
                             <tr>
+                                <th>#</th>
                                 <th><Localize i18n_default_text='Market' /></th>
                                 <th><Localize i18n_default_text='Signal' /></th>
+                                <th><Localize i18n_default_text='Confidence' /></th>
                                 <th><Localize i18n_default_text='Triggering Digits' /></th>
                                 <th><Localize i18n_default_text='Detected At' /></th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {signals.map((sig, idx) => (
+                            {sorted_signals.map((sig, idx) => (
                                 <tr key={`${sig.symbol}-${sig.contract_type}-${sig.barrier}-${idx}`}>
-                                    <td className='signal-scanner__cell-market'>{sig.display_name || sig.symbol}</td>
+                                    <td className='pps-signal-scanner__cell-rank'>{idx + 1}</td>
+                                    <td className='pps-signal-scanner__cell-market'>{sig.display_name || sig.symbol}</td>
                                     <td>
-                                        <span className={classNames('signal-scanner__signal-badge', {
-                                            'signal-scanner__signal-badge--over': sig.contract_type === 'DIGITOVER',
-                                            'signal-scanner__signal-badge--under': sig.contract_type === 'DIGITUNDER',
-                                            'signal-scanner__signal-badge--even': sig.contract_type === 'DIGITEVEN',
-                                            'signal-scanner__signal-badge--odd': sig.contract_type === 'DIGITODD',
+                                        <span className={classNames('pps-signal-scanner__signal-badge', {
+                                            'pps-signal-scanner__signal-badge--over': sig.contract_type === 'DIGITOVER',
+                                            'pps-signal-scanner__signal-badge--under': sig.contract_type === 'DIGITUNDER',
+                                            'pps-signal-scanner__signal-badge--even': sig.contract_type === 'DIGITEVEN',
+                                            'pps-signal-scanner__signal-badge--odd': sig.contract_type === 'DIGITODD',
                                         })}>
                                             {signal_type_label(sig)}
                                         </span>
                                     </td>
-                                    <td className='signal-scanner__cell-digits'>
+                                    <td className='pps-signal-scanner__cell-confidence'>
+                                        <div className='pps-signal-scanner__confidence-bar'>
+                                            <div
+                                                className='pps-signal-scanner__confidence-fill'
+                                                style={{
+                                                    width: `${Math.max(4, sig.confidence || 0)}%`,
+                                                    background: (sig.confidence || 0) >= 80 ? 'var(--brand-success)' : (sig.confidence || 0) >= 60 ? 'var(--brand-warning)' : 'var(--status-danger)',
+                                                }}
+                                            />
+                                        </div>
+                                        <span className='pps-signal-scanner__confidence-value'>{(sig.confidence || 0).toFixed(0)}%</span>
+                                    </td>
+                                    <td className='pps-signal-scanner__cell-digits'>
                                         {sig.triggering_digits ? (
-                                            <div className='signal-scanner__digit-list'>
+                                            <div className='pps-signal-scanner__digit-list'>
                                                 {sig.triggering_digits.map(td => (
-                                                    <span key={td.digit} className='signal-scanner__digit-item'>
-                                                        <span className='signal-scanner__digit-value'>{td.digit}</span>
-                                                        <span className='signal-scanner__digit-pct'>{td.percentage.toFixed(1)}%</span>
+                                                    <span key={td.digit} className='pps-signal-scanner__digit-item'>
+                                                        <span className='pps-signal-scanner__digit-value'>{td.digit}</span>
+                                                        <span className='pps-signal-scanner__digit-pct'>{td.percentage.toFixed(1)}%</span>
                                                     </span>
                                                 ))}
                                             </div>
                                         ) : (
-                                            <span className='signal-scanner__confidence'>{sig.confidence.toFixed(0)}% confidence</span>
+                                            <span className='pps-signal-scanner__confidence'>{(sig.confidence || 0).toFixed(0)}% confidence</span>
                                         )}
                                     </td>
-                                    <td className='signal-scanner__cell-time'>{formatTime(sig.detected_at)}</td>
+                                    <td className='pps-signal-scanner__cell-time'>{formatTime(sig.detected_at)}</td>
                                     <td>
                                         <button
-                                            className='dc-btn dc-btn--primary signal-scanner__trade-btn'
+                                            className='pps-signal-scanner__trade-btn'
                                             onClick={() => handleLoadAndTrade(sig)}
                                         >
                                             <Localize i18n_default_text='Load & Trade' />

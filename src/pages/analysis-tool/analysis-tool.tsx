@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { DigitCircles, EvenOddBars, MarketSelect, SignalCard } from '@/components/market-analysis';
+import classNames from 'classnames';
+import { SignalCard } from '@/components/market-analysis';
 import { CONNECTION_STATUS } from '@/external/bot-skeleton/services/api/observables/connection-status-stream';
 import { useApiBase } from '@/hooks/useApiBase';
-import { useSignalEngine } from '@/hooks/useSignalEngine';
 import { useStore } from '@/hooks/useStore';
 import { useTickHistory } from '@/hooks/useTickHistory';
 import {
@@ -11,11 +11,9 @@ import {
     computeEvenOdd,
     getDecimalPlaces,
     getLastDigit,
-    getLeastFrequentDigit,
-    getMostFrequentDigit,
     getSyntheticMarkets,
 } from '@/utils/digit-stats';
-import { suggestStake } from '@/utils/signal-engine';
+import { computeDigitStats, computeEvenOddSignal, computeOverUnderSignal, TSignal } from '@/utils/signal-engine';
 import { Localize } from '@deriv-com/translations';
 import './analysis-tool.scss';
 
@@ -42,29 +40,23 @@ const AnalysisTool = observer(() => {
         }
     }, [connectionStatus]);
 
-    const { prices, times, current_price, is_loading, error } = useTickHistory(symbol, MAX_FETCH);
+    const { prices, current_price, is_loading, error } = useTickHistory(symbol, MAX_FETCH);
 
     const decimals = useMemo(() => getDecimalPlaces(symbol), [symbol, markets]);
 
     const windowed_prices = useMemo(() => prices.slice(-ticks_window), [prices, ticks_window]);
-    const windowed_times = useMemo(() => times.slice(-ticks_window), [times, ticks_window]);
     const digits = useMemo(
         () => windowed_prices.map(p => getLastDigit(p, decimals)),
         [windowed_prices, decimals]
     );
-    const stats = useMemo(() => computeDigitDistribution(digits), [digits]);
-    const most_frequent_digit = useMemo(() => getMostFrequentDigit(stats), [stats]);
-    const least_frequent_digit = useMemo(() => getLeastFrequentDigit(stats), [stats]);
+    const stats = useMemo(() => computeDigitStats(digits), [digits]);
     const current_digit = digits.length ? digits[digits.length - 1] : null;
     const even_odd = useMemo(() => computeEvenOdd(digits), [digits]);
+    const even_count = useMemo(() => digits.filter(d => d % 2 === 0).length, [digits]);
+    const _odd_count = useMemo(() => digits.length - even_count, [digits, even_count]);
 
-    const { even_odd: even_odd_signal, over_under: over_under_signal, avg_interval_seconds } = useSignalEngine(
-        digits,
-        windowed_times,
-        barrier
-    );
-    const balance = Number(client?.balance) || 0;
-    const currency = client?.currency || '';
+    const even_odd_signal = useMemo(() => computeEvenOddSignal(digits, windowed_prices), [digits, windowed_prices]);
+    const over_under_signal = useMemo(() => computeOverUnderSignal(digits, barrier, windowed_prices), [digits, barrier, windowed_prices]);
 
     const commitTicksWindow = () => {
         const parsed = Number(ticks_window_input);
@@ -73,105 +65,144 @@ const AnalysisTool = observer(() => {
         setTicksWindowInput(String(clamped));
     };
 
-    return (
-        <div className='analysis-tool'>
-            <MarketSelect markets={markets} value={symbol} onChange={setSymbol} />
+    const handleTrade = (signal: TSignal) => {
+        console.log('Trade signal:', signal);
+    };
 
-            <div className='analysis-tool__price-bar'>
-                <span className='analysis-tool__price'>
+    return (
+        <div className='pps-analysis-tool'>
+            <div className='pps-analysis-tool__header'>
+                <h2 className='pps-analysis-tool__title'>
+                    <Localize i18n_default_text='AI Signal Center' />
+                </h2>
+                <p className='pps-analysis-tool__subtitle'>
+                    <Localize i18n_default_text='Advanced market analysis with AI-powered signals' />
+                </p>
+            </div>
+
+            <div className='pps-analysis-tool__controls'>
+                <div className='pps-analysis-tool__control'>
+                    <label className='pps-analysis-tool__label'>
+                        <Localize i18n_default_text='Market' />
+                    </label>
+                    <select
+                        className='pps-analysis-tool__select'
+                        value={symbol}
+                        onChange={e => setSymbol(e.target.value)}
+                    >
+                        {markets.map(m => (
+                            <option key={m.symbol} value={m.symbol}>{m.display_name || m.symbol}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className='pps-analysis-tool__control'>
+                    <label className='pps-analysis-tool__label'>
+                        <Localize i18n_default_text='Ticks Window' />
+                    </label>
+                    <input
+                        className='pps-analysis-tool__input'
+                        type='number'
+                        min={MIN_WINDOW}
+                        max={MAX_WINDOW}
+                        value={ticks_window_input}
+                        onChange={e => setTicksWindowInput(e.target.value)}
+                        onBlur={commitTicksWindow}
+                        onKeyDown={e => e.key === 'Enter' && commitTicksWindow()}
+                    />
+                </div>
+                <div className='pps-analysis-tool__control'>
+                    <label className='pps-analysis-tool__label'>
+                        <Localize i18n_default_text='Over/Under Barrier' />
+                    </label>
+                    <select
+                        className='pps-analysis-tool__select'
+                        value={barrier}
+                        onChange={e => setBarrier(Number(e.target.value))}
+                    >
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => (
+                            <option key={d} value={d}>{d}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
+            <div className='pps-analysis-tool__price-bar'>
+                <span className='pps-analysis-tool__price'>
                     {current_price !== null ? current_price.toFixed(decimals) : '—'}
                 </span>
-                <span className='analysis-tool__current-digit'>{current_digit ?? '—'}</span>
+                <span className='pps-analysis-tool__current-digit'>{current_digit ?? '—'}</span>
             </div>
 
-            <div className='analysis-tool__window-row'>
-                <label className='analysis-tool__window-label'>
-                    <Localize i18n_default_text='Ticks window:' />
-                </label>
-                <input
-                    className='analysis-tool__window-input'
-                    type='number'
-                    min={MIN_WINDOW}
-                    max={MAX_WINDOW}
-                    value={ticks_window_input}
-                    onChange={e => setTicksWindowInput(e.target.value)}
-                    onBlur={commitTicksWindow}
-                    onKeyDown={e => e.key === 'Enter' && commitTicksWindow()}
-                />
-                <span className='analysis-tool__window-hint'>({MIN_WINDOW}–{MAX_WINDOW})</span>
-            </div>
+            {error && <div className='pps-analysis-tool__error'>{error}</div>}
 
-            {error && <div className='analysis-tool__error'>{error}</div>}
+            {is_loading && (
+                <div className='pps-analysis-tool__loading'>
+                    <div className='skeleton' style={{ height: '2rem', width: '200px' }} />
+                </div>
+            )}
 
-            <div className='analysis-tool__section'>
-                <div className='analysis-tool__section-header'>
+            <div className='pps-analysis-tool__section'>
+                <div className='pps-analysis-tool__section-header'>
                     <span>
-                        <Localize
-                            i18n_default_text='Last {{count}} ticks digit distribution'
-                            values={{ count: ticks_window }}
-                        />
+                        <Localize i18n_default_text='Last {{count}} ticks digit distribution' values={{ count: ticks_window }} />
                     </span>
-                    <span className='analysis-tool__progress'>
+                    <span className='pps-analysis-tool__progress'>
                         {Math.min(windowed_prices.length, ticks_window)}/{ticks_window}
                     </span>
                 </div>
-                <DigitCircles
-                    stats={stats}
-                    current_digit={current_digit}
-                    most_frequent_digit={most_frequent_digit}
-                    least_frequent_digit={least_frequent_digit}
-                />
-            </div>
-
-            <div className='analysis-tool__section'>
-                <div className='analysis-tool__section-header'>
-                    <span>
-                        <Localize i18n_default_text='Even/Odd' />
-                    </span>
-                </div>
-                <EvenOddBars even_percentage={even_odd.even_percentage} odd_percentage={even_odd.odd_percentage} />
-            </div>
-
-            <div className='analysis-tool__section'>
-                <div className='analysis-tool__section-header'>
-                    <span>
-                        <Localize i18n_default_text='AI Signal Center' />
-                    </span>
-                    <label className='analysis-tool__barrier-picker'>
-                        <Localize i18n_default_text='Over/Under barrier:' />
-                        <select
-                            className='analysis-tool__barrier-select'
-                            value={barrier}
-                            onChange={e => setBarrier(Number(e.target.value))}
+                <div className='pps-analysis-tool__digit-grid'>
+                    {stats.map(({ digit, percentage, is_hot, is_cold, streak }) => (
+                        <div
+                            key={digit}
+                            className={classNames('pps-digit-item', {
+                                'pps-digit-item--hot': is_hot,
+                                'pps-digit-item--cold': is_cold,
+                            })}
                         >
-                            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => (
-                                <option key={d} value={d}>{d}</option>
-                            ))}
-                        </select>
-                    </label>
+                            <span className='pps-digit-item__digit'>{digit}</span>
+                            <span className='pps-digit-item__pct'>{percentage.toFixed(1)}%</span>
+                            {streak > 0 && <span className='pps-digit-item__streak'>🔥{streak}</span>}
+                        </div>
+                    ))}
                 </div>
-                <p className='analysis-tool__disclaimer'>
+            </div>
+
+            <div className='pps-analysis-tool__section'>
+                <div className='pps-analysis-tool__section-header'>
+                    <span><Localize i18n_default_text='Even/Odd Balance' /></span>
+                </div>
+                <div className='pps-even-odd-bar'>
+                    <div className='pps-even-odd-bar__fill pps-even-odd-bar__fill--even' style={{ width: `${even_odd.even_percentage || 1}%` }}>
+                        <span>Even {even_odd.even_percentage.toFixed(1)}%</span>
+                    </div>
+                    <div className='pps-even-odd-bar__fill pps-even-odd-bar__fill--odd' style={{ width: `${even_odd.odd_percentage || 1}%` }}>
+                        <span>Odd {even_odd.odd_percentage.toFixed(1)}%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className='pps-analysis-tool__section'>
+                <div className='pps-analysis-tool__section-header'>
+                    <span><Localize i18n_default_text='AI Signal Center' /></span>
+                </div>
+                <p className='pps-analysis-tool__disclaimer'>
                     <Localize i18n_default_text='Signals are statistical measures of digit skew, not predictions. Confidence reflects how likely the observed deviation is real rather than noise.' />
                 </p>
-                <div className='analysis-tool__signal-grid'>
+                <div className='pps-analysis-tool__signal-grid'>
                     <SignalCard
                         title='Even/Odd'
+                        market={symbol}
                         signal={even_odd_signal}
-                        suggested_stake={suggestStake(balance, even_odd_signal.risk_level)}
-                        currency={currency}
-                        avg_interval_seconds={avg_interval_seconds}
+                        onTrade={handleTrade}
                     />
                     <SignalCard
                         title={`Over/Under (barrier ${barrier})`}
+                        market={symbol}
                         signal={over_under_signal}
-                        suggested_stake={suggestStake(balance, over_under_signal.risk_level)}
-                        currency={currency}
-                        avg_interval_seconds={avg_interval_seconds}
+                        onTrade={handleTrade}
                     />
                 </div>
             </div>
-
-            {is_loading && <div className='analysis-tool__loading'><Localize i18n_default_text='Loading ticks…' /></div>}
         </div>
     );
 });

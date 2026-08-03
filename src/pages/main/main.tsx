@@ -38,6 +38,7 @@ import {
     LabelPairedObjectsColumnCaptionRegularIcon,
     LabelPairedPuzzlePieceTwoCaptionBoldIcon,
     LabelPairedSearchCaptionRegularIcon,
+    LabelPairedSparklesCaptionFillIcon,
 } from '@deriv/quill-icons/LabelPaired';
 import { LegacyGuide1pxIcon } from '@deriv/quill-icons/Legacy';
 import { Localize, localize } from '@deriv-com/translations';
@@ -54,6 +55,8 @@ const TradingBots = lazy(() => import('../trading-bots'));
 const AnalysisTool = lazy(() => import('../analysis-tool'));
 const SignalScanner = lazy(() => import('../signal-scanner'));
 const BulkTrader = lazy(() => import('../bulk-trader'));
+const EntryScanner = lazy(() => import('../entry-scanner'));
+const AIAssistant = lazy(() => import('@/components/ai-assistant'));
 
 const AppWrapper = observer(() => {
     const { connectionStatus } = useApiBase();
@@ -86,7 +89,7 @@ const AppWrapper = observer(() => {
     const { clear } = summary_card;
     const { DASHBOARD, BOT_BUILDER } = DBOT_TABS;
     const init_render = React.useRef(true);
-    const hash = ['dashboard', 'bot_builder', 'chart', 'trading_bots', 'analysis_tool', 'signal_scanner', 'bulk_trader', 'tutorial'];
+    const hash = ['dashboard', 'bot_builder', 'chart', 'trading_bots', 'analysis_tool', 'signal_scanner', 'bulk_trader', 'entry_scanner', 'ai_assistant', 'tutorial'];
     const { isDesktop } = useDevice();
     const location = useLocation();
     const navigate = useNavigate();
@@ -510,6 +513,44 @@ const AppWrapper = observer(() => {
                                     fallback={<ChunkLoader message={localize('Please wait, loading bulk trader...')} />}
                                 >
                                     <BulkTrader />
+                                </Suspense>
+                            </div>
+                            <div
+                                label={
+                                    <>
+                                        <LabelPairedCircleDotCaptionFillIcon
+                                            height='24px'
+                                            width='24px'
+                                            fill='var(--text-general)'
+                                        />
+                                        <Localize i18n_default_text='Entry Scanner' />
+                                    </>
+                                }
+                                id='id-entry-scanner'
+                            >
+                                <Suspense
+                                    fallback={<ChunkLoader message={localize('Please wait, loading entry scanner...')} />}
+                                >
+                                    <EntryScanner />
+                                </Suspense>
+                            </div>
+                            <div
+                                label={
+                                    <>
+                                        <LabelPairedCircleDotCaptionFillIcon
+                                            height='24px'
+                                            width='24px'
+                                            fill='var(--text-general)'
+                                        />
+                                        <Localize i18n_default_text='AI Assistant' />
+                                    </>
+                                }
+                                id='id-ai-assistant'
+                            >
+                                <Suspense
+                                    fallback={<ChunkLoader message={localize('Please wait, loading AI assistant...')} />}
+                                >
+                                    <AIAssistant />
                                 </Suspense>
                             </div>
                             <div

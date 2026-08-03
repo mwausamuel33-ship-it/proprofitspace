@@ -4,6 +4,12 @@ export type TDigitStat = {
     digit: number;
     count: number;
     percentage: number;
+    z_score: number;
+    deviation: number;
+    is_hot: boolean;
+    is_cold: boolean;
+    streak: number;
+    last_seen: number;
 };
 
 export type TEvenOddStat = {
@@ -44,10 +50,19 @@ export const computeDigitDistribution = (digits: number[]): TDigitStat[] => {
         if (d >= 0 && d <= 9) counts[d] += 1;
     });
     const total = digits.length || 1;
+    const mean_p = total / 10;
+    const se = Math.sqrt((mean_p * (1 - mean_p)) / total) || 1;
+
     return counts.map((count, digit) => ({
         digit,
         count,
         percentage: Number(((count / total) * 100).toFixed(1)),
+        z_score: Number(((count / total - mean_p) / se).toFixed(2)),
+        deviation: Number(((count / total - mean_p) * 100).toFixed(1)),
+        is_hot: (count / total) > 1.15 * mean_p,
+        is_cold: (count / total) < 0.85 * mean_p,
+        streak: 0,
+        last_seen: -1,
     }));
 };
 

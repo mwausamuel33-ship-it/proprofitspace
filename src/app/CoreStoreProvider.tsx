@@ -34,7 +34,7 @@ const CoreStoreProvider: React.FC<{ children: React.ReactNode }> = observer(({ c
 
     const { currentLang } = useTranslations();
 
-    const handleLogout = useLogout();
+    useLogout();
 
     const activeAccount = useMemo(
         () => accountList?.find(account => account.loginid === activeLoginid),

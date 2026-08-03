@@ -9,7 +9,7 @@ export const switch_account_notification = () => ({
     key: 'bot_switch_account',
     header: localize('You have switched accounts.'),
     message: localize(
-        'Our system will finish any Deriv Bot trades that are running, and Deriv Bot will not place any new trades.'
+        'Our system will finish any ProProfitSpace trades that are running, and ProProfitSpace will not place any new trades.'
     ),
     type: 'warning',
     is_persistent: true,

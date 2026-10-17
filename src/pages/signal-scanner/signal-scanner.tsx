@@ -1,27 +1,26 @@
-import { observer } from 'mobx-react-lite';
+import { useState } from 'react';
 import classNames from 'classnames';
-import { useMultiMarketScanner } from '@/hooks/useMultiMarketScanner';
-import { generateSignalBotXml } from '@/utils/signal-bot-xml';
+import { observer } from 'mobx-react-lite';
+import { useDestroyerScanner } from '@/hooks/useDestroyerScanner';
+import { DEFAULT_THRESHOLD } from '@/utils/destroyer-rules';
+import { generateDestroyerBotXml } from '@/utils/signal-bot-xml';
 import { load } from '@/external/bot-skeleton';
 import { Localize } from '@deriv-com/translations';
 import './signal-scanner.scss';
 
+const LOSING_ZONE = [0, 1, 2, 7, 8, 9];
+
 const SignalScanner = observer(() => {
-    const { signals, is_scanning, last_scan } = useMultiMarketScanner({ interval_ms: 25000 });
+    const [threshold, setThreshold] = useState(DEFAULT_THRESHOLD);
+    const [stake, setStake] = useState(1);
+    const [maxRuns, setMaxRuns] = useState(3);
+    const { rows, signals, is_scanning, last_scan } = useDestroyerScanner({ threshold });
 
-    const formatTime = (epoch: number) => {
-        const d = new Date(epoch);
-        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    };
+    const formatTime = (epoch: number) =>
+        new Date(epoch).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-    const handleLoadAndTrade = async (signal: typeof signals[0]) => {
-        const xmlString = generateSignalBotXml({
-            symbol: signal.symbol,
-            display_name: signal.display_name || signal.symbol,
-            contract_type: signal.contract_type,
-            barrier: signal.barrier,
-            confidence: signal.confidence || 0,
-        });
+    const handleLoadAndTrade = async (row: (typeof signals)[0]) => {
+        const xmlString = generateDestroyerBotXml(row.signal, { symbol: row.symbol, stake, maxRuns });
 
         const workspace = window.Blockly?.derivWorkspace;
         if (!workspace) {
@@ -31,7 +30,7 @@ const SignalScanner = observer(() => {
 
         await load({
             block_string: xmlString,
-            file_name: `Signal - ${signal.display_name || signal.symbol}`,
+            file_name: `Destroyer - ${row.display_name} - ${row.signal.label}`,
             strategy_id: null,
             workspace,
             from: 'signal_scanner',
@@ -41,114 +40,134 @@ const SignalScanner = observer(() => {
         });
 
         workspace.strategy_to_load = xmlString;
-
         window.location.hash = 'bot_builder';
     };
 
-    const signal_type_label = (sig: typeof signals[0]) => {
-        if (sig.contract_type === 'DIGITOVER') return `Over ${sig.barrier}`;
-        if (sig.contract_type === 'DIGITUNDER') return `Under ${sig.barrier}`;
-        return sig.label;
-    };
-
-    // Sort signals by confidence (highest first)
-    const sorted_signals = [...signals].sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
-
     return (
-        <div className='pps-signal-scanner'>
-            <div className='pps-signal-scanner__header'>
+        <div className='pps-sc'>
+            <div className='pps-sc__header'>
                 <div>
-                    <h2 className='pps-signal-scanner__title'>
-                        <Localize i18n_default_text='Live Market Scanner' />
-                    </h2>
-                    <p className='pps-signal-scanner__subtitle'>
-                        <Localize i18n_default_text='Continuously ranking all synthetic indices by opportunity strength' />
+                    <p className='pps-sc__eyebrow'>
+                        <Localize i18n_default_text='Destroyer Scanner' />
                     </p>
+                    <h2 className='pps-sc__title'>
+                        <Localize i18n_default_text='Every Volatility and Jump index, scanned live' />
+                    </h2>
                 </div>
-                <div className='pps-signal-scanner__status'>
-                    {is_scanning && (
-                        <span className='pps-signal-scanner__scanning-pill'>
-                            <span className='pps-signal-scanner__scanning-dot' />
-                            <Localize i18n_default_text='Scanning...' />
-                        </span>
-                    )}
-                    {last_scan && (
-                        <span className='pps-signal-scanner__last-scan'>
-                            <Localize i18n_default_text='Last scan: {{time}}' values={{ time: formatTime(last_scan) }} />
-                        </span>
-                    )}
+                <div className='pps-sc__status'>
+                    <span className={classNames('pps-sc__pill', { 'pps-sc__pill--live': is_scanning })}>
+                        {is_scanning ? 'Scanning…' : 'Idle'}
+                    </span>
+                    {last_scan && <span className='pps-sc__time'>Last scan {formatTime(last_scan)}</span>}
                 </div>
             </div>
 
-            {sorted_signals.length === 0 ? (
-                <div className='pps-signal-scanner__empty'>
-                    <div className='pps-signal-scanner__empty-icon'>🔍</div>
-                    <p>
-                        <Localize i18n_default_text='No signals detected yet. The scanner checks all Volatility and Jump indices every 25 seconds.' />
-                    </p>
+            <div className='pps-sc__controls'>
+                <label className='pps-sc__field'>
+                    <span>Digit threshold (%)</span>
+                    <input
+                        type='number'
+                        step='0.1'
+                        min='5'
+                        max='15'
+                        value={threshold}
+                        onChange={e => setThreshold(Number(e.target.value) || DEFAULT_THRESHOLD)}
+                    />
+                </label>
+                <label className='pps-sc__field'>
+                    <span>Stake</span>
+                    <input
+                        type='number'
+                        step='0.1'
+                        min='0.35'
+                        value={stake}
+                        onChange={e => setStake(Number(e.target.value) || 1)}
+                    />
+                </label>
+                <label className='pps-sc__field'>
+                    <span>Max runs</span>
+                    <input
+                        type='number'
+                        min='1'
+                        max='20'
+                        value={maxRuns}
+                        onChange={e => setMaxRuns(Math.max(1, Number(e.target.value) || 3))}
+                    />
+                </label>
+                <div className='pps-sc__summary'>
+                    <strong>{signals.length}</strong> signals · <strong>{rows.length}</strong> markets scanned
+                </div>
+            </div>
+
+            <div className='pps-sc__rules'>
+                <div>
+                    <b>Over</b> — 0,1 below threshold gives Over 1; 0,1,2 all below gives Over 2. Entry on digits 2, 5, 6.
+                </div>
+                <div>
+                    <b>Under</b> — 9,8 below threshold gives Under 8; 9,8,7 all below gives Under 7. Entry on digits 4, 7,
+                    9.
+                </div>
+            </div>
+
+            <h3 className='pps-sc__section'>Signals</h3>
+            {signals.length === 0 ? (
+                <div className='pps-sc__empty'>
+                    {rows.length === 0
+                        ? 'Waiting for tick history from the first scan…'
+                        : 'No market meets the rules right now. Try a lower threshold, or wait for the next scan.'}
                 </div>
             ) : (
-                <div className='pps-signal-scanner__table-wrapper'>
-                    <table className='pps-signal-scanner__table'>
+                <div className='pps-sc__scroll'>
+                    <table className='pps-sc__table'>
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th><Localize i18n_default_text='Market' /></th>
-                                <th><Localize i18n_default_text='Signal' /></th>
-                                <th><Localize i18n_default_text='Confidence' /></th>
-                                <th><Localize i18n_default_text='Triggering Digits' /></th>
-                                <th><Localize i18n_default_text='Detected At' /></th>
-                                <th></th>
+                                <th>Market</th>
+                                <th>Signal</th>
+                                <th>Losing digits</th>
+                                <th>Entry digits</th>
+                                <th>Scanned</th>
+                                <th />
                             </tr>
                         </thead>
                         <tbody>
-                            {sorted_signals.map((sig, idx) => (
-                                <tr key={`${sig.symbol}-${sig.contract_type}-${sig.barrier}-${idx}`}>
-                                    <td className='pps-signal-scanner__cell-rank'>{idx + 1}</td>
-                                    <td className='pps-signal-scanner__cell-market'>{sig.display_name || sig.symbol}</td>
+                            {signals.map((row, idx) => (
+                                <tr key={row.symbol}>
+                                    <td className='pps-sc__muted'>{idx + 1}</td>
+                                    <td className='pps-sc__market'>{row.display_name}</td>
                                     <td>
-                                        <span className={classNames('pps-signal-scanner__signal-badge', {
-                                            'pps-signal-scanner__signal-badge--over': sig.contract_type === 'DIGITOVER',
-                                            'pps-signal-scanner__signal-badge--under': sig.contract_type === 'DIGITUNDER',
-                                            'pps-signal-scanner__signal-badge--even': sig.contract_type === 'DIGITEVEN',
-                                            'pps-signal-scanner__signal-badge--odd': sig.contract_type === 'DIGITODD',
-                                        })}>
-                                            {signal_type_label(sig)}
+                                        <span
+                                            className={classNames('pps-sc__badge', {
+                                                'pps-sc__badge--over': row.signal.side === 'over',
+                                                'pps-sc__badge--under': row.signal.side === 'under',
+                                            })}
+                                        >
+                                            {row.signal.label}
                                         </span>
                                     </td>
-                                    <td className='pps-signal-scanner__cell-confidence'>
-                                        <div className='pps-signal-scanner__confidence-bar'>
-                                            <div
-                                                className='pps-signal-scanner__confidence-fill'
-                                                style={{
-                                                    width: `${Math.max(4, sig.confidence || 0)}%`,
-                                                    background: (sig.confidence || 0) >= 80 ? 'var(--brand-success)' : (sig.confidence || 0) >= 60 ? 'var(--brand-warning)' : 'var(--status-danger)',
-                                                }}
-                                            />
-                                        </div>
-                                        <span className='pps-signal-scanner__confidence-value'>{(sig.confidence || 0).toFixed(0)}%</span>
-                                    </td>
-                                    <td className='pps-signal-scanner__cell-digits'>
-                                        {sig.triggering_digits ? (
-                                            <div className='pps-signal-scanner__digit-list'>
-                                                {sig.triggering_digits.map(td => (
-                                                    <span key={td.digit} className='pps-signal-scanner__digit-item'>
-                                                        <span className='pps-signal-scanner__digit-value'>{td.digit}</span>
-                                                        <span className='pps-signal-scanner__digit-pct'>{td.percentage.toFixed(1)}%</span>
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <span className='pps-signal-scanner__confidence'>{(sig.confidence || 0).toFixed(0)}% confidence</span>
-                                        )}
-                                    </td>
-                                    <td className='pps-signal-scanner__cell-time'>{formatTime(sig.detected_at)}</td>
                                     <td>
-                                        <button
-                                            className='pps-signal-scanner__trade-btn'
-                                            onClick={() => handleLoadAndTrade(sig)}
-                                        >
-                                            <Localize i18n_default_text='Load & Trade' />
+                                        <div className='pps-sc__chips'>
+                                            {row.signal.losingDigits.map(d => (
+                                                <span key={d} className='pps-sc__chip'>
+                                                    <b>{d}</b>
+                                                    {row.digit_pct[d].toFixed(1)}%
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className='pps-sc__chips'>
+                                            {row.signal.entryDigits.map(d => (
+                                                <span key={d} className='pps-sc__chip pps-sc__chip--entry'>
+                                                    {d}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </td>
+                                    <td className='pps-sc__muted'>{formatTime(row.scanned_at)}</td>
+                                    <td>
+                                        <button className='pps-sc__btn' onClick={() => handleLoadAndTrade(row)}>
+                                            Load &amp; Trade
                                         </button>
                                     </td>
                                 </tr>
@@ -157,6 +176,42 @@ const SignalScanner = observer(() => {
                     </table>
                 </div>
             )}
+
+            <h3 className='pps-sc__section'>All markets (last-digit %)</h3>
+            <div className='pps-sc__scroll'>
+                <table className='pps-sc__table pps-sc__table--dense'>
+                    <thead>
+                        <tr>
+                            <th>Market</th>
+                            {Array.from({ length: 10 }, (_, d) => (
+                                <th key={d}>{d}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.map(row => (
+                            <tr key={row.symbol}>
+                                <td className='pps-sc__market'>{row.display_name}</td>
+                                {row.digit_pct.map((pct, d) => (
+                                    <td
+                                        key={d}
+                                        className={classNames('pps-sc__cell', {
+                                            'pps-sc__cell--low': LOSING_ZONE.includes(d) && pct < threshold,
+                                        })}
+                                    >
+                                        {pct.toFixed(1)}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            <p className='pps-sc__note'>
+                Digit frequencies describe past ticks; they do not change the odds of the next tick. Test on a demo account
+                first and keep stake and max runs small.
+            </p>
         </div>
     );
 });

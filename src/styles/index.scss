@@ -171,3 +171,27 @@ body {
         }
     }
 }
+
+/* ============================================
+   ProProfitSpace fixes (contrast + header overlap)
+   ============================================ */
+
+/* Tiny / pale text: raise the type scale and contrast for every pps-* page.
+   Custom properties inherit, so this fixes the existing scss without editing it. */
+[class^='pps-'],
+[class*=' pps-'] {
+    --text-size-xxxxs: 11px;
+    --text-size-xxs: 12px;
+    --text-size-xs: 13px;
+    --text-less-prominent: #475569;
+    --brand-primary: #0891b2;
+    --brand-secondary: #6366f1;
+}
+
+/* The Run button / "Bot is not running" box sat on top of Log in / Sign up.
+   Slide it left. If it still touches the account buttons when logged in, raise 260px. */
+@media (min-width: 1024px) {
+    body .main__run-strategy-wrapper {
+        inset-inline-end: 260px;
+    }
+}

@@ -1,4 +1,6 @@
 import strategyXml from '@/xml/signal_martingale.xml';
+import destroyerXml from '@/xml/sammee_destroyer.xml';
+import { DestroyerSignal, patchDestroyerXml, PatchOptions } from '@/utils/destroyer-rules';
 
 type TSignal = {
     symbol: string;
@@ -8,6 +10,11 @@ type TSignal = {
     confidence: number;
 };
 
+/** Builds the Sammee Destroyer bot (entry digits + recovery) for a scanner signal. */
+export const generateDestroyerBotXml = (signal: DestroyerSignal, options: PatchOptions): string =>
+    patchDestroyerXml(destroyerXml as string, signal, options);
+
+/** Original generator, kept so the other pages that use it keep working. */
 export const generateSignalBotXml = (signal: TSignal): string => {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(strategyXml, 'application/xml');

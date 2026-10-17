@@ -9,6 +9,7 @@ import OnboardTourHandler from '../tutorials/dbot-tours/onboarding-tour';
 import Announcements from './announcements';
 import Cards from './cards';
 import InfoPanel from './info-panel';
+import { SessionResults } from '../signal-scanner/scanner-widgets';
 import Landing from './landing';
 import './dashboard.scss';
 import './dashboard-pps.scss';
@@ -85,6 +86,12 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                             </button>
                         </div>
                     </div>
+
+                    {is_logged_in && (
+                        <div className='pps-dashboard__results'>
+                            <SessionResults />
+                        </div>
+                    )}
 
                     <div className='pps-dashboard__stats'>
                         {RULE_CARDS.map(card => (

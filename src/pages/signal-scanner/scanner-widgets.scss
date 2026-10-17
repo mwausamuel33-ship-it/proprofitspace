@@ -1,0 +1,123 @@
+.pps-w-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    border: 1px solid transparent;
+
+    i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentcolor;
+    }
+
+    &--demo {
+        color: #34d399;
+        background: rgba(52, 211, 153, 0.12);
+        border-color: rgba(52, 211, 153, 0.4);
+    }
+    &--real {
+        color: #fb7185;
+        background: rgba(251, 113, 133, 0.14);
+        border-color: rgba(251, 113, 133, 0.55);
+    }
+    &--out {
+        color: #9fb0cc;
+        background: rgba(148, 163, 184, 0.12);
+        border-color: rgba(148, 163, 184, 0.3);
+    }
+}
+
+.pps-w-guard {
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: #121d36;
+    color: #e8eef9;
+    font-size: 13px;
+
+    &__line {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        color: #9fb0cc;
+
+        b {
+            color: #e8eef9;
+        }
+        em {
+            font-style: normal;
+            color: #9fb0cc;
+            font-weight: 600;
+        }
+    }
+
+    &__msg {
+        margin-top: 6px;
+        line-height: 1.4;
+    }
+
+    &--warn {
+        border-color: rgba(251, 191, 36, 0.6);
+        background: rgba(251, 191, 36, 0.1);
+        .pps-w-guard__msg {
+            color: #fbbf24;
+        }
+    }
+
+    &--danger {
+        border-color: rgba(251, 113, 133, 0.7);
+        background: rgba(251, 113, 133, 0.12);
+        .pps-w-guard__msg {
+            color: #fb7185;
+            font-weight: 700;
+        }
+    }
+}
+
+.pps-w-results {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+
+    @media (max-width: 720px) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    &__tile {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 10px 14px;
+        background: #121d36;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 12px;
+
+        span {
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #9fb0cc;
+        }
+
+        b {
+            font-size: 18px;
+            font-weight: 800;
+            color: #e8eef9;
+        }
+    }
+}
+
+.pps-w-up {
+    color: #34d399 !important;
+}
+.pps-w-down {
+    color: #fb7185 !important;
+}

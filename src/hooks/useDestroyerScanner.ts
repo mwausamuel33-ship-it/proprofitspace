@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api_base } from '@/external/bot-skeleton';
-import { DEFAULT_THRESHOLD, DestroyerSignal, evaluateDestroyer } from '@/utils/destroyer-rules';
+import { compareSignals, DEFAULT_THRESHOLD, DestroyerSignal, evaluateDestroyer } from '@/utils/destroyer-rules';
 import { getDecimalPlaces, getLastDigit } from '@/utils/digit-stats';
 
 export type TDestroyerRow = {
@@ -32,6 +32,11 @@ export const useDestroyerScanner = ({
     const [rows, setRows] = useState<TDestroyerRow[]>([]);
     const [is_scanning, setIsScanning] = useState(false);
     const [last_scan, setLastScan] = useState<number | null>(null);
+    const [next_scan_at, setNextScanAt] = useState<number | null>(null);
+    const [refresh, setRefresh] = useState(0);
+
+    /** Scan right away instead of waiting for the countdown. */
+    const scanNow = useCallback(() => setRefresh(n => n + 1), []);
 
     useEffect(() => {
         if (!enabled) return undefined;
@@ -83,6 +88,7 @@ export const useDestroyerScanner = ({
             }
 
             setIsScanning(true);
+            setNextScanAt(null);
             const result: TDestroyerRow[] = [];
             for (let i = 0; i < markets.length; i += CONCURRENCY) {
                 if (cancelled) return;
@@ -94,6 +100,7 @@ export const useDestroyerScanner = ({
             setRows(result);
             setLastScan(Date.now());
             setIsScanning(false);
+            setNextScanAt(Date.now() + interval_ms);
             timer = setTimeout(run, interval_ms);
         };
 
@@ -102,7 +109,7 @@ export const useDestroyerScanner = ({
             cancelled = true;
             if (timer) clearTimeout(timer);
         };
-    }, [enabled, interval_ms, ticks]);
+    }, [enabled, interval_ms, ticks, refresh]);
 
     const signals = useMemo<TDestroyerSignalRow[]>(() => {
         const out: TDestroyerSignalRow[] = [];
@@ -110,8 +117,8 @@ export const useDestroyerScanner = ({
             const signal = evaluateDestroyer(r.digit_pct, threshold);
             if (signal) out.push({ ...r, signal });
         });
-        return out.sort((a, b) => a.signal.avgLosingPct - b.signal.avgLosingPct);
+        return out.sort((a, b) => compareSignals(a.signal, b.signal));
     }, [rows, threshold]);
 
-    return { rows, signals, is_scanning, last_scan };
+    return { rows, signals, is_scanning, last_scan, next_scan_at, scanNow };
 };

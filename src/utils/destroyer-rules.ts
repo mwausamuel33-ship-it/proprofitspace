@@ -3,6 +3,8 @@
 
 export type DestroyerSide = 'over' | 'under';
 
+export type DestroyerStrength = 'strong' | 'good' | 'weak';
+
 export interface DestroyerSignal {
     side: DestroyerSide;
     prediction: number; // barrier: Over 1/2 or Under 8/7
@@ -10,14 +12,31 @@ export interface DestroyerSignal {
     entryDigits: [number, number, number]; // last digits that trigger the purchase
     losingDigits: number[]; // digits that make this contract lose
     avgLosingPct: number; // average % of the losing digits (lower = stronger signal)
+    maxLosingPct: number; // highest % among the losing digits
+    deviation: number; // points the losing digits sit below the fair 10% share (higher = stronger)
+    strength: DestroyerStrength; // strong: all losing digits < 10%; good: average < 10%; weak: otherwise
     label: string; // 'Over 2', 'Under 8', ...
     reason: string;
 }
 
 export const DEFAULT_THRESHOLD = 10.5; // percent
+export const FAIR_SHARE = 10; // percent each digit should hold on average
 
 export const OVER_ENTRY: [number, number, number] = [2, 5, 6];
 export const UNDER_ENTRY: [number, number, number] = [4, 7, 9];
+
+const rate = (p: number[], losing: number[]) => {
+    const avg = losing.reduce((sum, d) => sum + p[d], 0) / losing.length;
+    const max = Math.max(...losing.map(d => p[d]));
+    const strength: DestroyerStrength = max < FAIR_SHARE ? 'strong' : avg < FAIR_SHARE ? 'good' : 'weak';
+    return { avg, max, deviation: FAIR_SHARE - avg, strength };
+};
+
+const STRENGTH_RANK: Record<DestroyerStrength, number> = { strong: 0, good: 1, weak: 2 };
+
+/** Sort helper: strongest tier first, then the bigger deviation below 10%. */
+export const compareSignals = (a: DestroyerSignal, b: DestroyerSignal) =>
+    STRENGTH_RANK[a.strength] - STRENGTH_RANK[b.strength] || b.deviation - a.deviation;
 
 /** digitPct: array of 10 numbers (percent of ticks for digit 0..9). */
 export function evaluateDestroyer(digitPct: number[], threshold = DEFAULT_THRESHOLD): DestroyerSignal | null {
@@ -31,13 +50,17 @@ export function evaluateDestroyer(digitPct: number[], threshold = DEFAULT_THRESH
         const all3 = below(2);
         const prediction = all3 ? 2 : 1;
         const losing = all3 ? [0, 1, 2] : [0, 1];
+        const r = rate(p, losing);
         candidates.push({
             side: 'over',
             prediction,
             recoveryPrediction: prediction + 2,
             entryDigits: OVER_ENTRY,
             losingDigits: losing,
-            avgLosingPct: losing.reduce((s, d) => s + p[d], 0) / losing.length,
+            avgLosingPct: r.avg,
+            maxLosingPct: r.max,
+            deviation: r.deviation,
+            strength: r.strength,
             label: `Over ${prediction}`,
             reason: all3 ? '0, 1 and 2 are all below the threshold' : '0 and 1 are below the threshold',
         });
@@ -48,21 +71,25 @@ export function evaluateDestroyer(digitPct: number[], threshold = DEFAULT_THRESH
         const all3 = below(7);
         const prediction = all3 ? 7 : 8;
         const losing = all3 ? [7, 8, 9] : [8, 9];
+        const r = rate(p, losing);
         candidates.push({
             side: 'under',
             prediction,
             recoveryPrediction: prediction - 2,
             entryDigits: UNDER_ENTRY,
             losingDigits: losing,
-            avgLosingPct: losing.reduce((s, d) => s + p[d], 0) / losing.length,
+            avgLosingPct: r.avg,
+            maxLosingPct: r.max,
+            deviation: r.deviation,
+            strength: r.strength,
             label: `Under ${prediction}`,
             reason: all3 ? '7, 8 and 9 are all below the threshold' : '8 and 9 are below the threshold',
         });
     }
 
     if (!candidates.length) return null;
-    // If both sides qualify, take the one whose losing digits are rarest.
-    candidates.sort((a, b) => a.avgLosingPct - b.avgLosingPct);
+    // If both sides qualify, take the stronger one.
+    candidates.sort(compareSignals);
     return candidates[0];
 }
 

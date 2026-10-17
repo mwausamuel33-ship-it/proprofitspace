@@ -195,3 +195,12 @@ body {
         inset-inline-end: 260px;
     }
 }
+
+/* Bot Builder was covering the tab bar, so there was no way back to the Scanner.
+   Push it below the tabs. If it still overlaps, raise 12rem. */
+@media (min-width: 1024px) {
+    body .bot-builder {
+        top: 12rem;
+        height: calc(var(--tab-content-height) - 5.4rem);
+    }
+}

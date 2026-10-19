@@ -9,6 +9,7 @@
     "dev": "rsbuild dev --port 4003",
     "build": "rsbuild build",
     "test": "jest",
+    "lint": "eslint src --ext .ts,.tsx",
     "type-check": "tsc --noEmit",
     "generate:brand-css": "node scripts/generate-brand-css.js",
     "prebuild": "node scripts/generate-brand-css.js"

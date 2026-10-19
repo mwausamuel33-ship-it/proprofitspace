@@ -1,7 +1,7 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useRef, useCallback } from 'react';
 import React from 'react';
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from 'react-router-dom';
-import { cleanupUrl, handleOAuthCallback } from '@/external/deriv-core';
+import { cleanupUrl, handleOAuthCallback, clearAllAuthData } from '@/external/deriv-core';
 import ChunkLoader from '@/components/loader/chunk-loader';
 import LocalStorageSyncWrapper from '@/components/localStorage-sync-wrapper';
 import RoutePromptDialog from '@/components/route-prompt-dialog';
@@ -11,6 +11,8 @@ import { useLanguageFromURL } from '@/hooks/useLanguageFromURL';
 import { StoreProvider } from '@/hooks/useStore';
 import { isPreviewMode, PREVIEW_BASE_PATH } from '@/utils/is-preview-mode';
 import { localize, TranslationProvider } from '@deriv-com/translations';
+import { DerivWSAccountsService } from '@/services/derivws-accounts.service';
+import { logOAuth } from '@/utils/auth-logger';
 import CoreStoreProvider from './CoreStoreProvider';
 import i18nInstance from './i18n';
 import './app-root.scss';
@@ -78,19 +80,37 @@ function App() {
     // Handle account switching via URL parameter
     useAccountSwitching();
 
+    const callbackProcessed = useRef(false);
+
+    const handleOAuthError = useCallback((error: unknown) => {
+        console.error('OAuth callback error:', error);
+        clearAllAuthData();
+        cleanupUrl(window.location.origin);
+    }, []);
+
     React.useEffect(() => {
+        if (callbackProcessed.current) return;
         const urlParams = new URLSearchParams(window.location.search);
         if (!urlParams.has('code')) return;
 
+        callbackProcessed.current = true;
+        logOAuth.callbackReceived(!!urlParams.get('code'), !!urlParams.get('state'));
+
         const handleCallback = async () => {
             try {
+                const clientId = process.env.NEXT_PUBLIC_DERIV_APP_ID;
+                if (!clientId) {
+                    throw new Error('Missing NEXT_PUBLIC_DERIV_APP_ID');
+                }
+
                 const authInfo = await handleOAuthCallback(window.location.href, {
-                    clientId: process.env.NEXT_PUBLIC_DERIV_APP_ID || '',
+                    clientId,
                     redirectUri: window.location.origin,
                     scopes: 'trade',
                 });
+                logOAuth.stateValidated();
+                logOAuth.tokenExchanged(authInfo.expires_in);
 
-                const { DerivWSAccountsService } = await import('@/services/derivws-accounts.service');
                 const accounts = await DerivWSAccountsService.fetchAccountsList(authInfo.access_token);
 
                 if (accounts && accounts.length > 0) {
@@ -101,20 +121,23 @@ function App() {
                         firstAccount.account_id.startsWith('VRT') || firstAccount.account_id.startsWith('VRTC');
                     localStorage.setItem('account_type', isDemo ? 'demo' : 'real');
 
+                    logOAuth.completed(firstAccount.account_id);
+
                     const { api_base } = await import('@/external/bot-skeleton');
                     await api_base.init(true);
                 } else {
                     console.error('No accounts returned after authentication');
                 }
             } catch (error) {
-                console.error('OAuth callback error:', error);
+                logOAuth.failed(error);
+                handleOAuthError(error);
             } finally {
                 cleanupUrl(window.location.origin);
             }
         };
 
         handleCallback();
-    }, []);
+    }, [handleOAuthError]);
 
     return <RouterProvider router={router} />;
 }

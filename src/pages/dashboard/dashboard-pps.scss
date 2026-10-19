@@ -1,12 +1,19 @@
 // Loaded after dashboard.scss. Fixed colours so the cards stay readable in any theme.
 .pps-dashboard {
     &__hero {
-        background: linear-gradient(135deg, #0b1324, #17224a);
+        position: relative;
+        overflow: hidden;
+        background:
+            radial-gradient(500px 200px at 90% -40px, rgba(99, 102, 241, 0.35), transparent 70%),
+            radial-gradient(420px 180px at 5% 120%, rgba(34, 211, 238, 0.22), transparent 70%), #0b1324;
         border: 1px solid rgba(148, 163, 184, 0.25);
+        border-radius: 16px;
     }
 
     &__title {
         font-size: 30px;
+        font-weight: 900;
+        letter-spacing: -0.02em;
         background: linear-gradient(135deg, #22d3ee, #a5b4fc);
         -webkit-background-clip: text;
         background-clip: text;
@@ -20,8 +27,18 @@
 
     &__hero-btn {
         font-size: 14px;
+        font-weight: 800;
         color: #04101f;
         background: linear-gradient(135deg, #22d3ee, #6366f1);
+        border-radius: 10px;
+        transition:
+            transform 0.15s ease,
+            filter 0.15s ease;
+
+        &:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.1);
+        }
 
         &--secondary {
             color: #22d3ee;
@@ -31,13 +48,33 @@
     }
 
     &__stat {
+        position: relative;
         display: flex;
         flex-direction: column;
         gap: 4px;
-        padding: 16px;
+        padding: 16px 16px 16px 20px;
         background: #0f1a33;
         border: 1px solid rgba(148, 163, 184, 0.22);
         border-radius: 14px;
+        transition:
+            transform 0.2s ease,
+            border-color 0.2s ease;
+
+        &::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            bottom: 14px;
+            width: 3px;
+            border-radius: 3px;
+            background: linear-gradient(180deg, #22d3ee, #6366f1);
+        }
+
+        &:hover {
+            transform: translateY(-2px);
+            border-color: rgba(34, 211, 238, 0.5);
+        }
     }
 
     &__stat-label {
@@ -58,6 +95,10 @@
         font-size: 12px;
         color: #9fb0cc;
     }
+
+    &__results {
+        margin: 12px 0;
+    }
 }
 
 // The My computer / Bot Builder / Quick strategy cards were stacking vertically.
@@ -73,8 +114,4 @@
         flex: 1 1 200px;
         max-width: 280px;
     }
-}
-
-.pps-dashboard__results {
-    margin: 12px 0;
 }

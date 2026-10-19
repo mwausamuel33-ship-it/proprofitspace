@@ -11,6 +11,7 @@ import Cards from './cards';
 import InfoPanel from './info-panel';
 import { SessionResults } from '../signal-scanner/scanner-widgets';
 import Landing from './landing';
+import '@/styles/pps-theme.scss';
 import './dashboard.scss';
 import './dashboard-pps.scss';
 

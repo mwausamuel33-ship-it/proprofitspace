@@ -8,6 +8,7 @@ import { assessStake } from '@/utils/stake-guard';
 import { generateDestroyerBotXml } from '@/utils/signal-bot-xml';
 import { load } from '@/external/bot-skeleton';
 import { Localize } from '@deriv-com/translations';
+import '@/styles/pps-theme.scss';
 import { AccountBadge, SessionResults, StakeGuard } from './scanner-widgets';
 import './signal-scanner.scss';
 

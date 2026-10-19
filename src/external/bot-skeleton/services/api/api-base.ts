@@ -8,6 +8,8 @@ import { TAuthData } from '@/types/api-types';
 import { clearAuthData } from '@/utils/auth-utils';
 import { handleBackendError, isBackendError } from '@/utils/error-handler';
 import { activeSymbolsProcessorService } from '../../../../services/active-symbols-processor.service';
+import { tokenRefreshService } from '../../../../services/token-refresh.service';
+import { logWebSocket, logSession } from '@/utils/auth-logger';
 import { observer as globalObserver } from '../../utils/observer';
 import { doUntilDone, socket_state } from '../tradeEngine/utils/helpers';
 import {
@@ -19,7 +21,7 @@ import {
     setIsAuthorizing,
 } from './observables/connection-status-stream';
 import ApiHelpers from './api-helpers';
-import { generateDerivApiInstance, V2GetActiveAccountId } from './appId';
+import { generateDerivApiInstance } from './appId';
 import chart_api from './chart-api';
 
 type CurrentSubscription = {
@@ -65,11 +67,14 @@ class APIBase {
     active_symbols_promise: Promise<any[] | undefined> | null = null;
     common_store: CommonStore | undefined;
     reconnection_attempts: number = 0;
+    is_reconnecting = false;
 
     // Constants for timeouts - extracted magic numbers for better maintainability
     private readonly ACTIVE_SYMBOLS_TIMEOUT_MS = 10000; // 10 seconds
     private readonly ENRICHMENT_TIMEOUT_MS = 10000; // 10 seconds
     private readonly MAX_RECONNECTION_ATTEMPTS = 5; // Maximum number of reconnection attempts before session reset
+    private readonly RECONNECT_BASE_DELAY_MS = 1000; // Base delay for exponential backoff
+    private readonly RECONNECT_MAX_DELAY_MS = 30000; // Max delay for exponential backoff
 
     unsubscribeAllSubscriptions = () => {
         this.current_auth_subscriptions?.forEach(subscription_promise => {
@@ -86,14 +91,19 @@ class APIBase {
 
     onsocketopen() {
         setConnectionStatus(CONNECTION_STATUS.OPENED);
+        logWebSocket.connected();
 
         // Reset reconnection attempts on successful connection
         this.reconnection_attempts = 0;
+        this.is_reconnecting = false;
 
         const currentClientStore = globalObserver.getState('client.store');
         if (currentClientStore) {
             currentClientStore.setIsAccountRegenerating(false);
         }
+
+        // Start proactive token refresh validation
+        tokenRefreshService.startValidation();
 
         this.handleTokenExchangeIfNeeded();
     }
@@ -148,6 +158,7 @@ class APIBase {
 
     onsocketclose() {
         setConnectionStatus(CONNECTION_STATUS.CLOSED);
+        logWebSocket.disconnected();
         this.reconnectIfNotConnected();
     }
 
@@ -188,7 +199,7 @@ class APIBase {
             }
         }
 
-        const hasAccountID = V2GetActiveAccountId();
+        const hasAccountID = getAccountId();
 
         if (!this.has_active_symbols && !hasAccountID) {
             this.active_symbols_promise = this.getActiveSymbols().then(() => undefined);
@@ -215,10 +226,14 @@ class APIBase {
         if (this.api) this.api.disconnect();
     }
 
+    private eventListenersInitialized = false;
+
     initEventListeners() {
+        if (this.eventListenersInitialized) return;
         if (window) {
             window.addEventListener('online', this.reconnectIfNotConnected);
             window.addEventListener('focus', this.reconnectIfNotConnected);
+            this.eventListenersInitialized = true;
         }
     }
 
@@ -229,27 +244,49 @@ class APIBase {
     }
 
     reconnectIfNotConnected = () => {
-        if (this.api?.connection?.readyState && this.api?.connection?.readyState > 1) {
-            this.reconnection_attempts += 1;
+        if (this.is_reconnecting) return;
 
-            if (this.reconnection_attempts >= this.MAX_RECONNECTION_ATTEMPTS) {
-                // Reset reconnection counter
-                this.reconnection_attempts = 0;
+        const readyState = this.api?.connection?.readyState;
+        // Only reconnect if fully closed (3). CLOSING (2) is transient.
+        if (!readyState || readyState !== 3) return;
 
-                // Properly handle logout through the API
-                setIsAuthorized(false);
-                setAccountList([]);
-                setAuthData(null);
+        // Don't increment attempts if we're already at max - just reset
+        if (this.reconnection_attempts >= this.MAX_RECONNECTION_ATTEMPTS) {
+            this.reconnection_attempts = 0;
+            this.is_reconnecting = false;
+            logWebSocket.reconnectFailed(this.MAX_RECONNECTION_ATTEMPTS);
+            logSession.expired();
 
-                // Clear necessary storage items
-                localStorage.removeItem('active_loginid');
-                localStorage.removeItem('account_type');
-                localStorage.removeItem('accountsList');
-                localStorage.removeItem('clientAccounts');
-            }
+            // Properly handle logout through the API
+            setIsAuthorized(false);
+            setAccountList([]);
+            setAuthData(null);
 
-            this.init(true);
+            // Clear necessary storage items
+            localStorage.removeItem('active_loginid');
+            localStorage.removeItem('account_type');
+            localStorage.removeItem('accountsList');
+            localStorage.removeItem('clientAccounts');
+            return;
         }
+
+        this.reconnection_attempts += 1;
+        logWebSocket.reconnecting(this.reconnection_attempts);
+
+        // Exponential backoff with jitter
+        const delay = Math.min(
+            this.RECONNECT_BASE_DELAY_MS * Math.pow(2, this.reconnection_attempts - 1) + Math.random() * 500,
+            this.RECONNECT_MAX_DELAY_MS
+        );
+
+        this.is_reconnecting = true;
+        setTimeout(() => {
+            this.is_reconnecting = false;
+            // Only reconnect if still closed
+            if (this.api?.connection?.readyState === 3) {
+                this.init(true);
+            }
+        }, delay);
     };
 
     async authorizeAndSubscribe() {
@@ -259,6 +296,24 @@ class APIBase {
         setIsAuthorizing(true);
 
         try {
+            // Wait for WebSocket to be open before authorizing
+            const readyState = this.api?.connection?.readyState;
+            if (readyState !== WebSocket.OPEN) {
+                await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error('WebSocket connection timeout during authorization'));
+                    }, 10000);
+
+                    const onOpen = () => {
+                        clearTimeout(timeout);
+                        this.api?.connection.removeEventListener('open', onOpen);
+                        resolve(undefined);
+                    };
+
+                    this.api?.connection.addEventListener('open', onOpen);
+                });
+            }
+
             const { balance, error } = await this.api.balance();
 
             if (error) {
@@ -368,6 +423,9 @@ class APIBase {
     }
 
     async subscribe() {
+        // Clear existing subscriptions before re-subscribing to avoid duplicates
+        this.unsubscribeAllSubscriptions();
+
         const subscribeToStream = (streamName: string) => {
             return doUntilDone(
                 () => {

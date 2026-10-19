@@ -1,0 +1,1064 @@
+===== src/pages/analysis-tool/analysis-tool.tsx =====
+import { useEffect, useMemo, useState } from 'react';
+import { observer } from 'mobx-react-lite';
+import classNames from 'classnames';
+import { SignalCard } from '@/components/market-analysis';
+import { CONNECTION_STATUS } from '@/external/bot-skeleton/services/api/observables/connection-status-stream';
+import { useApiBase } from '@/hooks/useApiBase';
+import { useStore } from '@/hooks/useStore';
+import { useTickHistory } from '@/hooks/useTickHistory';
+import {
+    computeDigitDistribution,
+    computeEvenOdd,
+    getDecimalPlaces,
+    getLastDigit,
+    getSyntheticMarkets,
+} from '@/utils/digit-stats';
+import { computeDigitStats, computeEvenOddSignal, computeOverUnderSignal, TSignal } from '@/utils/signal-engine';
+import { Localize } from '@deriv-com/translations';
+import './analysis-tool.scss';
+
+const MAX_FETCH = 5000;
+const MIN_WINDOW = 50;
+const MAX_WINDOW = 5000;
+
+const AnalysisTool = observer(() => {
+    const { connectionStatus } = useApiBase();
+    const { client } = useStore() ?? {};
+    const [markets, setMarkets] = useState<{ symbol: string; display_name: string }[]>([]);
+    const [symbol, setSymbol] = useState('');
+    const [ticks_window_input, setTicksWindowInput] = useState('1000');
+    const [ticks_window, setTicksWindow] = useState(1000);
+    const [barrier, setBarrier] = useState(5);
+
+    useEffect(() => {
+        if (connectionStatus === CONNECTION_STATUS.OPENED) {
+            const list = getSyntheticMarkets();
+            if (list.length) {
+                setMarkets(list);
+                setSymbol(prev => prev || list[0].symbol);
+            }
+        }
+    }, [connectionStatus]);
+
+    const { prices, current_price, is_loading, error } = useTickHistory(symbol, MAX_FETCH);
+
+    const decimals = useMemo(() => getDecimalPlaces(symbol), [symbol, markets]);
+
+    const windowed_prices = useMemo(() => prices.slice(-ticks_window), [prices, ticks_window]);
+    const digits = useMemo(
+        () => windowed_prices.map(p => getLastDigit(p, decimals)),
+        [windowed_prices, decimals]
+    );
+    const stats = useMemo(() => computeDigitStats(digits), [digits]);
+    const current_digit = digits.length ? digits[digits.length - 1] : null;
+    const even_odd = useMemo(() => computeEvenOdd(digits), [digits]);
+    const even_count = useMemo(() => digits.filter(d => d % 2 === 0).length, [digits]);
+    const _odd_count = useMemo(() => digits.length - even_count, [digits, even_count]);
+
+    const even_odd_signal = useMemo(() => computeEvenOddSignal(digits, windowed_prices), [digits, windowed_prices]);
+    const over_under_signal = useMemo(() => computeOverUnderSignal(digits, barrier, windowed_prices), [digits, barrier, windowed_prices]);
+
+    const commitTicksWindow = () => {
+        const parsed = Number(ticks_window_input);
+        const clamped = Number.isFinite(parsed) ? Math.min(MAX_WINDOW, Math.max(MIN_WINDOW, Math.round(parsed))) : ticks_window;
+        setTicksWindow(clamped);
+        setTicksWindowInput(String(clamped));
+    };
+
+    const handleTrade = (signal: TSignal) => {
+        console.log('Trade signal:', signal);
+    };
+
+    return (
+        <div className='pps-analysis-tool'>
+            <div className='pps-analysis-tool__header'>
+                <h2 className='pps-analysis-tool__title'>
+                    <Localize i18n_default_text='AI Signal Center' />
+                </h2>
+                <p className='pps-analysis-tool__subtitle'>
+                    <Localize i18n_default_text='Advanced market analysis with AI-powered signals' />
+                </p>
+            </div>
+
+            <div className='pps-analysis-tool__controls'>
+                <div className='pps-analysis-tool__control'>
+                    <label className='pps-analysis-tool__label'>
+                        <Localize i18n_default_text='Market' />
+                    </label>
+                    <select
+                        className='pps-analysis-tool__select'
+                        value={symbol}
+                        onChange={e => setSymbol(e.target.value)}
+                    >
+                        {markets.map(m => (
+                            <option key={m.symbol} value={m.symbol}>{m.display_name || m.symbol}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className='pps-analysis-tool__control'>
+                    <label className='pps-analysis-tool__label'>
+                        <Localize i18n_default_text='Ticks Window' />
+                    </label>
+                    <input
+                        className='pps-analysis-tool__input'
+                        type='number'
+                        min={MIN_WINDOW}
+                        max={MAX_WINDOW}
+                        value={ticks_window_input}
+                        onChange={e => setTicksWindowInput(e.target.value)}
+                        onBlur={commitTicksWindow}
+                        onKeyDown={e => e.key === 'Enter' && commitTicksWindow()}
+                    />
+                </div>
+                <div className='pps-analysis-tool__control'>
+                    <label className='pps-analysis-tool__label'>
+                        <Localize i18n_default_text='Over/Under Barrier' />
+                    </label>
+                    <select
+                        className='pps-analysis-tool__select'
+                        value={barrier}
+                        onChange={e => setBarrier(Number(e.target.value))}
+                    >
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => (
+                            <option key={d} value={d}>{d}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
+            <div className='pps-analysis-tool__price-bar'>
+                <span className='pps-analysis-tool__price'>
+                    {current_price !== null ? current_price.toFixed(decimals) : '—'}
+                </span>
+                <span className='pps-analysis-tool__current-digit'>{current_digit ?? '—'}</span>
+            </div>
+
+            {error && <div className='pps-analysis-tool__error'>{error}</div>}
+
+            {is_loading && (
+                <div className='pps-analysis-tool__loading'>
+                    <div className='skeleton' style={{ height: '2rem', width: '200px' }} />
+                </div>
+            )}
+
+            <div className='pps-analysis-tool__section'>
+                <div className='pps-analysis-tool__section-header'>
+                    <span>
+                        <Localize i18n_default_text='Last {{count}} ticks digit distribution' values={{ count: ticks_window }} />
+                    </span>
+                    <span className='pps-analysis-tool__progress'>
+                        {Math.min(windowed_prices.length, ticks_window)}/{ticks_window}
+                    </span>
+                </div>
+                <div className='pps-analysis-tool__digit-grid'>
+                    {stats.map(({ digit, percentage, is_hot, is_cold, streak }) => (
+                        <div
+                            key={digit}
+                            className={classNames('pps-digit-item', {
+                                'pps-digit-item--hot': is_hot,
+                                'pps-digit-item--cold': is_cold,
+                            })}
+                        >
+                            <span className='pps-digit-item__digit'>{digit}</span>
+                            <span className='pps-digit-item__pct'>{percentage.toFixed(1)}%</span>
+                            {streak > 0 && <span className='pps-digit-item__streak'>🔥{streak}</span>}
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div className='pps-analysis-tool__section'>
+                <div className='pps-analysis-tool__section-header'>
+                    <span><Localize i18n_default_text='Even/Odd Balance' /></span>
+                </div>
+                <div className='pps-even-odd-bar'>
+                    <div className='pps-even-odd-bar__fill pps-even-odd-bar__fill--even' style={{ width: `${even_odd.even_percentage || 1}%` }}>
+                        <span>Even {even_odd.even_percentage.toFixed(1)}%</span>
+                    </div>
+                    <div className='pps-even-odd-bar__fill pps-even-odd-bar__fill--odd' style={{ width: `${even_odd.odd_percentage || 1}%` }}>
+                        <span>Odd {even_odd.odd_percentage.toFixed(1)}%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className='pps-analysis-tool__section'>
+                <div className='pps-analysis-tool__section-header'>
+                    <span><Localize i18n_default_text='AI Signal Center' /></span>
+                </div>
+                <p className='pps-analysis-tool__disclaimer'>
+                    <Localize i18n_default_text='Signals are statistical measures of digit skew, not predictions. Confidence reflects how likely the observed deviation is real rather than noise.' />
+                </p>
+                <div className='pps-analysis-tool__signal-grid'>
+                    <SignalCard
+                        title='Even/Odd'
+                        market={symbol}
+                        signal={even_odd_signal}
+                        onTrade={handleTrade}
+                    />
+                    <SignalCard
+                        title={`Over/Under (barrier ${barrier})`}
+                        market={symbol}
+                        signal={over_under_signal}
+                        onTrade={handleTrade}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+});
+
+export default AnalysisTool;
+===== src/pages/analysis-tool/analysis-tool.scss =====
+.pps-analysis-tool {
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+    padding: 1.6rem;
+    max-width: 1200px;
+    margin: 0 auto;
+
+    &__header {
+        text-align: center;
+    }
+
+    &__title {
+        font-size: var(--text-size-2xl);
+        font-weight: 800;
+        color: var(--text-prominent);
+        margin: 0;
+        background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    &__subtitle {
+        font-size: var(--text-size-sm);
+        color: var(--text-less-prominent);
+        margin: 0.4rem 0 0;
+    }
+
+    &__controls {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    &__control {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        flex: 1;
+        min-width: 180px;
+    }
+
+    &__label {
+        font-size: var(--text-size-xxxxs);
+        color: var(--text-less-prominent);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+    }
+
+    &__select,
+    &__input {
+        padding: 0.6rem 1rem;
+        background: var(--general-main-1);
+        border: 1px solid var(--border-normal);
+        border-radius: var(--BORDER_RADIUS_2);
+        color: var(--text-prominent);
+        font-family: var(--brand-font-primary);
+        font-size: var(--text-size-sm);
+        transition: all var(--duration-fast) var(--ease-out-expo);
+
+        &:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
+        }
+    }
+
+    &__price-bar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1.2rem;
+        padding: 1rem;
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--glass-blur));
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+        border: 1px solid var(--glass-border);
+        border-radius: var(--glass-radius);
+    }
+
+    &__price {
+        font-size: var(--text-size-3xl);
+        font-weight: 800;
+        color: var(--brand-primary);
+        font-family: var(--brand-font-monospace);
+    }
+
+    &__current-digit {
+        font-size: var(--text-size-xl);
+        font-weight: 700;
+        color: var(--brand-secondary);
+        background: rgba(124, 58, 237, 0.15);
+        padding: 0.4rem 1rem;
+        border-radius: var(--BORDER_RADIUS_2);
+        border: 1px solid rgba(124, 58, 237, 0.3);
+    }
+
+    &__error {
+        padding: 0.8rem 1.2rem;
+        background: rgba(255, 51, 102, 0.1);
+        border: 1px solid rgba(255, 51, 102, 0.3);
+        border-radius: var(--BORDER_RADIUS_2);
+        color: var(--status-danger);
+        font-size: var(--text-size-sm);
+    }
+
+    &__loading {
+        display: flex;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    &__section {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    &__section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    &__section-header span:first-child {
+        font-size: var(--text-size-sm);
+        font-weight: 700;
+        color: var(--text-prominent);
+    }
+
+    &__progress {
+        font-size: var(--text-size-xxxxs);
+        color: var(--text-less-prominent);
+        font-family: var(--brand-font-monospace);
+    }
+
+    &__disclaimer {
+        font-size: var(--text-size-xxs);
+        color: var(--text-less-prominent);
+        line-height: 1.5;
+        margin: 0;
+        padding: 0.6rem 0.8rem;
+        background: rgba(0, 212, 255, 0.05);
+        border-radius: var(--BORDER_RADIUS_2);
+        border-left: 3px solid var(--brand-primary);
+    }
+
+    &__digit-grid {
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: 0.4rem;
+    }
+
+    &__signal-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.2rem;
+    }
+}
+
+.pps-digit-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.6rem 0.4rem;
+    background: var(--general-main-1);
+    border: 1px solid var(--border-normal);
+    border-radius: var(--BORDER_RADIUS_2);
+    transition: all var(--duration-fast) var(--ease-out-expo);
+    position: relative;
+
+    &--hot {
+        border-color: rgba(0, 255, 157, 0.4);
+        background: rgba(0, 255, 157, 0.08);
+    }
+
+    &--cold {
+        border-color: rgba(255, 51, 102, 0.3);
+        background: rgba(255, 51, 102, 0.05);
+    }
+
+    &__digit {
+        font-size: var(--text-size-xl);
+        font-weight: 800;
+        color: var(--text-prominent);
+        font-family: var(--brand-font-monospace);
+    }
+
+    &__pct {
+        font-size: var(--text-size-xxs);
+        color: var(--text-less-prominent);
+        font-family: var(--brand-font-monospace);
+    }
+
+    &__streak {
+        position: absolute;
+        top: -0.3rem;
+        right: -0.3rem;
+        font-size: 0.7rem;
+        background: var(--brand-warning);
+        color: var(--text-colored-background);
+        border-radius: 50%;
+        width: 1.2rem;
+        height: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+.pps-even-odd-bar {
+    display: flex;
+    height: 3rem;
+    border-radius: var(--BORDER_RADIUS_2);
+    overflow: hidden;
+    border: 1px solid var(--border-normal);
+
+    &__fill {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: width var(--duration-slow) var(--ease-out-expo);
+        position: relative;
+        min-width: 2rem;
+
+        span {
+            font-size: var(--text-size-xs);
+            font-weight: 700;
+            white-space: nowrap;
+            padding: 0 0.5rem;
+        }
+    }
+
+    &__fill--even {
+        background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+        color: var(--text-colored-background);
+    }
+
+    &__fill--odd {
+        background: linear-gradient(135deg, var(--brand-secondary), var(--brand-tertiary));
+        color: var(--text-colored-background);
+    }
+}
+===== src/pages/bulk-trader/bulk-trader.tsx =====
+import { useEffect, useMemo, useState } from 'react';
+import { DigitGauges, EvenOddBars, MarketSelect } from '@/components/market-analysis';
+import { api_base } from '@/external/bot-skeleton';
+import { CONNECTION_STATUS } from '@/external/bot-skeleton/services/api/observables/connection-status-stream';
+import { useApiBase } from '@/hooks/useApiBase';
+import { useTickHistory } from '@/hooks/useTickHistory';
+import {
+    computeDigitDistribution,
+    computeEvenOdd,
+    getDecimalPlaces,
+    getLastDigit,
+    getSyntheticMarkets,
+} from '@/utils/digit-stats';
+import { Localize, localize } from '@deriv-com/translations';
+import './bulk-trader.scss';
+
+const MAX_FETCH = 5000;
+const MIN_WINDOW = 50;
+const MAX_WINDOW = 5000;
+const MAX_TRADES = 25;
+const RESULT_HISTORY_LENGTH = 8;
+
+type TStatus = { type: 'success' | 'error' | 'info'; message: string } | null;
+
+const BulkTrader = () => {
+    const { connectionStatus, isAuthorized, authData } = useApiBase();
+    const [markets, setMarkets] = useState<{ symbol: string; display_name: string }[]>([]);
+    const [symbol, setSymbol] = useState('');
+    const [ticks_window_input, setTicksWindowInput] = useState('1000');
+    const [ticks_window, setTicksWindow] = useState(1000);
+    const [ticks_per_trade, setTicksPerTrade] = useState('1');
+    const [stake, setStake] = useState('0.5');
+    const [no_of_trades, setNoOfTrades] = useState('1');
+    const [status, setStatus] = useState<TStatus>(null);
+    const [is_submitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (connectionStatus === CONNECTION_STATUS.OPENED) {
+            const list = getSyntheticMarkets();
+            if (list.length) {
+                setMarkets(list);
+                setSymbol(prev => prev || list[0].symbol);
+            }
+        }
+    }, [connectionStatus]);
+
+    const { prices, current_price, error } = useTickHistory(symbol, MAX_FETCH);
+    const decimals = useMemo(() => getDecimalPlaces(symbol), [symbol, markets]);
+    const windowed_prices = useMemo(() => prices.slice(-ticks_window), [prices, ticks_window]);
+    const digits = useMemo(() => windowed_prices.map(p => getLastDigit(p, decimals)), [windowed_prices, decimals]);
+    const stats = useMemo(() => computeDigitDistribution(digits), [digits]);
+    const current_digit = digits.length ? digits[digits.length - 1] : null;
+    const even_odd = useMemo(() => computeEvenOdd(digits), [digits]);
+    const recent_results = useMemo(
+        () => digits.slice(-RESULT_HISTORY_LENGTH).map(d => (d % 2 === 0 ? 'E' : 'O')),
+        [digits]
+    );
+
+    const commitTicksWindow = () => {
+        const parsed = Number(ticks_window_input);
+        const clamped = Number.isFinite(parsed)
+            ? Math.min(MAX_WINDOW, Math.max(MIN_WINDOW, Math.round(parsed)))
+            : ticks_window;
+        setTicksWindow(clamped);
+        setTicksWindowInput(String(clamped));
+    };
+
+    const placeTrade = async (contract_type: 'DIGITEVEN' | 'DIGITODD') => {
+        if (!api_base?.api) {
+            setStatus({ type: 'error', message: localize('Not connected to Deriv API.') });
+            return;
+        }
+        if (!isAuthorized) {
+            setStatus({ type: 'error', message: localize('Please log in to place real trades.') });
+            return;
+        }
+
+        const amount = Number(stake);
+        const duration = Math.max(1, Math.round(Number(ticks_per_trade) || 1));
+        const trade_count = Math.min(MAX_TRADES, Math.max(1, Math.round(Number(no_of_trades) || 1)));
+        const currency = authData?.currency || 'USD';
+
+        if (!Number.isFinite(amount) || amount <= 0) {
+            setStatus({ type: 'error', message: localize('Enter a valid stake amount.') });
+            return;
+        }
+
+        const confirmed = window.confirm(
+            localize('This will place {{count}} real {{type}} trade(s) of {{amount}} {{currency}} each on {{symbol}}. Continue?', {
+                count: trade_count,
+                type: contract_type === 'DIGITEVEN' ? 'Even' : 'Odd',
+                amount,
+                currency,
+                symbol,
+            })
+        );
+        if (!confirmed) return;
+
+        setIsSubmitting(true);
+        setStatus({ type: 'info', message: localize('Placing trade(s)…') });
+
+        let succeeded = 0;
+        let last_error = '';
+
+        for (let i = 0; i < trade_count; i += 1) {
+            try {
+                // eslint-disable-next-line no-await-in-loop
+                // api-base.ts types `send` as returning void, but it resolves a Promise at
+                // runtime (see ticks_service.js) — cast is required to use the real behaviour.
+                const proposal: any = await (api_base.api as any).send({
+                    proposal: 1,
+                    amount,
+                    basis: 'stake',
+                    contract_type,
+                    currency,
+                    duration,
+                    duration_unit: 't',
+                    symbol,
+                });
+                if (proposal?.error) {
+                    last_error = proposal.error.message;
+                    continue; // eslint-disable-line no-continue
+                }
+                // eslint-disable-next-line no-await-in-loop
+                const buy: any = await (api_base.api as any).send({
+                    buy: proposal.proposal.id,
+                    price: proposal.proposal.ask_price,
+                });
+                if (buy?.error) {
+                    last_error = buy.error.message;
+                } else {
+                    succeeded += 1;
+                }
+            } catch (e: any) {
+                last_error = e?.message || 'Unknown error';
+            }
+        }
+
+        setIsSubmitting(false);
+        if (succeeded === trade_count) {
+            setStatus({ type: 'success', message: localize('{{count}} trade(s) placed successfully.', { count: succeeded }) });
+        } else if (succeeded > 0) {
+            setStatus({
+                type: 'error',
+                message: localize('{{succeeded}}/{{total}} trade(s) placed. Last error: {{error}}', {
+                    succeeded,
+                    total: trade_count,
+                    error: last_error,
+                }),
+            });
+        } else {
+            setStatus({ type: 'error', message: last_error || localize('Failed to place trade(s).') });
+        }
+    };
+
+    return (
+        <div className='bulk-trader'>
+            <div className='bulk-trader__row'>
+                <MarketSelect markets={markets} value={symbol} onChange={setSymbol} label={localize('Market')} />
+                <div className='bulk-trader__trade-type'>
+                    <label className='bulk-trader__label'>{localize('Trade Type')}</label>
+                    <div className='bulk-trader__static-select'>Even/Odd</div>
+                </div>
+            </div>
+
+            <div className='bulk-trader__field'>
+                <label className='bulk-trader__label'>{localize('Number of Ticks')}</label>
+                <input
+                    className='bulk-trader__input'
+                    type='number'
+                    min={MIN_WINDOW}
+                    max={MAX_WINDOW}
+                    value={ticks_window_input}
+                    onChange={e => setTicksWindowInput(e.target.value)}
+                    onBlur={commitTicksWindow}
+                    onKeyDown={e => e.key === 'Enter' && commitTicksWindow()}
+                />
+            </div>
+
+            <div className='bulk-trader__current-tick'>
+                <span className='bulk-trader__current-tick-label'>{localize('Current Tick')}</span>
+                <span className='bulk-trader__current-tick-value'>
+                    {current_price !== null ? current_price.toFixed(decimals) : '—'}
+                </span>
+            </div>
+
+            <DigitGauges stats={stats} current_digit={current_digit} />
+
+            <div className='bulk-trader__history'>
+                {recent_results.map((r, i) => (
+                    <span
+                        key={i}
+                        className={`bulk-trader__history-badge bulk-trader__history-badge--${r === 'E' ? 'even' : 'odd'}`}
+                    >
+                        {r}
+                    </span>
+                ))}
+            </div>
+
+            <div className='bulk-trader__row'>
+                <div className='bulk-trader__field'>
+                    <label className='bulk-trader__label'>{localize('Ticks')}</label>
+                    <input
+                        className='bulk-trader__input'
+                        type='number'
+                        min={1}
+                        value={ticks_per_trade}
+                        onChange={e => setTicksPerTrade(e.target.value)}
+                    />
+                </div>
+                <div className='bulk-trader__field'>
+                    <label className='bulk-trader__label'>{localize('Stake')}</label>
+                    <input
+                        className='bulk-trader__input'
+                        type='number'
+                        min={0}
+                        step='0.01'
+                        value={stake}
+                        onChange={e => setStake(e.target.value)}
+                    />
+                </div>
+                <div className='bulk-trader__field'>
+                    <label className='bulk-trader__label'>{localize('No of Trades')}</label>
+                    <input
+                        className='bulk-trader__input'
+                        type='number'
+                        min={1}
+                        max={MAX_TRADES}
+                        value={no_of_trades}
+                        onChange={e => setNoOfTrades(e.target.value)}
+                    />
+                </div>
+            </div>
+
+            <EvenOddBars even_percentage={even_odd.even_percentage} odd_percentage={even_odd.odd_percentage} />
+
+            <div className='bulk-trader__actions'>
+                <button
+                    className='bulk-trader__action bulk-trader__action--even'
+                    disabled={is_submitting || !symbol}
+                    onClick={() => placeTrade('DIGITEVEN')}
+                >
+                    {localize('Even')} — {even_odd.even_percentage.toFixed(2)}%
+                </button>
+                <button
+                    className='bulk-trader__action bulk-trader__action--odd'
+                    disabled={is_submitting || !symbol}
+                    onClick={() => placeTrade('DIGITODD')}
+                >
+                    {localize('Odd')} — {even_odd.odd_percentage.toFixed(2)}%
+                </button>
+            </div>
+
+            {!isAuthorized && (
+                <div className='bulk-trader__notice'>
+                    <Localize i18n_default_text='Log in to place real trades. You can still use the live stats above without an account.' />
+                </div>
+            )}
+
+            {status && <div className={`bulk-trader__status bulk-trader__status--${status.type}`}>{status.message}</div>}
+            {error && <div className='bulk-trader__status bulk-trader__status--error'>{error}</div>}
+        </div>
+    );
+};
+
+export default BulkTrader;
+===== src/pages/bulk-trader/bulk-trader.scss =====
+.bulk-trader {
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+    padding: 1.6rem;
+    max-width: 96rem;
+    height: 100%;
+    overflow-y: auto;
+
+    &__row {
+        display: flex;
+        gap: 1.6rem;
+        flex-wrap: wrap;
+
+        > * {
+            flex: 1;
+            min-width: 18rem;
+        }
+    }
+
+    &__label {
+        font-size: var(--text-size-xs);
+        color: var(--text-general);
+        font-weight: var(--text-weight-bold);
+        margin-bottom: 0.8rem;
+        display: block;
+    }
+
+    &__trade-type,
+    &__field {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__static-select,
+    &__input {
+        padding: 1.2rem;
+        border: 1px solid var(--border-normal);
+        border-radius: 0.4rem;
+        background: var(--general-main-1);
+        color: var(--text-general);
+        font-size: var(--text-size-s);
+    }
+
+    &__current-tick {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    &__current-tick-label {
+        font-size: var(--text-size-xxxxs);
+        color: var(--text-less-prominent);
+        text-transform: uppercase;
+    }
+
+    &__current-tick-value {
+        font-size: var(--text-size-m);
+        font-weight: var(--text-weight-bold);
+        color: var(--brand-primary);
+    }
+
+    &__history {
+        display: flex;
+        gap: 0.6rem;
+        justify-content: center;
+    }
+
+    &__history-badge {
+        width: 2.8rem;
+        height: 2.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.4rem;
+        font-size: var(--text-size-xs);
+        font-weight: var(--text-weight-bold);
+        color: var(--text-colored-background, #fff);
+
+        &--even {
+            background: var(--status-success);
+        }
+
+        &--odd {
+            background: var(--status-danger);
+        }
+    }
+
+    &__actions {
+        display: flex;
+        gap: 1.6rem;
+    }
+
+    &__action {
+        flex: 1;
+        padding: 1.6rem;
+        border: none;
+        border-radius: 0.4rem;
+        font-size: var(--text-size-s);
+        font-weight: var(--text-weight-bold);
+        color: var(--text-colored-background, #fff);
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        &--even {
+            background: var(--status-success);
+        }
+
+        &--odd {
+            background: var(--status-danger);
+        }
+    }
+
+    &__notice {
+        font-size: var(--text-size-xxxxs);
+        color: var(--text-less-prominent);
+        background: var(--general-section-1);
+        padding: 0.8rem 1.2rem;
+        border-radius: 0.4rem;
+    }
+
+    &__status {
+        font-size: var(--text-size-xs);
+        padding: 0.8rem 1.2rem;
+        border-radius: 0.4rem;
+
+        &--success {
+            color: var(--text-profit-success);
+            background: var(--transparent-success, rgba(16, 185, 129, 0.1));
+        }
+
+        &--error {
+            color: var(--text-loss-danger);
+            background: var(--status-warning-transparent);
+        }
+
+        &--info {
+            color: var(--text-general);
+            background: var(--general-section-1);
+        }
+    }
+}
+===== cards.tsx =====
+// @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
+// TODO: Complete MobX integration for popup functionality
+// Some code is kept commented out pending popup integration
+import React from 'react';
+import classNames from 'classnames';
+import { observer } from 'mobx-react-lite';
+import GoogleDrive from '@/components/load-modal/google-drive';
+import Dialog from '@/components/shared_ui/dialog';
+import MobileFullPageModal from '@/components/shared_ui/mobile-full-page-modal';
+import Text from '@/components/shared_ui/text';
+import { DBOT_TABS } from '@/constants/bot-contents';
+import { useStore } from '@/hooks/useStore';
+import {
+    DerivLightBotBuilderIcon,
+    DerivLightGoogleDriveIcon,
+    DerivLightLocalDeviceIcon,
+    DerivLightMyComputerIcon,
+    DerivLightQuickStrategyIcon,
+} from '@deriv/quill-icons/Illustration';
+import { Localize, localize } from '@deriv-com/translations';
+import { useDevice } from '@deriv-com/ui';
+/* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
+/* [/AI] */
+import DashboardBotList from './bot-list/dashboard-bot-list';
+
+type TCardProps = {
+    has_dashboard_strategies: boolean;
+    is_mobile: boolean;
+};
+
+type TCardArray = {
+    id: string;
+    icon: React.ReactElement;
+    content: React.ReactElement;
+    callback: () => void;
+};
+
+const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => {
+    const { dashboard, load_modal, quick_strategy, google_drive } = useStore();
+    const { toggleLoadModal, setActiveTabIndex } = load_modal;
+    const { is_google_drive_configured } = google_drive;
+    const { isDesktop } = useDevice();
+    const { onCloseDialog, dialog_options, is_dialog_open, setActiveTab, setPreviewOnPopup } = dashboard;
+    const { setFormVisibility } = quick_strategy;
+
+    const openFileLoader = () => {
+        toggleLoadModal();
+        setActiveTabIndex(is_mobile ? 0 : 1);
+        setActiveTab(DBOT_TABS.BOT_BUILDER);
+    };
+
+    const openGoogleDriveDialog = () => {
+        const google_drive_tab_index = isDesktop ? 2 : 1;
+        toggleLoadModal();
+        setActiveTabIndex(google_drive_tab_index); // Google Drive tab index
+        setActiveTab(DBOT_TABS.BOT_BUILDER);
+    };
+
+    const actions: TCardArray[] = [
+        {
+            id: 'my-computer',
+            icon: is_mobile ? (
+                <DerivLightLocalDeviceIcon height='48px' width='48px' />
+            ) : (
+                <DerivLightMyComputerIcon height='48px' width='48px' />
+            ),
+            content: is_mobile ? <Localize i18n_default_text='Local' /> : <Localize i18n_default_text='My computer' />,
+            callback: () => {
+                openFileLoader();
+                /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
+                /* [/AI] */
+            },
+        },
+        {
+            id: 'google-drive',
+            icon: <DerivLightGoogleDriveIcon height='48px' width='48px' />,
+            content: <Localize i18n_default_text='Google Drive' />,
+            callback: () => {
+                openGoogleDriveDialog();
+                /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
+                /* [/AI] */
+            },
+        },
+        {
+            id: 'bot-builder',
+            icon: <DerivLightBotBuilderIcon height='48px' width='48px' />,
+            content: <Localize i18n_default_text='Bot Builder' />,
+            callback: () => {
+                setActiveTab(DBOT_TABS.BOT_BUILDER);
+                /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
+                /* [/AI] */
+            },
+        },
+        {
+            id: 'quick-strategy',
+            icon: <DerivLightQuickStrategyIcon height='48px' width='48px' />,
+            content: <Localize i18n_default_text='Quick strategy' />,
+            callback: () => {
+                setActiveTab(DBOT_TABS.BOT_BUILDER);
+                setFormVisibility(true);
+                /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
+                /* [/AI] */
+            },
+        },
+    ]
+        // Hide the Google Drive tile when the feature isn't configured (no GD_* env vars).
+        .filter(action => action.id !== 'google-drive' || is_google_drive_configured);
+
+    return React.useMemo(
+        () => (
+            <div
+                className={classNames('tab__dashboard__table', {
+                    'tab__dashboard__table--minimized': has_dashboard_strategies && is_mobile,
+                })}
+            >
+                <div
+                    className={classNames('tab__dashboard__table__tiles', {
+                        'tab__dashboard__table__tiles--minimized': has_dashboard_strategies && is_mobile,
+                    })}
+                    id='tab__dashboard__table__tiles'
+                >
+                    {actions.map(icons => {
+                        const { icon, content, callback, id } = icons;
+                        return (
+                            <div
+                                key={id}
+                                className={classNames('tab__dashboard__table__block', {
+                                    'tab__dashboard__table__block--minimized': has_dashboard_strategies && is_mobile,
+                                })}
+                            >
+                                <div
+                                    className={classNames('tab__dashboard__table__images', {
+                                        'tab__dashboard__table__images--minimized': has_dashboard_strategies,
+                                    })}
+                                    width='8rem'
+                                    height='8rem'
+                                    icon={icon}
+                                    id={id}
+                                    onClick={() => {
+                                        callback();
+                                    }}
+                                >
+                                    {icon}
+                                </div>
+                                <Text color='prominent' size={is_mobile ? 'xxs' : 'xs'}>
+                                    {content}
+                                </Text>
+                            </div>
+                        );
+                    })}
+
+                    {!isDesktop ? (
+                        <Dialog
+                            title={dialog_options.title}
+                            is_visible={is_dialog_open}
+                            onCancel={onCloseDialog}
+                            is_mobile_full_width
+                            className='dc-dialog__wrapper--google-drive'
+                            has_close_icon
+                        >
+                            <GoogleDrive />
+                        </Dialog>
+                    ) : (
+                        <MobileFullPageModal
+                            is_modal_open={is_dialog_open}
+                            className='load-strategy__wrapper'
+                            header={localize('Load strategy')}
+                            onClickClose={() => {
+                                setPreviewOnPopup(false);
+                                onCloseDialog();
+                            }}
+                            height_offset='80px'
+                        >
+                            <div label='Google Drive' className='google-drive-label'>
+                                <GoogleDrive />
+                            </div>
+                        </MobileFullPageModal>
+                    )}
+                </div>
+                <DashboardBotList />
+            </div>
+        ),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [is_dialog_open, has_dashboard_strategies, is_google_drive_configured]
+    );
+});
+
+export default Cards;
+analysis-tool bot-builder bulk-trader chart dashboard entry-scanner main signal-scanner trading-bots tutorials 

@@ -1,0 +1,92 @@
+// ProProfitSpace look: shared tokens, nicer tab bar, smoother controls.
+// Imported by the pps pages, so it works without touching the Deriv theme files.
+
+:root {
+    --pps-bg: #0b1324;
+    --pps-surface: #121d36;
+    --pps-surface-2: #182646;
+    --pps-border: rgba(148, 163, 184, 0.2);
+    --pps-text: #e8eef9;
+    --pps-muted: #9fb0cc;
+    --pps-accent: #22d3ee;
+    --pps-accent-2: #6366f1;
+    --pps-good: #34d399;
+    --pps-warn: #fbbf24;
+    --pps-bad: #fb7185;
+    --pps-gradient: linear-gradient(135deg, #22d3ee, #6366f1);
+}
+
+/* ---- tab bar: pill tabs with a gradient underline ---- */
+.main__container .dc-tabs {
+    &__list {
+        gap: 4px;
+        padding: 6px 8px 0;
+    }
+
+    &__item {
+        border-radius: 10px 10px 0 0;
+        transition:
+            background 0.2s ease,
+            color 0.2s ease;
+
+        &:hover {
+            background: rgba(34, 211, 238, 0.1);
+        }
+    }
+
+    &__active {
+        background: linear-gradient(180deg, rgba(34, 211, 238, 0.16), rgba(99, 102, 241, 0.1)) !important;
+        border-radius: 10px 10px 0 0;
+    }
+
+    &__active-line {
+        height: 3px !important;
+        border-radius: 3px;
+        background: var(--pps-gradient) !important;
+    }
+}
+
+/* ---- thin, subtle scrollbars inside our pages ---- */
+.pps-sc-page,
+.pps-entry-scanner,
+.pps-sc__scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+
+    &::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.35);
+        border-radius: 8px;
+    }
+}
+
+/* ---- gentle entrance for pages and cards ---- */
+@keyframes pps-rise {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pps-sc,
+.pps-dashboard__hero,
+.pps-dashboard__stat,
+.pps-entry-card {
+    animation: pps-rise 0.35s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pps-sc,
+    .pps-dashboard__hero,
+    .pps-dashboard__stat,
+    .pps-entry-card {
+        animation: none;
+    }
+}

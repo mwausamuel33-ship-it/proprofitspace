@@ -3,6 +3,15 @@ import { clearAuthInfo } from '@/external/deriv-core';
 import { observer as globalObserver } from '@/external/bot-skeleton/utils/observer';
 import { ErrorLogger } from '@/utils/error-logger';
 
+const AUTH_SESSION_KEYS = [
+    'auth_info',
+    'oauth_csrf_token',
+    'oauth_code_verifier',
+    'deriv_accounts',
+    'account_list',
+    'accounts',
+];
+
 /**
  * Hook to handle invalid token events by clearing auth data and redirecting to OAuth login
  *
@@ -15,15 +24,26 @@ import { ErrorLogger } from '@/utils/error-logger';
 export const useInvalidTokenHandler = (): { unregisterHandler: () => void } => {
     const handleInvalidToken = async () => {
         try {
-            // Clear invalid auth token via vendored deriv-core
+            ErrorLogger.warn('InvalidToken', 'Invalid token detected, initiating re-authentication');
+
+            // Clear auth token via vendored deriv-core
             clearAuthInfo();
+
+            // Clear auth-related localStorage items
             localStorage.removeItem('active_loginid');
             localStorage.removeItem('authToken');
             localStorage.removeItem('accountsList');
             localStorage.removeItem('clientAccounts');
+            localStorage.removeItem('account_type');
+            localStorage.removeItem('client_account_details');
+            localStorage.removeItem('client.country');
 
-            // Clear sessionStorage completely to remove any stale auth data
-            sessionStorage.clear();
+            // Clear WebSocket instance to force fresh connection on next auth
+            const { clearDerivApiInstance } = await import('@/external/bot-skeleton/services/api/appId');
+            clearDerivApiInstance();
+
+            // Clear only auth-related sessionStorage items (preserve non-auth data)
+            AUTH_SESSION_KEYS.forEach(key => sessionStorage.removeItem(key));
 
             // Redirect to OAuth login instead of reload to get fresh authentication
             const { generateOAuthURL } = await import('@/components/shared');
@@ -33,7 +53,6 @@ export const useInvalidTokenHandler = (): { unregisterHandler: () => void } => {
                 // Use replace to prevent back button from returning to invalid state
                 window.location.replace(oauthUrl);
             } else {
-                // Fallback: reload if OAuth URL generation fails
                 ErrorLogger.error('InvalidToken', 'Failed to generate OAuth URL, falling back to reload');
                 window.location.reload();
             }

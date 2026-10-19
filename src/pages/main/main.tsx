@@ -17,6 +17,7 @@ import { CONNECTION_STATUS } from '@/external/bot-skeleton/services/api/observab
 import { isDbotRTL } from '@/external/bot-skeleton/utils/workspace';
 import { useApiBase } from '@/hooks/useApiBase';
 import { useStore } from '@/hooks/useStore';
+import AutoTrader from '@/pages/auto-trader/auto-trader';
 import {
     disableUrlParameterApplication,
     enableUrlParameterApplication,
@@ -609,6 +610,8 @@ const AppWrapper = observer(() => {
             >
                 {message}
             </Dialog>
+
+            <AutoTrader />
 
             {/* Trade Type Confirmation Modal */}
             {(() => {

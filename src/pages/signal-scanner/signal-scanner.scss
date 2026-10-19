@@ -34,7 +34,10 @@
     max-width: 1100px;
     margin: 12px auto 24px;
     padding: 20px;
-    background: var(--sc-bg);
+    background:
+        radial-gradient(600px 220px at 85% -40px, rgba(99, 102, 241, 0.18), transparent 70%),
+        radial-gradient(500px 200px at 10% -60px, rgba(34, 211, 238, 0.14), transparent 70%), var(--sc-bg);
+    border: 1px solid var(--sc-border);
     color: var(--sc-text);
     border-radius: 16px;
     font-size: 14px;
@@ -329,8 +332,15 @@
             }
         }
 
+        transition: background 0.2s ease;
+
+        &:not(&--head):hover {
+            background: rgba(34, 211, 238, 0.05);
+        }
+
         &--strong {
             border-left-color: var(--sc-good);
+            background: linear-gradient(90deg, rgba(52, 211, 153, 0.08), transparent 40%);
         }
         &--good {
             border-left-color: var(--sc-warn);

@@ -6,6 +6,7 @@ import ChunkLoader from '@/components/loader/chunk-loader';
 import { api_base } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
 import { localize } from '@deriv-com/translations';
+import { tokenRefreshService } from '@/services/token-refresh.service';
 import './app-root.scss';
 
 const AppContent = lazy(() => import('./app-content'));
@@ -51,18 +52,22 @@ const AppRoot = () => {
                 try {
                     await api_base.init();
                     api_base_initialized.current = true;
+                    tokenRefreshService.startValidation();
                 } catch (error) {
                     console.error('API initialization failed:', error);
                     api_base_initialized.current = false;
                 } finally {
                     setIsApiInitialized(true);
-                    clearTimeout(timeoutId); // Clear timeout if API init completes
+                    clearTimeout(timeoutId);
                 }
             }
         };
 
         initializeApi();
-        return () => clearTimeout(timeoutId);
+        return () => {
+            clearTimeout(timeoutId);
+            tokenRefreshService.destroy();
+        };
     }, []);
 
     if (!store || !is_api_initialized) return <AppRootLoader />;

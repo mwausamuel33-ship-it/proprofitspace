@@ -9,6 +9,7 @@ import { removeCookies } from '@/components/shared/utils/storage/storage';
 import { observer as globalObserver, observer } from '@/external/bot-skeleton';
 import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 import { ErrorLogger } from '@/utils/error-logger';
+import { logSession } from '@/utils/auth-logger';
 import type { Balance } from '@deriv/api-types';
 import {
     authData$,
@@ -244,6 +245,7 @@ export default class ClientStore {
 
     logout = async () => {
         if (localStorage.getItem('active_loginid')) {
+            logSession.cleared();
             // Clear DerivAPI singleton instance and close WebSocket
             const { clearDerivApiInstance } = await import('@/external/bot-skeleton/services/api/appId');
             clearDerivApiInstance();
@@ -273,8 +275,15 @@ export default class ClientStore {
             localStorage.removeItem('clientAccounts');
             localStorage.removeItem('account_type');
 
-            // Clear sessionStorage
-            sessionStorage.clear();
+            // Clear sessionStorage auth-related items (preserve non-auth data)
+            const keysToRemove: string[] = [];
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                if (key && (key.includes('account') || key.includes('auth') || key.includes('deriv'))) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => sessionStorage.removeItem(key));
 
             // Clear cookies
             removeCookies('client_information');

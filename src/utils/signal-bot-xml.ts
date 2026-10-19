@@ -1,5 +1,7 @@
 import strategyXml from '@/xml/signal_martingale.xml';
 import destroyerXml from '@/xml/sammee_destroyer.xml';
+import autopilotXml from '@/xml/sammee_autopilot.xml';
+import { AutopilotStage, patchAutopilotXml } from '@/utils/autopilot-rules';
 import { DestroyerSignal, patchDestroyerXml, PatchOptions } from '@/utils/destroyer-rules';
 
 type TSignal = {
@@ -13,6 +15,10 @@ type TSignal = {
 /** Builds the Sammee Destroyer bot (entry digits + recovery) for a scanner signal. */
 export const generateDestroyerBotXml = (signal: DestroyerSignal, options: PatchOptions): string =>
     patchDestroyerXml(destroyerXml as string, signal, options);
+
+/** Single-trade bot for one Autopilot stage (Differs or Over). The bot stops after the contract settles. */
+export const generateAutopilotBotXml = (stage: AutopilotStage): string =>
+    patchAutopilotXml(autopilotXml as string, stage);
 
 /** Original generator, kept so the other pages that use it keep working. */
 export const generateSignalBotXml = (signal: TSignal): string => {

@@ -47,9 +47,10 @@ export default defineConfig({
         NEXT_PUBLIC_APP_BUILD: JSON.stringify(process.env.NEXT_PUBLIC_APP_BUILD ?? ''),
         GD_CLIENT_ID: JSON.stringify(process.env.GD_CLIENT_ID),
         GD_APP_ID: JSON.stringify(process.env.GD_APP_ID),
-        GD_API_KEY: JSON.stringify(process.env.GD_API_KEY),
-      },
+      GD_API_KEY: JSON.stringify(process.env.GD_API_KEY),
     },
+  },
+  resolve: {
     alias: {
       // Resolve from wherever the package actually lives so the build works
       // both standalone and inside the monorepo (npm workspaces hoist react to
@@ -63,6 +64,7 @@ export default defineConfig({
       '@/constants': path.resolve(__dirname, './src/constants'),
       '@/stores': path.resolve(__dirname, './src/stores'),
     },
+  },
   },
   output: {
     assetPrefix: isStaticBuild ? '/bot/preview/' : '/',

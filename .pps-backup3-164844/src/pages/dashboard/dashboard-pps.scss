@@ -1,0 +1,76 @@
+// Loaded after dashboard.scss. Fixed colours so the cards stay readable in any theme.
+.pps-dashboard {
+    &__hero {
+        background: linear-gradient(135deg, #0b1324, #17224a);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    &__title {
+        font-size: 30px;
+        background: linear-gradient(135deg, #22d3ee, #a5b4fc);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    &__subtitle {
+        font-size: 14px;
+        color: #b6c4df;
+    }
+
+    &__hero-btn {
+        font-size: 14px;
+        color: #04101f;
+        background: linear-gradient(135deg, #22d3ee, #6366f1);
+
+        &--secondary {
+            color: #22d3ee;
+            background: transparent;
+            border: 1px solid #22d3ee;
+        }
+    }
+
+    &__stat {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 16px;
+        background: #0f1a33;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 14px;
+    }
+
+    &__stat-label {
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: #8fa3c4;
+    }
+
+    &__stat-value {
+        font-size: 20px;
+        font-weight: 800;
+        color: #f1f6ff;
+    }
+
+    &__stat-note {
+        font-size: 12px;
+        color: #9fb0cc;
+    }
+}
+
+// The My computer / Bot Builder / Quick strategy cards were stacking vertically.
+// This lays out whatever the Cards component renders as a wrapping row.
+.pps-dashboard .quick-panel > :last-child {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: stretch;
+
+    > * {
+        flex: 1 1 200px;
+        max-width: 280px;
+    }
+}

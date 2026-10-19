@@ -150,7 +150,7 @@ const SignalScanner = observer(() => {
                             <Localize i18n_default_text='Destroyer Scanner' />
                         </p>
                         <h2 className='pps-sc__title'>
-                            <Localize i18n_default_text='Every Volatility and Jump index, scanned live' />
+                            <Localize i18n_default_text='Every Volatility index, scanned live' />
                         </h2>
                     </div>
                     {last_scan && <span className='pps-sc__time'>Last scan {formatTime(last_scan)}</span>}

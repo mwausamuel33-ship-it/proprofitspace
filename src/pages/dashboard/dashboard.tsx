@@ -32,7 +32,7 @@ const readLandingSeen = () => {
 const RULE_CARDS = [
     { label: 'Over rule', value: '0,1,2 < 10.5%', note: 'Over 1 or Over 2 · entry on 2, 5, 6' },
     { label: 'Under rule', value: '9,8,7 < 10.5%', note: 'Under 8 or Under 7 · entry on 4, 7, 9' },
-    { label: 'Markets', value: 'Vol + Jump', note: 'All indices, last 1000 ticks' },
+    { label: 'Markets', value: 'Volatility', note: 'All Volatility indices, last 1000 ticks' },
     { label: 'Recovery', value: 'Martingale', note: 'Safer barrier after a loss, capped steps' },
 ];
 
@@ -72,7 +72,7 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                         <div className='pps-dashboard__hero-text'>
                             <h1 className='pps-dashboard__title'>ProProfitSpace</h1>
                             <p className='pps-dashboard__subtitle'>
-                                <Localize i18n_default_text='Scan every Volatility and Jump index, then load the Destroyer bot in one click' />
+                                <Localize i18n_default_text='Scan every Volatility index, then load the bot in one click' />
                             </p>
                         </div>
                         <div className='pps-dashboard__hero-actions'>

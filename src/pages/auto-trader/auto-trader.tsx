@@ -2,13 +2,28 @@ import { useState } from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import { DEFAULT_AUTO_CONFIG, TAutoConfig, TMode, useAutoTrader } from '@/hooks/useAutoTrader';
-import { AccountBadge, StakeGuard } from '@/pages/signal-scanner/scanner-widgets';
-import { pickBestSignal, pickDiffers, pickOver, pickRecovery } from '@/utils/autopilot-rules';
+import { AccountBadge } from '@/pages/signal-scanner/scanner-widgets';
+import {
+    pickBestSignal,
+    pickDiffers,
+    pickEvenOdd,
+    pickEvenOddRecovery,
+    pickMatches,
+    pickOver,
+    pickRecovery,
+} from '@/utils/autopilot-rules';
 import { DestroyerStrength } from '@/utils/destroyer-rules';
 import '@/styles/pps-theme.scss';
 import './auto-trader.scss';
 
 const STARS: Record<DestroyerStrength, string> = { strong: '★★★', good: '★★', weak: '★' };
+
+const TABS: { id: TMode; label: string }[] = [
+    { id: 'smartscan', label: 'SmartScan' },
+    { id: 'evenodd', label: 'Even/Odd' },
+    { id: 'matches', label: 'Matches' },
+    { id: 'autopilot', label: 'Autopilot' },
+];
 
 const Field = ({
     label,
@@ -50,13 +65,20 @@ const AutoTrader = observer(() => {
     const fmt = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}`;
     const time = (e: number) => new Date(e).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-    // live previews from the latest scan
+    // live previews from the latest background scan
     const rows = t.scan.rows;
     const best = pickBestSignal(rows, cfg.threshold, cfg.minStrength);
+    const evenOdd = pickEvenOdd(rows);
+    const matches = pickMatches(rows, cfg.maxGap);
+    const recoveryEO = pickEvenOddRecovery(rows);
     const differs = pickDiffers(rows);
     const over1 = pickOver(rows, 1, cfg.threshold);
     const over2 = pickOver(rows, 2, cfg.threshold);
-    const recovery = pickRecovery(rows, cfg.threshold);
+    const recoveryOver = pickRecovery(rows, cfg.threshold);
+
+    const recoveryLine = recoveryEO
+        ? `${recoveryEO.side === 'even' ? 'Even' : 'Odd'} · ${recoveryEO.display_name}${recoveryEO.strict ? '' : ' (best lean)'}`
+        : 'Scanning…';
 
     return (
         <div className='pps-ai'>
@@ -65,7 +87,7 @@ const AutoTrader = observer(() => {
                     <div className='pps-ai__head'>
                         <div>
                             <b>AI Trade</b>
-                            <span>Automatic trading with limits</span>
+                            <span>Scans once, then trades until a loss</span>
                         </div>
                         <button className='pps-ai__x' onClick={() => setOpen(false)} aria-label='Close'>
                             ×
@@ -75,27 +97,23 @@ const AutoTrader = observer(() => {
                     <AccountBadge />
 
                     <div className='pps-ai__tabs'>
-                        <button
-                            className={classNames('pps-ai__tab', { 'pps-ai__tab--on': tab === 'smartscan' })}
-                            onClick={() => setTab('smartscan')}
-                            disabled={running}
-                        >
-                            SmartScan
-                        </button>
-                        <button
-                            className={classNames('pps-ai__tab', { 'pps-ai__tab--on': tab === 'autopilot' })}
-                            onClick={() => setTab('autopilot')}
-                            disabled={running}
-                        >
-                            Autopilot
-                        </button>
+                        {TABS.map(x => (
+                            <button
+                                key={x.id}
+                                className={classNames('pps-ai__tab', { 'pps-ai__tab--on': tab === x.id })}
+                                onClick={() => setTab(x.id)}
+                                disabled={running}
+                            >
+                                {x.label}
+                            </button>
+                        ))}
                     </div>
 
-                    {tab === 'smartscan' ? (
+                    {tab === 'smartscan' && (
                         <div className='pps-ai__body'>
                             <p className='pps-ai__desc'>
-                                Finds the best Over or Under signal, loads the Destroyer bot, presses Run, and repeats with the
-                                next best signal when the bot finishes.
+                                Scans once, picks the best Over/Under signal, and trades it on every tick. When it takes a
+                                loss, it scans again and recovers on an Even/Odd market.
                             </p>
                             <div className='pps-ai__preview'>
                                 <span>Best signal now</span>
@@ -107,12 +125,17 @@ const AutoTrader = observer(() => {
                                     <b className='pps-ai__none'>{rows.length ? 'None strong enough yet' : 'Scanning…'}</b>
                                 )}
                             </div>
+                            <div className='pps-ai__preview'>
+                                <span>Recovery market now</span>
+                                <b>{recoveryLine}</b>
+                            </div>
                             <div className='pps-ai__grid'>
-                                <Field label='Stake' value={cfg.stake} step={0.1} min={0.35} onChange={v => set('stake', v)} disabled={running} />
+                                <Field label='Stake' value={cfg.stake} step={0.1} onChange={v => set('stake', v)} disabled={running} />
                                 <Field label='Martingale ×' value={cfg.martingale} step={0.1} min={1} onChange={v => set('martingale', v)} disabled={running} />
                                 <Field label='Take profit' value={cfg.takeProfit} step={0.5} onChange={v => set('takeProfit', v)} disabled={running} />
                                 <Field label='Stop loss' value={cfg.stopLoss} step={0.5} onChange={v => set('stopLoss', v)} disabled={running} />
-                                <Field label='Max bots' value={cfg.maxRuns} onChange={v => set('maxRuns', Math.max(1, v))} disabled={running} />
+                                <Field label='Max trades' value={cfg.maxRuns} onChange={v => set('maxRuns', Math.max(1, v))} disabled={running} />
+                                <Field label='Max recovery' value={cfg.maxRecovery} onChange={v => set('maxRecovery', Math.max(1, v))} disabled={running} />
                                 <Field label='Threshold %' value={cfg.threshold} step={0.1} min={5} onChange={v => set('threshold', v)} disabled={running} />
                             </div>
                             <label className='pps-ai__select'>
@@ -128,9 +151,82 @@ const AutoTrader = observer(() => {
                                 </select>
                             </label>
                         </div>
-                    ) : (
+                    )}
+
+                    {tab === 'evenodd' && (
                         <div className='pps-ai__body'>
-                            <p className='pps-ai__desc'>Runs a repeating sequence of single trades, each on the right market:</p>
+                            <p className='pps-ai__desc'>
+                                Finds the market whose most frequent digit stands out. If that digit is even it trades Even, if
+                                it is odd it trades Odd, entering on the least frequent digit of the same type, then trades every
+                                tick until a loss.
+                            </p>
+                            <div className='pps-ai__preview'>
+                                <span>Best market now</span>
+                                {evenOdd ? (
+                                    <b>
+                                        {evenOdd.side === 'even' ? 'Even' : 'Odd'} · {evenOdd.display_name}
+                                        <small>
+                                            top digit {evenOdd.topDigit} ({evenOdd.topPct.toFixed(1)}%) · entry on{' '}
+                                            {evenOdd.entryDigit} ({evenOdd.entryPct.toFixed(1)}%)
+                                        </small>
+                                    </b>
+                                ) : (
+                                    <b className='pps-ai__none'>Scanning…</b>
+                                )}
+                            </div>
+                            <div className='pps-ai__grid'>
+                                <Field label='Stake' value={cfg.stake} step={0.1} onChange={v => set('stake', v)} disabled={running} />
+                                <Field label='Martingale ×' value={cfg.martingale} step={0.1} min={1} onChange={v => set('martingale', v)} disabled={running} />
+                                <Field label='Take profit' value={cfg.takeProfit} step={0.5} onChange={v => set('takeProfit', v)} disabled={running} />
+                                <Field label='Stop loss' value={cfg.stopLoss} step={0.5} onChange={v => set('stopLoss', v)} disabled={running} />
+                                <Field label='Max trades' value={cfg.maxRuns} onChange={v => set('maxRuns', Math.max(1, v))} disabled={running} />
+                                <Field label='Max recovery' value={cfg.maxRecovery} onChange={v => set('maxRecovery', Math.max(1, v))} disabled={running} />
+                            </div>
+                        </div>
+                    )}
+
+                    {tab === 'matches' && (
+                        <div className='pps-ai__body'>
+                            <p className='pps-ai__desc'>
+                                Looks for a market where the two most frequent digits are almost level. It waits for the most
+                                frequent digit to appear, then predicts the second most frequent one, retrying until it matches.
+                            </p>
+                            <div className='pps-ai__preview'>
+                                <span>Best market now</span>
+                                {matches ? (
+                                    <b>
+                                        Match {matches.matchDigit} · {matches.display_name}
+                                        <small>
+                                            entry on {matches.entryDigit} · gap {matches.gap.toFixed(2)} points
+                                        </small>
+                                    </b>
+                                ) : (
+                                    <b className='pps-ai__none'>
+                                        {rows.length ? `No market within ${cfg.maxGap} points yet` : 'Scanning…'}
+                                    </b>
+                                )}
+                            </div>
+                            <div className='pps-ai__grid'>
+                                <Field label='Stake' value={cfg.stake} step={0.1} onChange={v => set('stake', v)} disabled={running} />
+                                <Field label='Take profit' value={cfg.takeProfit} step={0.5} onChange={v => set('takeProfit', v)} disabled={running} />
+                                <Field label='Stop loss' value={cfg.stopLoss} step={0.5} onChange={v => set('stopLoss', v)} disabled={running} />
+                                <Field label='Max gap (pts)' value={cfg.maxGap} step={0.1} min={0.1} onChange={v => set('maxGap', v)} disabled={running} />
+                                <Field label='Tries per scan' value={cfg.maxTries} onChange={v => set('maxTries', Math.max(1, v))} disabled={running} />
+                                <Field label='Max trades' value={cfg.maxRuns} onChange={v => set('maxRuns', Math.max(1, v))} disabled={running} />
+                            </div>
+                            <p className='pps-ai__note'>
+                                A match wins about 1 trade in 10 and pays roughly 9 times the stake. Expect long losing runs, and
+                                it uses a flat stake with no martingale.
+                            </p>
+                        </div>
+                    )}
+
+                    {tab === 'autopilot' && (
+                        <div className='pps-ai__body'>
+                            <p className='pps-ai__desc'>
+                                Scans once, then runs single trades in order, each on the market that fits. After a loss it scans
+                                again and recovers.
+                            </p>
                             <div className='pps-ai__steps'>
                                 <div className='pps-ai__step'>
                                     <i>1</i>
@@ -156,17 +252,23 @@ const AutoTrader = observer(() => {
                                 <div className='pps-ai__step pps-ai__step--rec'>
                                     <i>↺</i>
                                     <div>
-                                        <b>After a loss: Over 3 or 4</b>
-                                        <span>{recovery ? `Over ${recovery.level} · ${recovery.display_name}` : 'No market fits yet'}</span>
+                                        <b>After a loss</b>
+                                        <span>
+                                            {cfg.recovery === 'evenodd'
+                                                ? recoveryLine
+                                                : recoveryOver
+                                                  ? `Over ${recoveryOver.level} · ${recoveryOver.display_name}`
+                                                  : 'No market fits yet'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
                             <p className='pps-ai__note'>
-                                Differs pays only about 9–10% of the stake on a win but loses the whole stake on a loss. The
-                                lowest-percentage digit is not less likely to come next.
+                                Differs pays only about 9–10% of the stake on a win but loses the whole stake on a loss. Each step
+                                loads its own bot, so this mode is slower per trade than the others.
                             </p>
                             <div className='pps-ai__grid'>
-                                <Field label='Stake' value={cfg.stake} step={0.1} min={0.35} onChange={v => set('stake', v)} disabled={running} />
+                                <Field label='Stake' value={cfg.stake} step={0.1} onChange={v => set('stake', v)} disabled={running} />
                                 <Field label='Martingale ×' value={cfg.martingale} step={0.1} min={1} onChange={v => set('martingale', v)} disabled={running} />
                                 <Field label='Take profit' value={cfg.takeProfit} step={0.5} onChange={v => set('takeProfit', v)} disabled={running} />
                                 <Field label='Stop loss' value={cfg.stopLoss} step={0.5} onChange={v => set('stopLoss', v)} disabled={running} />
@@ -174,10 +276,19 @@ const AutoTrader = observer(() => {
                                 <Field label='Max recovery' value={cfg.maxRecovery} onChange={v => set('maxRecovery', Math.max(1, v))} disabled={running} />
                                 <Field label='Threshold %' value={cfg.threshold} step={0.1} min={5} onChange={v => set('threshold', v)} disabled={running} />
                             </div>
+                            <label className='pps-ai__select'>
+                                <span>Recovery type</span>
+                                <select
+                                    value={cfg.recovery}
+                                    disabled={running}
+                                    onChange={e => set('recovery', e.target.value as TAutoConfig['recovery'])}
+                                >
+                                    <option value='evenodd'>Even/Odd market</option>
+                                    <option value='over'>Over 3 or Over 4</option>
+                                </select>
+                            </label>
                         </div>
                     )}
-
-                    <StakeGuard stake={cfg.stake} martingale={cfg.martingale} />
 
                     <label className='pps-ai__real'>
                         <input
@@ -219,7 +330,7 @@ const AutoTrader = observer(() => {
                         </button>
                     ) : (
                         <button className='pps-ai__go' onClick={() => t.start(tab)}>
-                            Start {tab === 'smartscan' ? 'SmartScan' : 'Autopilot'}
+                            Start {TABS.find(x => x.id === tab)?.label}
                         </button>
                     )}
 
@@ -244,7 +355,7 @@ const AutoTrader = observer(() => {
                 aria-label='AI Trade'
             >
                 <span className={classNames('pps-ai__dot', { 'pps-ai__dot--on': running })} />
-                {running ? `${t.mode === 'autopilot' ? 'Autopilot' : 'SmartScan'} · ${fmt(t.pnl)}` : 'AI Trade'}
+                {running ? `${TABS.find(x => x.id === t.mode)?.label ?? 'AI'} · ${fmt(t.pnl)}` : 'AI Trade'}
             </button>
         </div>
     );

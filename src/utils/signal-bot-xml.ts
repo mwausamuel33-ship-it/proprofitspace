@@ -1,7 +1,6 @@
 import strategyXml from '@/xml/signal_martingale.xml';
 import destroyerXml from '@/xml/sammee_destroyer.xml';
-import autopilotXml from '@/xml/sammee_autopilot.xml';
-import { AutopilotStage, patchAutopilotXml } from '@/utils/autopilot-rules';
+import { BotSpec, buildBotXml } from '@/utils/bot-xml-builder';
 import { DestroyerSignal, patchDestroyerXml, PatchOptions } from '@/utils/destroyer-rules';
 
 type TSignal = {
@@ -16,9 +15,8 @@ type TSignal = {
 export const generateDestroyerBotXml = (signal: DestroyerSignal, options: PatchOptions): string =>
     patchDestroyerXml(destroyerXml as string, signal, options);
 
-/** Single-trade bot for one Autopilot stage (Differs or Over). The bot stops after the contract settles. */
-export const generateAutopilotBotXml = (stage: AutopilotStage): string =>
-    patchAutopilotXml(autopilotXml as string, stage);
+/** Trade bot for the AI Trade panel (Over/Under, Even/Odd, Matches, Differs) built from the Destroyer template. */
+export const generateBotXml = (spec: BotSpec): string => buildBotXml(destroyerXml as string, spec);
 
 /** Original generator, kept so the other pages that use it keep working. */
 export const generateSignalBotXml = (signal: TSignal): string => {

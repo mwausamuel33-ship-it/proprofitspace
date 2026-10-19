@@ -7,7 +7,7 @@ const FEATURES = [
     {
         icon: '◎',
         title: 'Scans every index',
-        text: 'All Volatility, Volatility (1s) and Jump indices are checked every 20 seconds over their last 1000 ticks.',
+        text: 'All Volatility and Volatility (1s) indices are checked over their last 1000 ticks.',
     },
     {
         icon: '★',
@@ -29,7 +29,7 @@ const STEPS = [
 
 const SAMPLE = [
     { market: 'Volatility 75 (1s) Index', badge: 'Over 2', side: 'over', stars: 3, digits: '0 8.9% · 1 9.2% · 2 9.6%', entry: '2 5 6' },
-    { market: 'Jump 25 Index', badge: 'Under 8', side: 'under', stars: 2, digits: '8 9.4% · 9 9.8%', entry: '4 7 9' },
+    { market: 'Volatility 25 (1s) Index', badge: 'Under 8', side: 'under', stars: 2, digits: '8 9.4% · 9 9.8%', entry: '4 7 9' },
     { market: 'Volatility 50 Index', badge: 'Over 1', side: 'over', stars: 1, digits: '0 10.1% · 1 10.3%', entry: '2 5 6' },
 ];
 

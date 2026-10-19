@@ -13,15 +13,68 @@ export type TDestroyerRow = {
 
 export type TDestroyerSignalRow = TDestroyerRow & { signal: DestroyerSignal };
 
-const CONCURRENCY = 5;
+const CONCURRENCY = 6;
 const MIN_TICKS = 200;
+
+const scanSymbol = async (symbol: string, display_name: string, ticks: number): Promise<TDestroyerRow | null> => {
+    try {
+        const response: any = await (api_base.api as any).send({
+            ticks_history: symbol,
+            count: ticks,
+            end: 'latest',
+            style: 'ticks',
+        });
+        if (response?.error) return null;
+        const prices: number[] = (response?.history?.prices || []).map((p: string) => Number(p));
+        if (prices.length < MIN_TICKS) return null;
+        const decimals = getDecimalPlaces(symbol);
+        const counts = new Array(10).fill(0);
+        prices.forEach(p => {
+            const d = getLastDigit(p, decimals);
+            if (d >= 0 && d <= 9) counts[d]++;
+        });
+        const total = prices.length;
+        return {
+            symbol,
+            display_name,
+            digit_pct: counts.map(c => (c / total) * 100),
+            sample: total,
+            scanned_at: Date.now(),
+        };
+    } catch {
+        return null;
+    }
+};
+
+/**
+ * One scan of every Volatility index (Jump indices are not scanned). Returns null while the
+ * connection is not ready yet. Used by the hook below and by the AI Trade engine.
+ */
+export const scanMarkets = async (ticks = 1000, isCancelled: () => boolean = () => false): Promise<TDestroyerRow[] | null> => {
+    const markets = ((api_base?.active_symbols as any[]) || [])
+        .filter(s => s.market === 'synthetic_index' && s.submarket === 'random_index')
+        .map(s => ({
+            symbol: (s.symbol || s.underlying_symbol) as string,
+            display_name: (s.display_name || s.symbol) as string,
+        }));
+
+    if (!markets.length || !api_base?.api) return null;
+
+    const result: TDestroyerRow[] = [];
+    for (let i = 0; i < markets.length; i += CONCURRENCY) {
+        if (isCancelled()) return result;
+        const batch = markets.slice(i, i + CONCURRENCY);
+        const done = await Promise.all(batch.map(m => scanSymbol(m.symbol, m.display_name, ticks)));
+        done.forEach(r => r && result.push(r));
+    }
+    return result;
+};
 
 type TOptions = { interval_ms?: number; ticks?: number; threshold?: number; enabled?: boolean };
 
 /**
- * Scans every Volatility and Jump index, computes the last-digit distribution over the
- * last `ticks` ticks, and applies the Destroyer rules. Changing `threshold` re-evaluates
- * instantly without a rescan.
+ * Keeps scanning in the background while `enabled`, and re-evaluates the Destroyer rules when
+ * `threshold` changes (no rescan needed).
  */
 export const useDestroyerScanner = ({
     interval_ms = 20000,
@@ -43,60 +96,17 @@ export const useDestroyerScanner = ({
         let cancelled = false;
         let timer: ReturnType<typeof setTimeout> | null = null;
 
-        const scanSymbol = async (symbol: string, display_name: string): Promise<TDestroyerRow | null> => {
-            try {
-                const response: any = await (api_base.api as any).send({
-                    ticks_history: symbol,
-                    count: ticks,
-                    end: 'latest',
-                    style: 'ticks',
-                });
-                if (response?.error) return null;
-                const prices: number[] = (response?.history?.prices || []).map((p: string) => Number(p));
-                if (prices.length < MIN_TICKS) return null;
-                const decimals = getDecimalPlaces(symbol);
-                const counts = new Array(10).fill(0);
-                prices.forEach(p => {
-                    const d = getLastDigit(p, decimals);
-                    if (d >= 0 && d <= 9) counts[d]++;
-                });
-                const total = prices.length;
-                return {
-                    symbol,
-                    display_name,
-                    digit_pct: counts.map(c => (c / total) * 100),
-                    sample: total,
-                    scanned_at: Date.now(),
-                };
-            } catch {
-                return null;
-            }
-        };
-
         const run = async () => {
             if (cancelled) return;
-            const markets = ((api_base?.active_symbols as any[]) || [])
-                .filter(s => s.market === 'synthetic_index' && (s.submarket === 'random_index' || s.submarket === 'jump_index'))
-                .map(s => ({
-                    symbol: (s.symbol || s.underlying_symbol) as string,
-                    display_name: (s.display_name || s.symbol) as string,
-                }));
-
-            if (!markets.length || !api_base?.api) {
+            setIsScanning(true);
+            setNextScanAt(null);
+            const result = await scanMarkets(ticks, () => cancelled);
+            if (cancelled) return;
+            if (!result) {
+                setIsScanning(false);
                 timer = setTimeout(run, 3000); // connection not ready yet, try again shortly
                 return;
             }
-
-            setIsScanning(true);
-            setNextScanAt(null);
-            const result: TDestroyerRow[] = [];
-            for (let i = 0; i < markets.length; i += CONCURRENCY) {
-                if (cancelled) return;
-                const batch = markets.slice(i, i + CONCURRENCY);
-                const done = await Promise.all(batch.map(m => scanSymbol(m.symbol, m.display_name)));
-                done.forEach(r => r && result.push(r));
-            }
-            if (cancelled) return;
             setRows(result);
             setLastScan(Date.now());
             setIsScanning(false);

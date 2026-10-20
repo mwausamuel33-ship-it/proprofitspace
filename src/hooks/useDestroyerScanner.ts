@@ -13,7 +13,7 @@ export type TDestroyerRow = {
 
 export type TDestroyerSignalRow = TDestroyerRow & { signal: DestroyerSignal };
 
-const CONCURRENCY = 6;
+const CONCURRENCY = 20; // scan every Volatility market at once
 const MIN_TICKS = 200;
 
 const scanSymbol = async (symbol: string, display_name: string, ticks: number): Promise<TDestroyerRow | null> => {

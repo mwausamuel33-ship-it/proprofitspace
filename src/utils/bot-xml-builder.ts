@@ -8,8 +8,10 @@ export type BotKind = 'over' | 'under' | 'even' | 'odd' | 'matches' | 'differs';
  * untilLoss: keeps trading on every tick after a win and stops on the first loss.
  * untilWin:  retries after every loss (waiting for the entry digit again) and stops on the first win.
  * single:    places one trade and stops.
+ * recover:   trades on every tick for `maxRuns` wins. After a loss it recovers on the same market (stake x
+ *            martingale, up to `maxRecoverySteps`), and stops once the recovery wins or runs out of steps.
  */
-export type BotLoop = 'untilLoss' | 'untilWin' | 'single';
+export type BotLoop = 'untilLoss' | 'untilWin' | 'single' | 'recover';
 
 export interface BotSpec {
     symbol: string;
@@ -18,6 +20,10 @@ export interface BotSpec {
     stake: number;
     loop: BotLoop;
     entryDigits?: number[]; // wait for one of these last digits before the first purchase
+    martingale?: number; // recover loop
+    maxRuns?: number; // recover loop: wins before the bot stops
+    maxRecoverySteps?: number; // recover loop
+    recoveryPrediction?: number; // recover loop, Over/Under: barrier used while recovering
 }
 
 const CONTRACT: Record<BotKind, { contract: string; tradeType: string }> = {
@@ -32,7 +38,15 @@ const CONTRACT: Record<BotKind, { contract: string; tradeType: string }> = {
 const NOTIFY = (id: string, type: string, text: string) =>
     `<block type="notify" id="${id}"><field name="NOTIFICATION_TYPE">${type}</field><field name="NOTIFICATION_SOUND">silent</field><value name="MESSAGE"><block type="text" id="${id}t"><field name="TEXT">${text}</field></block></value></block>`;
 
-const AFTER_PURCHASE: Record<BotLoop, string> = {
+// The template's own after-purchase logic (wins, then recovery) is kept for the 'recover' loop. This is the
+// extra block that made the bot wait for the entry digit again after every win; 'recover' removes it.
+const ENTRY_RESET_BLOCK =
+    '<statement name="ELSE"><block type="variables_set" id="r1"><field name="VAR" id="vHit">EntryHit</field>' +
+    '<value name="VALUE"><block type="math_number" id="r2"><field name="NUM">0</field></block></value>' +
+    '<next><block type="trade_again" id="b53"></block></next></block></statement>';
+const PLAIN_TRADE_AGAIN = '<statement name="ELSE"><block type="trade_again" id="b53"></block></statement>';
+
+const AFTER_PURCHASE: Record<Exclude<BotLoop, 'recover'>, string> = {
     single: '<block type="after_purchase" id="b117" x="0" y="1500"></block>',
     untilLoss:
         '<block type="after_purchase" id="b117" x="0" y="1500"><statement name="AFTERPURCHASE_STACK">' +
@@ -100,6 +114,15 @@ export function buildBotXml(template: string, spec: BotSpec): string {
         ['b22', 'b25', 'b29'].forEach((id, i) => (x = setNum(x, id, e[i])));
     } else {
         x = setNum(x, 'b17', 1); // EntryHit = 1: buy right away
+    }
+
+    if (spec.loop === 'recover') {
+        x = x.replace(ENTRY_RESET_BLOCK, PLAIN_TRADE_AGAIN);
+        x = setNum(x, 'b5', spec.martingale ?? 2); // Martingale
+        x = setNum(x, 'b7', spec.maxRuns ?? 20); // MaxRuns
+        x = setNum(x, 'b9', spec.maxRecoverySteps ?? 3); // MaxRecoverySteps
+        if (spec.recoveryPrediction !== undefined) x = setNum(x, 'b63', spec.recoveryPrediction);
+        return x;
     }
 
     return replaceBlock(x, 'after_purchase', AFTER_PURCHASE[spec.loop]);

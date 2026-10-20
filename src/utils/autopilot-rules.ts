@@ -135,6 +135,18 @@ export function pickEvenOdd(rows: MarketDigits[]): EvenOddPick | null {
     return best;
 }
 
+/**
+ * How many winning runs to trade on an Even/Odd market before scanning again.
+ * Top digit at 12% or more: 15 runs, plus 2 for every further 0.5 points (at most 25).
+ * Below 12%: 4 to 6 runs (4 under 11%, 5 under 11.5%, 6 otherwise).
+ */
+export function evenOddRuns(topPct: number): number {
+    if (topPct >= 12) return Math.min(25, 15 + 2 * Math.floor((topPct - 12) / 0.5));
+    if (topPct < 11) return 4;
+    if (topPct < 11.5) return 5;
+    return 6;
+}
+
 export interface EvenOddRecoveryPick {
     symbol: string;
     display_name: string;

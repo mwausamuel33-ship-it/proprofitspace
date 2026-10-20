@@ -4,6 +4,7 @@ import { scanMarkets, useDestroyerScanner } from '@/hooks/useDestroyerScanner';
 import {
     AUTOPILOT_SEQUENCE,
     EvenOddRecoveryPick,
+    evenOddRuns,
     MarketDigits,
     OverPick,
     pickBestSignal,
@@ -69,9 +70,33 @@ interface TStats {
 const STOP_MSG = 'AUTO_TRADE_STOPPED';
 const TRIES_MSG = 'NO_MATCH_IN_TRIES';
 const SINGLE_BOT_MAX_MS = 5 * 60 * 1000;
+const SMARTSCAN_RUNS = 1000; // SmartScan trades until a loss; the session limits (max trades, profit, loss) still apply
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const signed = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}`;
+
+/**
+ * Watches the live stats of one bot run and remembers how the most recent trade ended.
+ * Used to tell "the bot finished its runs / recovered" apart from "the recovery ran out of steps and lost".
+ */
+const makeOutcomeTracker = () => {
+    let seen: TStats = { won: 0, lost: 0, profit: 0 };
+    let last: 'none' | 'win' | 'loss' | 'unknown' = 'none';
+    return {
+        observe(live: TStats) {
+            const dw = live.won - seen.won;
+            const dl = live.lost - seen.lost;
+            seen = { won: live.won, lost: live.lost, profit: live.profit };
+            if (dw < 0 || dl < 0) return; // summary was reset
+            if (dw > 0 && dl > 0) last = 'unknown';
+            else if (dl > 0) last = 'loss';
+            else if (dw > 0) last = 'win';
+        },
+        get last() {
+            return last;
+        },
+    };
+};
 
 export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
     const store: any = useStore_();
@@ -169,24 +194,24 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
             const r = await scanMarkets(1000, () => !activeRef.current);
             checkActive();
             if (r && r.length) return r;
-            await sleep(1500);
+            await sleep(1000);
         }
         throw new Error('Could not read market data. Check your connection.');
     };
 
     const ensureWorkspace = async () => {
         if (!window.location.hash.includes('bot_builder')) window.location.hash = 'bot_builder';
-        for (let i = 0; i < 40; i++) {
+        for (let i = 0; i < 80; i++) {
             const ws = window.Blockly?.derivWorkspace;
             if (ws) return ws;
-            await sleep(250);
+            await sleep(125);
             checkActive();
         }
         throw new Error('The Bot Builder workspace did not open.');
     };
 
     /**
-     * Loads one bot, presses Run and waits until it stops. `monitor` is checked about 3 times a second
+     * Loads one bot, presses Run and waits until it stops. `monitor` is checked about 4 times a second
      * and can return a reason to stop the bot early (take profit, stop loss, ...).
      */
     const runBot = async (
@@ -209,18 +234,18 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
             show_snackbar: false,
         });
         workspace.strategy_to_load = xml;
-        await sleep(700);
+        await sleep(400);
         checkActive();
 
         await run_panel.onRunButtonClick();
 
         let started = false;
-        for (let i = 0; i < 75; i++) {
+        for (let i = 0; i < 150; i++) {
             if (isRunning()) {
                 started = true;
                 break;
             }
-            await sleep(200);
+            await sleep(100);
             checkActive();
         }
         if (!started) throw new Error('The bot did not start. Press Run manually once to check for a pop-up.');
@@ -228,7 +253,7 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
         let stopReason: string | null = null;
         const t0 = Date.now();
         while (isRunning() || run_panel?.has_open_contract) {
-            await sleep(300);
+            await sleep(250);
             if (!activeRef.current) break;
             if (monitor && !stopReason) {
                 const live = diff(before, readStats());
@@ -244,61 +269,24 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
                 throw new Error('The bot ran longer than expected, so it was stopped.');
             }
         }
-        await sleep(1000); // let the transaction list update
+        await sleep(700); // let the transaction list update
 
         return { ...diff(before, readStats()), stopReason };
     };
 
     const botFor = (spec: BotSpec) => generateBotXml(spec);
 
-    /* ---------- recovery: Even/Odd (or Over 3/4 for Autopilot) ---------- */
-
-    const recoverEvenOdd = async (c: TAutoConfig): Promise<boolean> => {
-        setStage('Loss. Scanning for an Even/Odd recovery market…');
-        const rows = await scanOnce();
-        const pick = pickEvenOddRecovery(rows);
-        if (!pick) {
-            addLog('bad', 'Stopped: no market data for recovery.');
-            return false;
-        }
-        const label = `${pick.side === 'even' ? 'Even' : 'Odd'} on ${pick.display_name}`;
-        addLog(
-            'info',
-            pick.strict
-                ? `Recovery market: ${label} (its five most frequent digits are all ${pick.side}, ${pick.total.toFixed(1)}%).`
-                : `Recovery market: ${label} (no market had all five top digits ${pick.side}, so this is the strongest ${pick.side} lean, ${pick.total.toFixed(1)}%).`
-        );
-
-        let stake = round2(c.stake * c.martingale);
-        for (let step = 1; step <= c.maxRecovery; step++) {
-            checkActive();
-            const lim = limitHit(c);
-            if (lim) {
-                addLog('warn', lim);
-                return false;
-            }
-            setStage(`Recovery ${step}/${c.maxRecovery}: ${label}, stake ${stake.toFixed(2)}`);
-            const r = await runBot(
-                botFor({ symbol: pick.symbol, kind: pick.side, stake, loop: 'single' }),
-                `Recovery ${step} - ${label}`
-            );
-            commit(r);
-            if (r.won > 0) {
-                addLog('good', `Recovery won ${signed(r.profit)}. Session ${signed(sess.current.pnl)}.`);
-                return true;
-            }
-            if (r.lost === 0) {
-                addLog('bad', 'Stopped: the recovery trade produced no result. Check the Journal tab.');
-                return false;
-            }
-            addLog('bad', `Recovery ${step} lost ${r.profit.toFixed(2)}.`);
-            stake = round2(stake * c.martingale);
-        }
-        addLog('bad', `Stopped: ${c.maxRecovery} recovery trades in a row did not win.`);
-        return false;
-    };
-
-    /* ---------- SmartScan (Over/Under) and Even/Odd: scan once, trade every tick until a loss ---------- */
+    /* ------------------------------------------------------------------------------------------------
+     * SmartScan (Over/Under) and Even/Odd.
+     *
+     * Scan once, pick the best market, load ONE bot that trades every tick. The bot itself handles a
+     * loss: it recovers on the SAME market (stake x martingale, up to maxRecovery steps) and stops when
+     * the recovery wins. Only then do we scan again and move to the best market.
+     *   - Even/Odd:  the bot also stops after evenOddRuns(topPct) winning runs (15-25 when the top digit
+     *                is 12% or more, 4-6 below that), then we scan again.
+     *   - SmartScan: no run cap; it trades until a loss, recovers, then we scan again.
+     * If a recovery runs out of steps and still loses, we stop completely instead of trading on.
+     * ---------------------------------------------------------------------------------------------- */
 
     const runContinuous = async (c: TAutoConfig, m: 'smartscan' | 'evenodd') => {
         let waits = 0;
@@ -313,40 +301,67 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
             const rows = await scanOnce();
             let spec: BotSpec | null = null;
             let title = '';
+            let plan = '';
 
             if (m === 'smartscan') {
                 const best = pickBestSignal(rows, c.threshold, c.minStrength);
                 if (best) {
                     title = `${best.signal.label} on ${best.display_name} (${best.signal.strength})`;
+                    plan = 'Trading every tick until a loss, then recovering on this market.';
                     spec = {
                         symbol: best.symbol,
                         kind: best.signal.side,
                         prediction: best.signal.prediction,
                         stake: c.stake,
-                        loop: 'untilLoss',
+                        loop: 'recover',
                         entryDigits: best.signal.entryDigits,
+                        martingale: c.martingale,
+                        maxRuns: SMARTSCAN_RUNS,
+                        maxRecoverySteps: c.maxRecovery,
                     };
                 }
             } else {
                 const p = pickEvenOdd(rows);
                 if (p) {
+                    const runs = evenOddRuns(p.topPct);
                     title = `${p.side === 'even' ? 'Even' : 'Odd'} on ${p.display_name} (top digit ${p.topDigit} at ${p.topPct.toFixed(1)}%, entry on ${p.entryDigit})`;
-                    spec = { symbol: p.symbol, kind: p.side, stake: c.stake, loop: 'untilLoss', entryDigits: [p.entryDigit] };
+                    plan = `${runs} winning runs, then a new scan. On a loss it recovers on this market first.`;
+                    spec = {
+                        symbol: p.symbol,
+                        kind: p.side,
+                        stake: c.stake,
+                        loop: 'recover',
+                        entryDigits: [p.entryDigit],
+                        martingale: c.martingale,
+                        maxRuns: runs,
+                        maxRecoverySteps: c.maxRecovery,
+                    };
                 }
             }
 
             if (!spec) {
                 waits += 1;
-                setStage('No market fits yet. Scanning again in 15s…');
-                if (waits === 1 || waits % 6 === 0) addLog('info', 'No market fits the rules yet. Scanning again soon.');
-                await sleepActive(15000);
+                setStage('No market fits yet. Scanning again in 5s…');
+                if (waits === 1 || waits % 12 === 0) addLog('info', 'No market fits the rules yet. Scanning again soon.');
+                await sleepActive(5000);
                 continue;
             }
             waits = 0;
 
-            addLog('info', `${title}. Trading every tick until a loss.`);
+            addLog('info', `${title}. ${plan}`);
             setStage(`Trading ${title}`);
-            const r = await runBot(botFor(spec), `AI - ${title}`, live => limitHit(c, live), Infinity);
+
+            const tracker = makeOutcomeTracker();
+            const r = await runBot(
+                botFor(spec),
+                `AI - ${title}`,
+                live => {
+                    tracker.observe(live);
+                    return limitHit(c, live);
+                },
+                Infinity
+            );
+            tracker.observe(r);
             commit(r);
 
             if (r.stopReason) {
@@ -355,18 +370,26 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
             }
             if (!activeRef.current) return;
 
-            if (r.lost > 0) {
-                noResult = 0;
-                addLog('bad', `Loss after ${r.won} win${r.won === 1 ? '' : 's'}. Session ${signed(sess.current.pnl)}. Recovering.`);
-                const ok = await recoverEvenOdd(c);
-                if (!ok) return;
-            } else if (r.won === 0) {
+            if (r.won + r.lost === 0) {
                 noResult += 1;
                 addLog('warn', 'The bot finished without a result. Check the Journal tab.');
                 if (noResult >= 2) {
                     addLog('bad', 'Stopped: two bots in a row produced no result.');
                     return;
                 }
+                continue;
+            }
+            noResult = 0;
+
+            if (r.lost > 0) {
+                if (tracker.last === 'win') {
+                    addLog('good', `Loss, then the recovery on the same market won. Session ${signed(sess.current.pnl)}. Scanning for the best market.`);
+                } else {
+                    addLog('bad', `Stopped: the recovery did not win within ${c.maxRecovery} steps. Session ${signed(sess.current.pnl)}.`);
+                    return;
+                }
+            } else {
+                addLog('good', `${r.won} win${r.won === 1 ? '' : 's'} in a row. Session ${signed(sess.current.pnl)}. Scanning for the best market.`);
             }
         }
     };
@@ -385,9 +408,9 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
             const p = pickMatches(rows, c.maxGap);
             if (!p) {
                 waits += 1;
-                setStage(`No market has its top two digits within ${c.maxGap}%. Scanning again in 15s…`);
-                if (waits === 1 || waits % 6 === 0) addLog('info', `No market has its top two digits within ${c.maxGap} points yet.`);
-                await sleepActive(15000);
+                setStage(`No market has its top two digits within ${c.maxGap}%. Scanning again in 5s…`);
+                if (waits === 1 || waits % 12 === 0) addLog('info', `No market has its top two digits within ${c.maxGap} points yet.`);
+                await sleepActive(5000);
                 continue;
             }
             waits = 0;
@@ -490,7 +513,7 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
                         return;
                     }
                     addLog('warn', 'No step fits the current scan. Scanning again.');
-                    await sleepActive(10000);
+                    await sleepActive(5000);
                     rows = await scanOnce();
                     skips = 0;
                 }

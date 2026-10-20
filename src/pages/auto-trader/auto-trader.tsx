@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { DEFAULT_AUTO_CONFIG, TAutoConfig, TMode, useAutoTrader } from '@/hooks/useAutoTrader';
 import { AccountBadge } from '@/pages/signal-scanner/scanner-widgets';
 import {
+    evenOddRuns,
     pickBestSignal,
     pickDiffers,
     pickEvenOdd,
@@ -112,8 +113,8 @@ const AutoTrader = observer(() => {
                     {tab === 'smartscan' && (
                         <div className='pps-ai__body'>
                             <p className='pps-ai__desc'>
-                                Scans once, picks the best Over/Under signal, and trades it on every tick. When it takes a
-                                loss, it scans again and recovers on an Even/Odd market.
+                                Scans once, picks the best Over/Under signal and trades it on every tick. After a loss it
+                                recovers on the same market, and only then scans again and switches to the best market.
                             </p>
                             <div className='pps-ai__preview'>
                                 <span>Best signal now</span>
@@ -125,19 +126,33 @@ const AutoTrader = observer(() => {
                                     <b className='pps-ai__none'>{rows.length ? 'None strong enough yet' : 'Scanning…'}</b>
                                 )}
                             </div>
-                            <div className='pps-ai__preview'>
-                                <span>Recovery market now</span>
-                                <b>{recoveryLine}</b>
-                            </div>
+                            {cfg.recoveryMode === 'evenodd' && (
+                                <div className='pps-ai__preview'>
+                                    <span>Recovery market now</span>
+                                    <b>{recoveryLine}</b>
+                                </div>
+                            )}
                             <div className='pps-ai__grid'>
                                 <Field label='Stake' value={cfg.stake} step={0.1} onChange={v => set('stake', v)} disabled={running} />
                                 <Field label='Martingale ×' value={cfg.martingale} step={0.1} min={1} onChange={v => set('martingale', v)} disabled={running} />
                                 <Field label='Take profit' value={cfg.takeProfit} step={0.5} onChange={v => set('takeProfit', v)} disabled={running} />
                                 <Field label='Stop loss' value={cfg.stopLoss} step={0.5} onChange={v => set('stopLoss', v)} disabled={running} />
+                                <Field label='Runs per scan' value={cfg.runsPerScan} onChange={v => set('runsPerScan', Math.max(1, v))} disabled={running} />
                                 <Field label='Max trades' value={cfg.maxRuns} onChange={v => set('maxRuns', Math.max(1, v))} disabled={running} />
                                 <Field label='Max recovery' value={cfg.maxRecovery} onChange={v => set('maxRecovery', Math.max(1, v))} disabled={running} />
                                 <Field label='Threshold %' value={cfg.threshold} step={0.1} min={5} onChange={v => set('threshold', v)} disabled={running} />
                             </div>
+                            <label className='pps-ai__select'>
+                                <span>Recovery after a loss</span>
+                                <select
+                                    value={cfg.recoveryMode}
+                                    disabled={running}
+                                    onChange={e => set('recoveryMode', e.target.value as TAutoConfig['recoveryMode'])}
+                                >
+                                    <option value='same'>Same market (fast, in the bot)</option>
+                                    <option value='evenodd'>Best Even/Odd market (scans)</option>
+                                </select>
+                            </label>
                             <label className='pps-ai__select'>
                                 <span>Minimum strength</span>
                                 <select
@@ -156,9 +171,9 @@ const AutoTrader = observer(() => {
                     {tab === 'evenodd' && (
                         <div className='pps-ai__body'>
                             <p className='pps-ai__desc'>
-                                Finds the market whose most frequent digit stands out. If that digit is even it trades Even, if
-                                it is odd it trades Odd, entering on the least frequent digit of the same type, then trades every
-                                tick until a loss.
+                                Finds the market whose most frequent digit stands out. An even top digit means Even, an odd one
+                                means Odd, entering on the least frequent digit of that type. Top digit 12% or more: 15 runs or
+                                more. Below 12%: 4 to 6 runs. After a loss it recovers on the same market, then scans again.
                             </p>
                             <div className='pps-ai__preview'>
                                 <span>Best market now</span>
@@ -167,7 +182,7 @@ const AutoTrader = observer(() => {
                                         {evenOdd.side === 'even' ? 'Even' : 'Odd'} · {evenOdd.display_name}
                                         <small>
                                             top digit {evenOdd.topDigit} ({evenOdd.topPct.toFixed(1)}%) · entry on{' '}
-                                            {evenOdd.entryDigit} ({evenOdd.entryPct.toFixed(1)}%)
+                                            {evenOdd.entryDigit} ({evenOdd.entryPct.toFixed(1)}%) · {evenOddRuns(evenOdd.topPct)} runs
                                         </small>
                                     </b>
                                 ) : (
@@ -182,6 +197,17 @@ const AutoTrader = observer(() => {
                                 <Field label='Max trades' value={cfg.maxRuns} onChange={v => set('maxRuns', Math.max(1, v))} disabled={running} />
                                 <Field label='Max recovery' value={cfg.maxRecovery} onChange={v => set('maxRecovery', Math.max(1, v))} disabled={running} />
                             </div>
+                            <label className='pps-ai__select'>
+                                <span>Recovery after a loss</span>
+                                <select
+                                    value={cfg.recoveryMode}
+                                    disabled={running}
+                                    onChange={e => set('recoveryMode', e.target.value as TAutoConfig['recoveryMode'])}
+                                >
+                                    <option value='same'>Same market (fast, in the bot)</option>
+                                    <option value='evenodd'>Best Even/Odd market (scans)</option>
+                                </select>
+                            </label>
                         </div>
                     )}
 

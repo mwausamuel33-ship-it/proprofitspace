@@ -8,8 +8,8 @@ export type BotKind = 'over' | 'under' | 'even' | 'odd' | 'matches' | 'differs';
  * untilLoss: keeps trading on every tick after a win and stops on the first loss.
  * untilWin:  retries after every loss (waiting for the entry digit again) and stops on the first win.
  * single:    places one trade and stops.
- * recover:   trades on every tick for `maxRuns` wins. After a loss it recovers on the same market (stake x
- *            martingale, up to `maxRecoverySteps`), and stops once the recovery wins or runs out of steps.
+ * recover:   trades on every tick (no entry digit) for `maxRuns` wins. After a loss it recovers on the same
+ *            market as described by `recovery`, then the bot stops.
  */
 export type BotLoop = 'untilLoss' | 'untilWin' | 'single' | 'recover';
 
@@ -22,8 +22,15 @@ export interface BotSpec {
     entryDigits?: number[]; // wait for one of these last digits before the first purchase
     martingale?: number; // recover loop
     maxRuns?: number; // recover loop: wins before the bot stops
-    maxRecoverySteps?: number; // recover loop
-    recoveryPrediction?: number; // recover loop, Over/Under: barrier used while recovering
+    recovery?: RecoverySpec; // recover loop
+}
+
+export interface RecoverySpec {
+    barrier?: number; // Over/Under: barrier used while recovering (e.g. Over 2, Over 3, Under 7)
+    flip?: boolean; // Even/Odd: trade the opposite side while recovering, then the bot stops
+    winsNeeded: number; // recovery wins needed to finish the recovery
+    maxSteps: number; // recovery trades allowed
+    escalate: boolean; // multiply the stake again after each recovery loss (the first loss always multiplies once)
 }
 
 const CONTRACT: Record<BotKind, { contract: string; tradeType: string }> = {
@@ -37,14 +44,6 @@ const CONTRACT: Record<BotKind, { contract: string; tradeType: string }> = {
 
 const NOTIFY = (id: string, type: string, text: string) =>
     `<block type="notify" id="${id}"><field name="NOTIFICATION_TYPE">${type}</field><field name="NOTIFICATION_SOUND">silent</field><value name="MESSAGE"><block type="text" id="${id}t"><field name="TEXT">${text}</field></block></value></block>`;
-
-// The template's own after-purchase logic (wins, then recovery) is kept for the 'recover' loop. This is the
-// extra block that made the bot wait for the entry digit again after every win; 'recover' removes it.
-const ENTRY_RESET_BLOCK =
-    '<statement name="ELSE"><block type="variables_set" id="r1"><field name="VAR" id="vHit">EntryHit</field>' +
-    '<value name="VALUE"><block type="math_number" id="r2"><field name="NUM">0</field></block></value>' +
-    '<next><block type="trade_again" id="b53"></block></next></block></statement>';
-const PLAIN_TRADE_AGAIN = '<statement name="ELSE"><block type="trade_again" id="b53"></block></statement>';
 
 const AFTER_PURCHASE: Record<Exclude<BotLoop, 'recover'>, string> = {
     single: '<block type="after_purchase" id="b117" x="0" y="1500"></block>',
@@ -91,6 +90,110 @@ export function replaceBlock(xml: string, type: string, replacement: string): st
     return xml;
 }
 
+/* ---------- small block-XML helpers for the 'recover' loop ---------- */
+
+type TVar = readonly [string, string];
+const V = {
+    stake: ['vStake', 'Stake'],
+    mart: ['vMart', 'Martingale'],
+    mode: ['vMode', 'Mode'],
+    runs: ['vRuns', 'Runs'],
+    maxRuns: ['vMaxRuns', 'MaxRuns'],
+    pred: ['vPred', 'Prediction'],
+    rec: ['vRec', 'RecoverySteps'],
+    maxRec: ['vMaxRec', 'MaxRecoverySteps'],
+} as const;
+
+const makeBlocks = () => {
+    let n = 0;
+    const id = () => `g${++n}`;
+    const num = (v: number) => `<block type="math_number" id="${id()}"><field name="NUM">${v}</field></block>`;
+    const get = (v: TVar) => `<block type="variables_get" id="${id()}"><field name="VAR" id="${v[0]}">${v[1]}</field></block>`;
+    const setVar = (v: TVar, value: string, next?: string) =>
+        `<block type="variables_set" id="${id()}"><field name="VAR" id="${v[0]}">${v[1]}</field><value name="VALUE">${value}</value>${next ? `<next>${next}</next>` : ''}</block>`;
+    const cmp = (op: string, a: string, b: string) =>
+        `<block type="logic_compare" id="${id()}"><field name="OP">${op}</field><value name="A">${a}</value><value name="B">${b}</value></block>`;
+    const arith = (op: string, a: string, b: string) =>
+        `<block type="math_arithmetic" id="${id()}"><field name="OP">${op}</field><value name="A">${a}</value><value name="B">${b}</value></block>`;
+    const round = (x: string) => `<block type="math_round" id="${id()}"><field name="OP">ROUND</field><value name="NUM">${x}</value></block>`;
+    const ifElse = (cond: string, thenX: string, elseX?: string) =>
+        `<block type="controls_if" id="${id()}">${elseX !== undefined ? '<mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>' : ''}<value name="IF0">${cond}</value><statement name="DO0">${thenX}</statement>${elseX !== undefined ? `<statement name="ELSE">${elseX}</statement>` : ''}</block>`;
+    const notify = (type: string, text: string) =>
+        `<block type="notify" id="${id()}"><field name="NOTIFICATION_TYPE">${type}</field><field name="NOTIFICATION_SOUND">silent</field><value name="MESSAGE"><block type="text" id="${id()}"><field name="TEXT">${text}</field></block></value></block>`;
+    const again = () => `<block type="trade_again" id="${id()}"></block>`;
+    const purchase = (contract: string) => `<block type="purchase" id="${id()}"><field name="PURCHASE_LIST">${contract}</field></block>`;
+    const result = (r: 'win' | 'loss') => `<block type="contract_check_result" id="${id()}"><field name="CHECK_RESULT">${r}</field></block>`;
+    const stakeTimesMartingale = () =>
+        arith('DIVIDE', round(arith('MULTIPLY', arith('MULTIPLY', get(V.stake), get(V.mart)), num(100))), num(100));
+
+    /** Chains statements with <next>. Each item receives the next statement's XML. */
+    const chain = (...items: Array<(next?: string) => string>) => {
+        let out = '';
+        for (let i = items.length - 1; i >= 0; i--) out = items[i](out || undefined);
+        return out;
+    };
+    const set = (v: TVar, value: string) => (next?: string) => setVar(v, value, next);
+
+    return { num, get, cmp, arith, ifElse, notify, again, purchase, result, stakeTimesMartingale, chain, set };
+};
+
+/** The purchase and after-purchase blocks of the 'recover' loop. */
+export function buildRecoverBlocks(main: string, flipTo: string | null, r: RecoverySpec) {
+    const b = makeBlocks();
+
+    const purchaseStack = flipTo
+        ? b.ifElse(b.cmp('EQ', b.get(V.mode), b.num(0)), b.purchase(main), b.purchase(flipTo))
+        : b.purchase(main);
+    const before = `<block type="before_purchase" id="b116" deletable="false" x="0" y="900"><statement name="BEFOREPURCHASE_STACK">${purchaseStack}</statement></block>`;
+
+    // a win: in the normal phase count the run, in recovery count recovery wins
+    const normalWin = b.chain(
+        b.set(V.runs, b.arith('ADD', b.get(V.runs), b.num(1))),
+        () =>
+            b.ifElse(
+                b.cmp('GTE', b.get(V.runs), b.get(V.maxRuns)),
+                b.notify('success', 'Runs complete - bot stopped'),
+                b.again()
+            )
+    );
+    const recoveryWin =
+        r.winsNeeded > 1
+            ? b.chain(
+                  b.set(V.runs, b.arith('ADD', b.get(V.runs), b.num(1))),
+                  () =>
+                      b.ifElse(
+                          b.cmp('GTE', b.get(V.runs), b.num(r.winsNeeded)),
+                          b.notify('success', 'Recovery complete - bot stopped'),
+                          b.again()
+                      )
+              )
+            : b.notify('success', 'Recovery complete - bot stopped');
+    const onWin = b.ifElse(b.cmp('EQ', b.get(V.mode), b.num(0)), normalWin, recoveryWin);
+
+    // a loss: the first one starts the recovery, later ones continue or end it
+    const firstLoss = b.chain(
+        b.set(V.mode, b.num(1)),
+        b.set(V.runs, b.num(0)),
+        ...(r.barrier !== undefined ? [b.set(V.pred, b.num(r.barrier))] : []),
+        b.set(V.stake, b.stakeTimesMartingale()),
+        b.set(V.rec, b.num(1)),
+        () => b.again()
+    );
+    const nextLoss = b.chain(
+        b.set(V.rec, b.arith('ADD', b.get(V.rec), b.num(1))),
+        () =>
+            b.ifElse(
+                b.cmp('GT', b.get(V.rec), b.get(V.maxRec)),
+                b.notify('error', 'Recovery ended - bot stopped'),
+                b.chain(...(r.escalate ? [b.set(V.stake, b.stakeTimesMartingale())] : []), () => b.again())
+            )
+    );
+    const onLoss = b.ifElse(b.cmp('EQ', b.get(V.mode), b.num(0)), firstLoss, nextLoss);
+
+    const after = `<block type="after_purchase" id="b117" x="0" y="1500"><statement name="AFTERPURCHASE_STACK">${b.ifElse(b.result('win'), onWin, onLoss)}</statement></block>`;
+    return { before, after };
+}
+
 export function buildBotXml(template: string, spec: BotSpec): string {
     const { contract, tradeType } = CONTRACT[spec.kind];
     let x = template.replace(/DIGIT(OVER|UNDER|DIFF|MATCH|EVEN|ODD)/g, contract);
@@ -117,12 +220,15 @@ export function buildBotXml(template: string, spec: BotSpec): string {
     }
 
     if (spec.loop === 'recover') {
-        x = x.replace(ENTRY_RESET_BLOCK, PLAIN_TRADE_AGAIN);
+        const rec = spec.recovery ?? { winsNeeded: 1, maxSteps: 3, escalate: true };
         x = setNum(x, 'b5', spec.martingale ?? 2); // Martingale
         x = setNum(x, 'b7', spec.maxRuns ?? 20); // MaxRuns
-        x = setNum(x, 'b9', spec.maxRecoverySteps ?? 3); // MaxRecoverySteps
-        if (spec.recoveryPrediction !== undefined) x = setNum(x, 'b63', spec.recoveryPrediction);
-        return x;
+        x = setNum(x, 'b9', rec.maxSteps); // MaxRecoverySteps
+        const flipTo = rec.flip && (spec.kind === 'even' || spec.kind === 'odd') ? (spec.kind === 'even' ? 'DIGITODD' : 'DIGITEVEN') : null;
+        if (flipTo) x = x.replace(/(<field name="TYPE_LIST">)[^<]*/, '$1both'); // allow both contract types
+        const { before, after } = buildRecoverBlocks(contract, flipTo, rec);
+        x = replaceBlock(x, 'before_purchase', before);
+        return replaceBlock(x, 'after_purchase', after);
     }
 
     return replaceBlock(x, 'after_purchase', AFTER_PURCHASE[spec.loop]);

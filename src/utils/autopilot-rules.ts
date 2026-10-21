@@ -239,3 +239,147 @@ export function pickMatches(rows: MarketDigits[], maxGap = 0.5): MatchesPick | n
     }
     return best;
 }
+
+/* ------------------------------------------------------------------ SmartScan: prefer Over 1 */
+
+export type SignalFilter = 'over1first' | 'over1only' | 'all';
+
+/** Best market for Over 1 (digits 0 and 1 below the threshold), no weaker than `minStrength`. */
+export function pickOver1Signal(
+    rows: MarketDigits[],
+    threshold = DEFAULT_THRESHOLD,
+    minStrength: DestroyerStrength = 'good'
+): BestSignal | null {
+    let best: BestSignal | null = null;
+    for (const r of rows) {
+        const p0 = r.digit_pct[0];
+        const p1 = r.digit_pct[1];
+        if (!(p0 < threshold && p1 < threshold)) continue;
+        const avg = (p0 + p1) / 2;
+        const max = Math.max(p0, p1);
+        const strength: DestroyerStrength = max < FAIR_SHARE ? 'strong' : avg < FAIR_SHARE ? 'good' : 'weak';
+        if (RANK[strength] > RANK[minStrength]) continue;
+        const signal: DestroyerSignal = {
+            side: 'over',
+            prediction: 1,
+            recoveryPrediction: 3,
+            entryDigits: [2, 5, 6],
+            losingDigits: [0, 1],
+            avgLosingPct: avg,
+            maxLosingPct: max,
+            deviation: FAIR_SHARE - avg,
+            strength,
+            label: 'Over 1',
+            reason: '0 and 1 are below the threshold',
+        };
+        if (best === null || compareSignals(signal, best.signal) < 0) {
+            best = { symbol: r.symbol, display_name: r.display_name, signal };
+        }
+    }
+    return best;
+}
+
+/** SmartScan pick: Over 1 first (safer than Over 2), then any signal unless the filter says Over 1 only. */
+export function pickSmartSignal(
+    rows: MarketDigits[],
+    threshold = DEFAULT_THRESHOLD,
+    minStrength: DestroyerStrength = 'good',
+    filter: SignalFilter = 'over1first'
+): BestSignal | null {
+    if (filter !== 'all') {
+        const over1 = pickOver1Signal(rows, threshold, minStrength);
+        if (over1 || filter === 'over1only') return over1;
+    }
+    return pickBestSignal(rows, threshold, minStrength);
+}
+
+/* ------------------------------------------------------------------ Under recovery + Autopilot helpers */
+
+export interface UnderPick {
+    symbol: string;
+    display_name: string;
+    barrier: 5 | 6; // Under 5 or Under 6
+    avgLosingPct: number;
+}
+
+/** Market where every losing digit (barrier..9) of "Under <barrier>" is below `threshold`. */
+export function pickUnder(rows: MarketDigits[], barrier: 5 | 6, threshold = DEFAULT_THRESHOLD): UnderPick | null {
+    const losing = Array.from({ length: 10 - barrier }, (_, i) => barrier + i);
+    let best: UnderPick | null = null;
+    for (const r of rows) {
+        if (!losing.every(d => r.digit_pct[d] < threshold)) continue;
+        const avg = losing.reduce((sum, d) => sum + r.digit_pct[d], 0) / losing.length;
+        if (best === null || avg < best.avgLosingPct) {
+            best = { symbol: r.symbol, display_name: r.display_name, barrier, avgLosingPct: avg };
+        }
+    }
+    return best;
+}
+
+export type RecoveryType = 'evenodd' | 'over' | 'under' | 'auto';
+
+export interface RecoveryChoice {
+    kind: 'over' | 'under' | 'even' | 'odd';
+    symbol: string;
+    display_name: string;
+    barrier?: number; // Over/Under
+    label: string; // 'Over 4', 'Under 6', 'Even', ...
+    note: string; // short explanation for the log
+}
+
+/** The recovery market for Autopilot. 'auto' takes the strongest Over/Under recovery, else Even/Odd. */
+export function pickRecoveryChoice(rows: MarketDigits[], type: RecoveryType, threshold = DEFAULT_THRESHOLD): RecoveryChoice | null {
+    const over = (): RecoveryChoice | null => {
+        const p = pickRecovery(rows, threshold);
+        return p ? { kind: 'over', symbol: p.symbol, display_name: p.display_name, barrier: p.level, label: `Over ${p.level}`, note: `digits 0-${p.level} are low` } : null;
+    };
+    const under = (): RecoveryChoice | null => {
+        const p = pickUnder(rows, 5, FAIR_SHARE) ?? pickUnder(rows, 6, threshold);
+        return p ? { kind: 'under', symbol: p.symbol, display_name: p.display_name, barrier: p.barrier, label: `Under ${p.barrier}`, note: `digits ${p.barrier}-9 are low` } : null;
+    };
+    const evenOdd = (): RecoveryChoice | null => {
+        const p = pickEvenOddRecovery(rows);
+        if (!p) return null;
+        const label = p.side === 'even' ? 'Even' : 'Odd';
+        return {
+            kind: p.side,
+            symbol: p.symbol,
+            display_name: p.display_name,
+            label,
+            note: p.strict ? `its five most frequent digits are all ${p.side}` : `strongest ${p.side} lean, ${p.total.toFixed(1)}%`,
+        };
+    };
+
+    if (type === 'over') return over();
+    if (type === 'under') return under();
+    if (type === 'evenodd') return evenOdd();
+    return over() ?? under() ?? evenOdd();
+}
+
+/** One volatility for every Autopilot step: Differs, Over 1 and Over 2 all trade this market. */
+export interface AutopilotMarket {
+    symbol: string;
+    display_name: string;
+    digit_pct: number[];
+    over2Ok: boolean; // digit 2 is below the threshold too
+    differsDigit: number; // the lowest-percentage digit of this market
+    differsPct: number;
+}
+
+export function pickAutopilotMarket(rows: MarketDigits[], threshold = DEFAULT_THRESHOLD): AutopilotMarket | null {
+    let best: AutopilotMarket | null = null;
+    let bestScore = Infinity;
+    for (const r of rows) {
+        const p = r.digit_pct;
+        if (!(p[0] < threshold && p[1] < threshold)) continue; // Over 1 must fit
+        const over2Ok = p[2] < threshold;
+        const score = over2Ok ? (p[0] + p[1] + p[2]) / 3 : 100 + (p[0] + p[1]) / 2; // markets that fit Over 2 too come first
+        if (score < bestScore) {
+            let low = 0;
+            for (let d = 1; d < p.length; d++) if (p[d] < p[low]) low = d;
+            bestScore = score;
+            best = { symbol: r.symbol, display_name: r.display_name, digit_pct: p, over2Ok, differsDigit: low, differsPct: p[low] };
+        }
+    }
+    return best;
+}

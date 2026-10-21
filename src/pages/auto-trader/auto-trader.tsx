@@ -5,13 +5,11 @@ import { DEFAULT_AUTO_CONFIG, TAutoConfig, TMode, useAutoTrader } from '@/hooks/
 import { AccountBadge } from '@/pages/signal-scanner/scanner-widgets';
 import {
     evenOddRuns,
-    pickBestSignal,
-    pickDiffers,
+    pickAutopilotMarket,
     pickEvenOdd,
-    pickEvenOddRecovery,
     pickMatches,
-    pickOver,
-    pickRecovery,
+    pickRecoveryChoice,
+    pickSmartSignal,
 } from '@/utils/autopilot-rules';
 import { DestroyerStrength } from '@/utils/destroyer-rules';
 import '@/styles/pps-theme.scss';
@@ -68,18 +66,11 @@ const AutoTrader = observer(() => {
 
     // live previews from the latest background scan
     const rows = t.scan.rows;
-    const best = pickBestSignal(rows, cfg.threshold, cfg.minStrength);
+    const best = pickSmartSignal(rows, cfg.threshold, cfg.minStrength, cfg.signalFilter);
     const evenOdd = pickEvenOdd(rows);
     const matches = pickMatches(rows, cfg.maxGap);
-    const recoveryEO = pickEvenOddRecovery(rows);
-    const differs = pickDiffers(rows);
-    const over1 = pickOver(rows, 1, cfg.threshold);
-    const over2 = pickOver(rows, 2, cfg.threshold);
-    const recoveryOver = pickRecovery(rows, cfg.threshold);
-
-    const recoveryLine = recoveryEO
-        ? `${recoveryEO.side === 'even' ? 'Even' : 'Odd'} · ${recoveryEO.display_name}${recoveryEO.strict ? '' : ' (best lean)'}`
-        : 'Scanning…';
+    const apMarket = pickAutopilotMarket(rows, cfg.threshold);
+    const apRecovery = pickRecoveryChoice(rows, cfg.recovery, cfg.threshold);
 
     return (
         <div className='pps-ai'>
@@ -113,8 +104,9 @@ const AutoTrader = observer(() => {
                     {tab === 'smartscan' && (
                         <div className='pps-ai__body'>
                             <p className='pps-ai__desc'>
-                                Scans once, picks the best Over/Under signal and trades it on every tick. After a loss it
-                                recovers on the same market, and only then scans again and switches to the best market.
+                                Scans once, picks the best signal (Over 1 first, because Over 2 is riskier) and trades it on
+                                every tick with no entry digit. After a loss it recovers on the same market, and only then scans
+                                again and switches to the best market.
                             </p>
                             <div className='pps-ai__preview'>
                                 <span>Best signal now</span>
@@ -126,12 +118,6 @@ const AutoTrader = observer(() => {
                                     <b className='pps-ai__none'>{rows.length ? 'None strong enough yet' : 'Scanning…'}</b>
                                 )}
                             </div>
-                            {cfg.recoveryMode === 'evenodd' && (
-                                <div className='pps-ai__preview'>
-                                    <span>Recovery market now</span>
-                                    <b>{recoveryLine}</b>
-                                </div>
-                            )}
                             <div className='pps-ai__grid'>
                                 <Field label='Stake' value={cfg.stake} step={0.1} onChange={v => set('stake', v)} disabled={running} />
                                 <Field label='Martingale ×' value={cfg.martingale} step={0.1} min={1} onChange={v => set('martingale', v)} disabled={running} />
@@ -143,14 +129,26 @@ const AutoTrader = observer(() => {
                                 <Field label='Threshold %' value={cfg.threshold} step={0.1} min={5} onChange={v => set('threshold', v)} disabled={running} />
                             </div>
                             <label className='pps-ai__select'>
+                                <span>Signals to trade</span>
+                                <select
+                                    value={cfg.signalFilter}
+                                    disabled={running}
+                                    onChange={e => set('signalFilter', e.target.value as TAutoConfig['signalFilter'])}
+                                >
+                                    <option value='over1first'>Over 1 first, then others</option>
+                                    <option value='over1only'>Over 1 only</option>
+                                    <option value='all'>All signals (best strength)</option>
+                                </select>
+                            </label>
+                            <label className='pps-ai__select'>
                                 <span>Recovery after a loss</span>
                                 <select
-                                    value={cfg.recoveryMode}
+                                    value={cfg.smartRecovery}
                                     disabled={running}
-                                    onChange={e => set('recoveryMode', e.target.value as TAutoConfig['recoveryMode'])}
+                                    onChange={e => set('smartRecovery', e.target.value as TAutoConfig['smartRecovery'])}
                                 >
-                                    <option value='same'>Same market (fast, in the bot)</option>
-                                    <option value='evenodd'>Best Even/Odd market (scans)</option>
+                                    <option value='over2'>1. Over 2 until recovered (same stake)</option>
+                                    <option value='over3'>2. Over 3, once</option>
                                 </select>
                             </label>
                             <label className='pps-ai__select'>
@@ -165,6 +163,12 @@ const AutoTrader = observer(() => {
                                     <option value='weak'>Any signal (★)</option>
                                 </select>
                             </label>
+                            <p className='pps-ai__note'>
+                                Option 1 trades Over 2 at stake × martingale after the first loss, keeping that stake, until two
+                                recovery wins (about 1.4 times the lost stake at martingale 2). Option 2 places one Over 3 trade at
+                                stake × martingale and then goes back to normal, win or lose. On Under signals it uses Under 7 and
+                                Under 6.
+                            </p>
                         </div>
                     )}
 
@@ -172,8 +176,8 @@ const AutoTrader = observer(() => {
                         <div className='pps-ai__body'>
                             <p className='pps-ai__desc'>
                                 Finds the market whose most frequent digit stands out. An even top digit means Even, an odd one
-                                means Odd, entering on the least frequent digit of that type. Top digit 12% or more: 15 runs or
-                                more. Below 12%: 4 to 6 runs. After a loss it recovers on the same market, then scans again.
+                                means Odd. It starts at once with no entry digit. Top digit 12% or more: 15 runs or more. Below
+                                12%: 4 to 6 runs. After a loss it recovers on the same market, then scans again.
                             </p>
                             <div className='pps-ai__preview'>
                                 <span>Best market now</span>
@@ -181,8 +185,8 @@ const AutoTrader = observer(() => {
                                     <b>
                                         {evenOdd.side === 'even' ? 'Even' : 'Odd'} · {evenOdd.display_name}
                                         <small>
-                                            top digit {evenOdd.topDigit} ({evenOdd.topPct.toFixed(1)}%) · entry on{' '}
-                                            {evenOdd.entryDigit} ({evenOdd.entryPct.toFixed(1)}%) · {evenOddRuns(evenOdd.topPct)} runs
+                                            top digit {evenOdd.topDigit} ({evenOdd.topPct.toFixed(1)}%) ·{' '}
+                                            {evenOddRuns(evenOdd.topPct)} runs
                                         </small>
                                     </b>
                                 ) : (
@@ -200,12 +204,12 @@ const AutoTrader = observer(() => {
                             <label className='pps-ai__select'>
                                 <span>Recovery after a loss</span>
                                 <select
-                                    value={cfg.recoveryMode}
+                                    value={cfg.evenOddRecovery}
                                     disabled={running}
-                                    onChange={e => set('recoveryMode', e.target.value as TAutoConfig['recoveryMode'])}
+                                    onChange={e => set('evenOddRecovery', e.target.value as TAutoConfig['evenOddRecovery'])}
                                 >
-                                    <option value='same'>Same market (fast, in the bot)</option>
-                                    <option value='evenodd'>Best Even/Odd market (scans)</option>
+                                    <option value='same'>Same side again (Even stays Even)</option>
+                                    <option value='flip'>Flip side, then back (Even to Odd)</option>
                                 </select>
                             </label>
                         </div>
@@ -250,42 +254,46 @@ const AutoTrader = observer(() => {
                     {tab === 'autopilot' && (
                         <div className='pps-ai__body'>
                             <p className='pps-ai__desc'>
-                                Scans once, then runs single trades in order, each on the market that fits. After a loss it scans
-                                again and recovers.
+                                Scans once, picks one volatility and runs Differs, Over 1 and Over 2 on it in turn, with no entry
+                                digits. After a loss it scans for a recovery market, then picks a new volatility.
                             </p>
+                            <div className='pps-ai__preview'>
+                                <span>One volatility for every step</span>
+                                {apMarket ? (
+                                    <b>{apMarket.display_name}</b>
+                                ) : (
+                                    <b className='pps-ai__none'>{rows.length ? 'No volatility fits yet' : 'Scanning…'}</b>
+                                )}
+                            </div>
                             <div className='pps-ai__steps'>
                                 <div className='pps-ai__step'>
                                     <i>1</i>
                                     <div>
                                         <b>Differs</b>
-                                        <span>{differs ? `${differs.digit} on ${differs.display_name} (${differs.pct.toFixed(1)}%)` : 'Scanning…'}</span>
+                                        <span>
+                                            {apMarket ? `${apMarket.differsDigit} (${apMarket.differsPct.toFixed(1)}%)` : 'Waiting for a market'}
+                                        </span>
                                     </div>
                                 </div>
                                 <div className='pps-ai__step'>
                                     <i>2</i>
                                     <div>
                                         <b>Over 1</b>
-                                        <span>{over1 ? over1.display_name : 'No market fits yet'}</span>
+                                        <span>{apMarket ? 'Digits 0 and 1 are low' : 'Waiting for a market'}</span>
                                     </div>
                                 </div>
                                 <div className='pps-ai__step'>
                                     <i>3</i>
                                     <div>
                                         <b>Over 2</b>
-                                        <span>{over2 ? over2.display_name : 'No market fits yet'}</span>
+                                        <span>{apMarket ? (apMarket.over2Ok ? 'Digits 0, 1 and 2 are low' : 'Skipped: digit 2 is not low') : 'Waiting for a market'}</span>
                                     </div>
                                 </div>
                                 <div className='pps-ai__step pps-ai__step--rec'>
                                     <i>↺</i>
                                     <div>
                                         <b>After a loss</b>
-                                        <span>
-                                            {cfg.recovery === 'evenodd'
-                                                ? recoveryLine
-                                                : recoveryOver
-                                                  ? `Over ${recoveryOver.level} · ${recoveryOver.display_name}`
-                                                  : 'No market fits yet'}
-                                        </span>
+                                        <span>{apRecovery ? `${apRecovery.label} · ${apRecovery.display_name}` : 'Scanning…'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -311,6 +319,8 @@ const AutoTrader = observer(() => {
                                 >
                                     <option value='evenodd'>Even/Odd market</option>
                                     <option value='over'>Over 3 or Over 4</option>
+                                    <option value='under'>Under 5 or Under 6</option>
+                                    <option value='auto'>Best available (Over, Under, then Even/Odd)</option>
                                 </select>
                             </label>
                         </div>

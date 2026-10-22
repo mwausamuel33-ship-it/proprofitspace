@@ -3,17 +3,14 @@ import { load } from '@/external/bot-skeleton';
 import { scanMarkets, useDestroyerScanner } from '@/hooks/useDestroyerScanner';
 import {
     AUTOPILOT_SEQUENCE,
-    EvenOddRecoveryPick,
-    evenOddRuns,
+    AutopilotMarket,
     MarketDigits,
-    OverPick,
-    pickBestSignal,
-    pickDiffers,
+    SignalFilter,
+    evenOddRuns,
+    pickAutopilotMarket,
     pickEvenOdd,
-    pickEvenOddRecovery,
     pickMatches,
-    pickOver,
-    pickRecovery,
+    pickSmartSignal,
 } from '@/utils/autopilot-rules';
 import { BotSpec } from '@/utils/bot-xml-builder';
 import { DestroyerStrength } from '@/utils/destroyer-rules';
@@ -29,13 +26,17 @@ export interface TAutoConfig {
     takeProfit: number; // stop when session profit reaches this
     stopLoss: number; // stop when session loss reaches this
     maxRuns: number; // stop after this many trades
-    maxRecovery: number; // recovery trades allowed in a row
+    maxRecovery: number; // Even/Odd: recovery trades allowed (the stake multiplies after each loss)
     threshold: number;
     minStrength: DestroyerStrength; // SmartScan only
     allowReal: boolean;
     maxGap: number; // Matches: largest % gap between the two most frequent digits
     maxTries: number; // Matches: tries on one market before scanning again
-    recovery: 'evenodd' | 'over'; // Autopilot recovery type
+    runsPerScan: number; // SmartScan: winning runs on one market before scanning again
+    signalFilter: SignalFilter; // SmartScan: Over 1, Under 8, or both
+    confirmEvery: boolean; // SmartScan: wait for hit + confirmation before every trade, not just the first
+    recoverySteps: number; // SmartScan / Autopilot: recovery trades allowed while recovering at a flat stake
+    evenOddRecovery: 'same' | 'flip'; // Even/Odd: recover on the same side, or flip to the other side
 }
 
 export const DEFAULT_AUTO_CONFIG: TAutoConfig = {
@@ -44,13 +45,17 @@ export const DEFAULT_AUTO_CONFIG: TAutoConfig = {
     takeProfit: 5,
     stopLoss: 15,
     maxRuns: 100,
-    maxRecovery: 3,
+    maxRecovery: 4,
     threshold: 10.5,
     minStrength: 'good',
     allowReal: false,
     maxGap: 0.5,
     maxTries: 30,
-    recovery: 'evenodd',
+    runsPerScan: 20,
+    signalFilter: 'both',
+    confirmEvery: false,
+    recoverySteps: 6,
+    evenOddRecovery: 'same',
 };
 
 export type TLogKind = 'info' | 'good' | 'bad' | 'warn';
@@ -70,33 +75,9 @@ interface TStats {
 const STOP_MSG = 'AUTO_TRADE_STOPPED';
 const TRIES_MSG = 'NO_MATCH_IN_TRIES';
 const SINGLE_BOT_MAX_MS = 5 * 60 * 1000;
-const SMARTSCAN_RUNS = 1000; // SmartScan trades until a loss; the session limits (max trades, profit, loss) still apply
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const signed = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}`;
-
-/**
- * Watches the live stats of one bot run and remembers how the most recent trade ended.
- * Used to tell "the bot finished its runs / recovered" apart from "the recovery ran out of steps and lost".
- */
-const makeOutcomeTracker = () => {
-    let seen: TStats = { won: 0, lost: 0, profit: 0 };
-    let last: 'none' | 'win' | 'loss' | 'unknown' = 'none';
-    return {
-        observe(live: TStats) {
-            const dw = live.won - seen.won;
-            const dl = live.lost - seen.lost;
-            seen = { won: live.won, lost: live.lost, profit: live.profit };
-            if (dw < 0 || dl < 0) return; // summary was reset
-            if (dw > 0 && dl > 0) last = 'unknown';
-            else if (dl > 0) last = 'loss';
-            else if (dw > 0) last = 'win';
-        },
-        get last() {
-            return last;
-        },
-    };
-};
 
 export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
     const store: any = useStore_();
@@ -194,24 +175,24 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
             const r = await scanMarkets(1000, () => !activeRef.current);
             checkActive();
             if (r && r.length) return r;
-            await sleep(1000);
+            await sleep(1500);
         }
         throw new Error('Could not read market data. Check your connection.');
     };
 
     const ensureWorkspace = async () => {
         if (!window.location.hash.includes('bot_builder')) window.location.hash = 'bot_builder';
-        for (let i = 0; i < 80; i++) {
+        for (let i = 0; i < 40; i++) {
             const ws = window.Blockly?.derivWorkspace;
             if (ws) return ws;
-            await sleep(125);
+            await sleep(250);
             checkActive();
         }
         throw new Error('The Bot Builder workspace did not open.');
     };
 
     /**
-     * Loads one bot, presses Run and waits until it stops. `monitor` is checked about 4 times a second
+     * Loads one bot, presses Run and waits until it stops. `monitor` is checked about 3 times a second
      * and can return a reason to stop the bot early (take profit, stop loss, ...).
      */
     const runBot = async (
@@ -234,7 +215,7 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
             show_snackbar: false,
         });
         workspace.strategy_to_load = xml;
-        await sleep(400);
+        await sleep(350);
         checkActive();
 
         await run_panel.onRunButtonClick();
@@ -253,7 +234,7 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
         let stopReason: string | null = null;
         const t0 = Date.now();
         while (isRunning() || run_panel?.has_open_contract) {
-            await sleep(250);
+            await sleep(150);
             if (!activeRef.current) break;
             if (monitor && !stopReason) {
                 const live = diff(before, readStats());
@@ -269,24 +250,16 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
                 throw new Error('The bot ran longer than expected, so it was stopped.');
             }
         }
-        await sleep(700); // let the transaction list update
+        await sleep(600); // let the transaction list update
 
         return { ...diff(before, readStats()), stopReason };
     };
 
     const botFor = (spec: BotSpec) => generateBotXml(spec);
 
-    /* ------------------------------------------------------------------------------------------------
-     * SmartScan (Over/Under) and Even/Odd.
-     *
-     * Scan once, pick the best market, load ONE bot that trades every tick. The bot itself handles a
-     * loss: it recovers on the SAME market (stake x martingale, up to maxRecovery steps) and stops when
-     * the recovery wins. Only then do we scan again and move to the best market.
-     *   - Even/Odd:  the bot also stops after evenOddRuns(topPct) winning runs (15-25 when the top digit
-     *                is 12% or more, 4-6 below that), then we scan again.
-     *   - SmartScan: no run cap; it trades until a loss, recovers, then we scan again.
-     * If a recovery runs out of steps and still loses, we stop completely instead of trading on.
-     * ---------------------------------------------------------------------------------------------- */
+    /* ---------- SmartScan (Over 1 / Under 8) and Even/Odd ----------
+     * Scan once and trade that market on every tick. After a loss, recover on the same market inside the bot,
+     * and only then scan again and switch to the best market. */
 
     const runContinuous = async (c: TAutoConfig, m: 'smartscan' | 'evenodd') => {
         let waits = 0;
@@ -301,67 +274,72 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
             const rows = await scanOnce();
             let spec: BotSpec | null = null;
             let title = '';
-            let plan = '';
+            let runs = 0;
+            let untilRecovered = false;
+            let note = '';
 
             if (m === 'smartscan') {
-                const best = pickBestSignal(rows, c.threshold, c.minStrength);
+                const best = pickSmartSignal(rows, c.threshold, c.minStrength, c.signalFilter);
                 if (best) {
+                    const over = best.signal.side === 'over';
+                    const barrier = best.signal.prediction; // Over 1 or Under 8
+                    const recBarrier = over ? 2 : 7; // recover with Over 2 / Under 7
+                    runs = Math.max(1, Math.round(c.runsPerScan));
+                    untilRecovered = true;
                     title = `${best.signal.label} on ${best.display_name} (${best.signal.strength})`;
-                    plan = 'Trading every tick until a loss, then recovering on this market.';
+                    note = over
+                        ? `Waits for 0 or 1, then an over digit. After a loss: Over 2 until recovered.`
+                        : `Waits for 8 or 9, then an under digit. After a loss: Under 7 until recovered.`;
                     spec = {
                         symbol: best.symbol,
                         kind: best.signal.side,
-                        prediction: best.signal.prediction,
+                        prediction: barrier,
                         stake: c.stake,
                         loop: 'recover',
-                        entryDigits: best.signal.entryDigits,
                         martingale: c.martingale,
-                        maxRuns: SMARTSCAN_RUNS,
-                        maxRecoverySteps: c.maxRecovery,
+                        maxRuns: runs,
+                        confirm: { side: best.signal.side, barrier, every: c.confirmEvery },
+                        recovery: {
+                            barrier: recBarrier,
+                            winsNeeded: 1,
+                            untilRecovered: true,
+                            maxSteps: Math.max(1, Math.round(c.recoverySteps)),
+                            escalate: false,
+                        },
                     };
                 }
             } else {
                 const p = pickEvenOdd(rows);
                 if (p) {
-                    const runs = evenOddRuns(p.topPct);
-                    title = `${p.side === 'even' ? 'Even' : 'Odd'} on ${p.display_name} (top digit ${p.topDigit} at ${p.topPct.toFixed(1)}%, entry on ${p.entryDigit})`;
-                    plan = `${runs} winning runs, then a new scan. On a loss it recovers on this market first.`;
+                    runs = evenOddRuns(p.topPct);
+                    const flip = c.evenOddRecovery === 'flip';
+                    const other = p.side === 'even' ? 'Odd' : 'Even';
+                    title = `${p.side === 'even' ? 'Even' : 'Odd'} on ${p.display_name} (even ${p.evenPct.toFixed(1)}% vs odd ${p.oddPct.toFixed(1)}%)`;
+                    note = flip ? `After a loss: ${other} on this market, then back.` : 'After a loss: same side again.';
                     spec = {
                         symbol: p.symbol,
                         kind: p.side,
                         stake: c.stake,
                         loop: 'recover',
-                        entryDigits: [p.entryDigit],
                         martingale: c.martingale,
                         maxRuns: runs,
-                        maxRecoverySteps: c.maxRecovery,
+                        recovery: { flip, winsNeeded: 1, maxSteps: c.maxRecovery, escalate: true },
                     };
                 }
             }
 
             if (!spec) {
                 waits += 1;
-                setStage('No market fits yet. Scanning again in 5s…');
-                if (waits === 1 || waits % 12 === 0) addLog('info', 'No market fits the rules yet. Scanning again soon.');
-                await sleepActive(5000);
+                setStage('No market fits yet. Scanning again in 15s…');
+                if (waits === 1 || waits % 6 === 0) addLog('info', 'No market fits the rules yet. Scanning again soon.');
+                await sleepActive(15000);
                 continue;
             }
             waits = 0;
 
-            addLog('info', `${title}. ${plan}`);
+            addLog('info', `${title}. ${runs} runs. ${note}`);
             setStage(`Trading ${title}`);
-
-            const tracker = makeOutcomeTracker();
-            const r = await runBot(
-                botFor(spec),
-                `AI - ${title}`,
-                live => {
-                    tracker.observe(live);
-                    return limitHit(c, live);
-                },
-                Infinity
-            );
-            tracker.observe(r);
+            const r = await runBot(botFor(spec), `AI - ${title}`, live => limitHit(c, live), Infinity);
             commit(r);
 
             if (r.stopReason) {
@@ -381,15 +359,21 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
             }
             noResult = 0;
 
-            if (r.lost > 0) {
-                if (tracker.last === 'win') {
-                    addLog('good', `Loss, then the recovery on the same market won. Session ${signed(sess.current.pnl)}. Scanning for the best market.`);
+            if (r.lost === 0) {
+                addLog('good', `${r.won} runs won. Session ${signed(sess.current.pnl)}. Scanning for the best market.`);
+            } else if (untilRecovered) {
+                // The bot ends when the loss is recovered, or when it runs out of recovery trades.
+                if (r.profit >= 0) {
+                    addLog('good', `Loss recovered. Session ${signed(sess.current.pnl)}. Scanning for the best market.`);
                 } else {
-                    addLog('bad', `Stopped: the recovery did not win within ${c.maxRecovery} steps. Session ${signed(sess.current.pnl)}.`);
+                    addLog('bad', `Stopped: ${c.recoverySteps} recovery trades did not recover the loss. Session ${signed(sess.current.pnl)}.`);
                     return;
                 }
+            } else if (r.lost >= c.maxRecovery + 1) {
+                addLog('bad', `Stopped: the loss and ${c.maxRecovery} recovery trades in a row did not win. Session ${signed(sess.current.pnl)}.`);
+                return;
             } else {
-                addLog('good', `${r.won} win${r.won === 1 ? '' : 's'} in a row. Session ${signed(sess.current.pnl)}. Scanning for the best market.`);
+                addLog('good', `Recovered after ${r.lost} loss${r.lost === 1 ? '' : 'es'}. Session ${signed(sess.current.pnl)}. Scanning for the best market.`);
             }
         }
     };
@@ -408,9 +392,9 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
             const p = pickMatches(rows, c.maxGap);
             if (!p) {
                 waits += 1;
-                setStage(`No market has its top two digits within ${c.maxGap}%. Scanning again in 5s…`);
-                if (waits === 1 || waits % 12 === 0) addLog('info', `No market has its top two digits within ${c.maxGap} points yet.`);
-                await sleepActive(5000);
+                setStage(`No market has its top two digits within ${c.maxGap}%. Scanning again in 15s…`);
+                if (waits === 1 || waits % 6 === 0) addLog('info', `No market has its top two digits within ${c.maxGap} points yet.`);
+                await sleepActive(15000);
                 continue;
             }
             waits = 0;
@@ -445,17 +429,18 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
         }
     };
 
-    /* ---------- Autopilot: Differs -> Over 1 -> Over 2, with recovery ---------- */
+    /* ---------- Autopilot: Differs -> Over 1 -> Over 2 on ONE volatility ----------
+     * After a loss it recovers with Over 2 on the same volatility until the loss is recovered. */
 
     const runAutopilot = async (c: TAutoConfig) => {
         let rows = await scanOnce();
+        let market: AutopilotMarket | null = null;
         let step = 0;
-        let recoveryCount = 0;
-        let stake = c.stake;
-        let skips = 0;
-        let rescans = 0;
+        let debt = 0; // money still to win back (negative while recovering)
+        let recoveryTrades = 0;
+        let recoveryStake = 0;
+        let waits = 0;
         let noResult = 0;
-        let recPick: EvenOddRecoveryPick | OverPick | null = null;
 
         while (activeRef.current) {
             const lim = limitHit(c);
@@ -464,63 +449,47 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
                 return;
             }
 
-            const recovering = recoveryCount > 0;
-            let spec: BotSpec | null = null;
-            let title = '';
+            const recovering = debt < 0;
+            if (!market) {
+                market = pickAutopilotMarket(rows, c.threshold);
+                if (!market) {
+                    waits += 1;
+                    setStage('No volatility fits yet. Scanning again in 15s…');
+                    if (waits === 1 || waits % 6 === 0) addLog('info', 'No volatility has digits 0 and 1 below the threshold yet. Scanning again soon.');
+                    await sleepActive(15000);
+                    rows = await scanOnce();
+                    continue;
+                }
+                waits = 0;
+                step = 0;
+                addLog('info', `One volatility for every step: ${market.display_name}.`);
+            }
+
+            let spec: BotSpec;
+            let title: string;
+            let stake = c.stake;
 
             if (recovering) {
-                if (!recPick) {
-                    setStage('Loss. Scanning for a recovery market…');
-                    rows = await scanOnce();
-                    recPick = c.recovery === 'evenodd' ? pickEvenOddRecovery(rows) : pickRecovery(rows, c.threshold);
-                    if (!recPick) {
-                        addLog('bad', 'Stopped: no market met the recovery conditions.');
-                        return;
-                    }
-                }
-                if ('level' in recPick) {
-                    title = `Recovery Over ${recPick.level} on ${recPick.display_name}`;
-                    spec = { symbol: recPick.symbol, kind: 'over', prediction: recPick.level, stake, loop: 'single', entryDigits: [5, 6, 7] };
-                } else {
-                    title = `Recovery ${recPick.side === 'even' ? 'Even' : 'Odd'} on ${recPick.display_name}${recPick.strict ? '' : ' (best lean)'}`;
-                    spec = { symbol: recPick.symbol, kind: recPick.side, stake, loop: 'single' };
-                }
+                stake = recoveryStake;
+                title = `Recovery Over 2 on ${market.display_name}`;
+                spec = { symbol: market.symbol, kind: 'over', prediction: 2, stake, loop: 'single' };
             } else {
                 const kind = AUTOPILOT_SEQUENCE[step % AUTOPILOT_SEQUENCE.length];
                 if (kind === 'differs') {
-                    const p = pickDiffers(rows);
-                    if (p) {
-                        title = `Differs ${p.digit} on ${p.display_name} (digit at ${p.pct.toFixed(1)}%)`;
-                        spec = { symbol: p.symbol, kind: 'differs', prediction: p.digit, stake, loop: 'single' };
-                    }
+                    title = `Differs ${market.differsDigit} on ${market.display_name} (digit at ${market.differsPct.toFixed(1)}%)`;
+                    spec = { symbol: market.symbol, kind: 'differs', prediction: market.differsDigit, stake, loop: 'single' };
+                } else if (kind === 'over1') {
+                    title = `Over 1 on ${market.display_name}`;
+                    spec = { symbol: market.symbol, kind: 'over', prediction: 1, stake, loop: 'single' };
+                } else if (market.over2Ok) {
+                    title = `Over 2 on ${market.display_name}`;
+                    spec = { symbol: market.symbol, kind: 'over', prediction: 2, stake, loop: 'single' };
                 } else {
-                    const level = kind === 'over1' ? 1 : 2;
-                    const p = pickOver(rows, level, c.threshold);
-                    if (p) {
-                        title = `Over ${level} on ${p.display_name} (${p.strength})`;
-                        spec = { symbol: p.symbol, kind: 'over', prediction: level, stake, loop: 'single', entryDigits: [2, 5, 6] };
-                    }
+                    addLog('info', 'Digit 2 is not low enough on this volatility, so Over 2 is skipped.');
+                    step += 1;
+                    continue;
                 }
             }
-
-            if (!spec) {
-                skips += 1;
-                step += 1;
-                if (skips >= AUTOPILOT_SEQUENCE.length) {
-                    rescans += 1;
-                    if (rescans > 3) {
-                        addLog('bad', 'Stopped: no step found a suitable market after 3 rescans.');
-                        return;
-                    }
-                    addLog('warn', 'No step fits the current scan. Scanning again.');
-                    await sleepActive(5000);
-                    rows = await scanOnce();
-                    skips = 0;
-                }
-                continue;
-            }
-            skips = 0;
-            rescans = 0;
 
             addLog('info', `${title}, stake ${stake.toFixed(2)}`);
             setStage(`Trading: ${title}`);
@@ -538,24 +507,29 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
             }
             noResult = 0;
 
-            if (r.won > 0 && r.lost === 0) {
-                addLog('good', `Win ${signed(r.profit)}. Session ${signed(sess.current.pnl)}.`);
-                if (recovering) {
-                    addLog('good', 'Recovery complete. Scanning again and back to the normal sequence.');
-                    recoveryCount = 0;
-                    recPick = null;
-                    stake = c.stake;
+            if (recovering) {
+                recoveryTrades += 1;
+                debt = round2(debt + r.profit);
+                if (debt >= 0) {
+                    addLog('good', `Loss recovered. Session ${signed(sess.current.pnl)}. Scanning for the next volatility.`);
+                    debt = 0;
+                    recoveryTrades = 0;
+                    market = null;
                     rows = await scanOnce();
+                } else if (recoveryTrades >= c.recoverySteps) {
+                    addLog('bad', `Stopped: ${c.recoverySteps} recovery trades did not recover the loss. Session ${signed(sess.current.pnl)}.`);
+                    return;
+                } else {
+                    addLog(r.profit >= 0 ? 'good' : 'bad', `Recovery trade ${signed(r.profit)}. Still ${Math.abs(debt).toFixed(2)} to recover.`);
                 }
+            } else if (r.lost > 0) {
+                debt = round2(r.profit); // negative: the amount lost
+                recoveryTrades = 0;
+                recoveryStake = round2(c.stake * c.martingale);
+                addLog('bad', `Loss ${r.profit.toFixed(2)}. Recovering with Over 2 at stake ${recoveryStake.toFixed(2)} on the same volatility.`);
                 step += 1;
             } else {
-                recoveryCount += 1;
-                addLog('bad', `Loss ${r.profit.toFixed(2)}. Session ${signed(sess.current.pnl)}.`);
-                if (recoveryCount > c.maxRecovery) {
-                    addLog('bad', `Stopped: ${c.maxRecovery} recovery trades in a row did not win it back.`);
-                    return;
-                }
-                stake = round2(stake * c.martingale);
+                addLog('good', `Win ${signed(r.profit)}. Session ${signed(sess.current.pnl)}.`);
                 step += 1;
             }
         }

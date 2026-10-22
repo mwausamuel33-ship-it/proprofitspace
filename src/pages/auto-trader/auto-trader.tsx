@@ -3,12 +3,12 @@ import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import { DEFAULT_AUTO_CONFIG, TAutoConfig, TMode, useAutoTrader } from '@/hooks/useAutoTrader';
 import { AccountBadge } from '@/pages/signal-scanner/scanner-widgets';
+import { useStore } from '@/hooks/useStore';
 import {
     evenOddRuns,
     pickAutopilotMarket,
     pickEvenOdd,
     pickMatches,
-    pickRecoveryChoice,
     pickSmartSignal,
 } from '@/utils/autopilot-rules';
 import { DestroyerStrength } from '@/utils/destroyer-rules';
@@ -53,6 +53,48 @@ const Field = ({
     </label>
 );
 
+/** Demo / Real switch. It stores the chosen account and reloads, the way the app restores its last account. */
+const AccountSwitch = observer(() => {
+    const store: any = useStore();
+    const client = store.client;
+    const ids: string[] = client?.all_loginids ?? [];
+    const accounts: any = client?.accounts ?? {};
+    const demoId = ids.find(id => accounts[id]?.is_virtual);
+    const realId = ids.find(id => accounts[id] && !accounts[id].is_virtual);
+    const current: string = client?.loginid ?? '';
+
+    if (!client?.is_logged_in || (!demoId && !realId)) return null;
+
+    const go = (id?: string) => {
+        if (!id || id === current) return;
+        try {
+            localStorage.setItem('active_loginid', id);
+        } catch {
+            /* storage blocked */
+        }
+        window.location.reload();
+    };
+
+    return (
+        <div className='pps-ai__switch' role='group' aria-label='Account'>
+            <button
+                className={classNames('pps-ai__switch-btn', { 'pps-ai__switch-btn--on': current === demoId })}
+                onClick={() => go(demoId)}
+                disabled={!demoId}
+            >
+                Demo
+            </button>
+            <button
+                className={classNames('pps-ai__switch-btn pps-ai__switch-btn--real', { 'pps-ai__switch-btn--on': current === realId })}
+                onClick={() => go(realId)}
+                disabled={!realId}
+            >
+                Real
+            </button>
+        </div>
+    );
+});
+
 const AutoTrader = observer(() => {
     const [open, setOpen] = useState(false);
     const [tab, setTab] = useState<TMode>('smartscan');
@@ -70,7 +112,6 @@ const AutoTrader = observer(() => {
     const evenOdd = pickEvenOdd(rows);
     const matches = pickMatches(rows, cfg.maxGap);
     const apMarket = pickAutopilotMarket(rows, cfg.threshold);
-    const apRecovery = pickRecoveryChoice(rows, cfg.recovery, cfg.threshold);
 
     return (
         <div className='pps-ai'>
@@ -87,6 +128,7 @@ const AutoTrader = observer(() => {
                     </div>
 
                     <AccountBadge />
+                    <AccountSwitch />
 
                     <div className='pps-ai__tabs'>
                         {TABS.map(x => (
@@ -104,9 +146,10 @@ const AutoTrader = observer(() => {
                     {tab === 'smartscan' && (
                         <div className='pps-ai__body'>
                             <p className='pps-ai__desc'>
-                                Scans once, picks the best signal (Over 1 first, because Over 2 is riskier) and trades it on
-                                every tick with no entry digit. After a loss it recovers on the same market, and only then scans
-                                again and switches to the best market.
+                                Scans once and picks an Over 1 market (digits 0 and 1 low) or an Under 8 market (digits 8 and 9
+                                low). For Over 1 it waits for a 0 or 1 to hit, then an over digit to confirm, then trades. Under 8
+                                works the same with 8 or 9 and an under digit. After a loss it recovers on the same market, and
+                                only then scans again.
                             </p>
                             <div className='pps-ai__preview'>
                                 <span>Best signal now</span>
@@ -124,31 +167,20 @@ const AutoTrader = observer(() => {
                                 <Field label='Take profit' value={cfg.takeProfit} step={0.5} onChange={v => set('takeProfit', v)} disabled={running} />
                                 <Field label='Stop loss' value={cfg.stopLoss} step={0.5} onChange={v => set('stopLoss', v)} disabled={running} />
                                 <Field label='Runs per scan' value={cfg.runsPerScan} onChange={v => set('runsPerScan', Math.max(1, v))} disabled={running} />
+                                <Field label='Recovery trades' value={cfg.recoverySteps} onChange={v => set('recoverySteps', Math.max(1, v))} disabled={running} />
                                 <Field label='Max trades' value={cfg.maxRuns} onChange={v => set('maxRuns', Math.max(1, v))} disabled={running} />
-                                <Field label='Max recovery' value={cfg.maxRecovery} onChange={v => set('maxRecovery', Math.max(1, v))} disabled={running} />
                                 <Field label='Threshold %' value={cfg.threshold} step={0.1} min={5} onChange={v => set('threshold', v)} disabled={running} />
                             </div>
                             <label className='pps-ai__select'>
-                                <span>Signals to trade</span>
+                                <span>Markets to trade</span>
                                 <select
                                     value={cfg.signalFilter}
                                     disabled={running}
                                     onChange={e => set('signalFilter', e.target.value as TAutoConfig['signalFilter'])}
                                 >
-                                    <option value='over1first'>Over 1 first, then others</option>
-                                    <option value='over1only'>Over 1 only</option>
-                                    <option value='all'>All signals (best strength)</option>
-                                </select>
-                            </label>
-                            <label className='pps-ai__select'>
-                                <span>Recovery after a loss</span>
-                                <select
-                                    value={cfg.smartRecovery}
-                                    disabled={running}
-                                    onChange={e => set('smartRecovery', e.target.value as TAutoConfig['smartRecovery'])}
-                                >
-                                    <option value='over2'>1. Over 2 until recovered (same stake)</option>
-                                    <option value='over3'>2. Over 3, once</option>
+                                    <option value='both'>Over 1 and Under 8 (best strength)</option>
+                                    <option value='over'>Over 1 only</option>
+                                    <option value='under'>Under 8 only</option>
                                 </select>
                             </label>
                             <label className='pps-ai__select'>
@@ -163,11 +195,19 @@ const AutoTrader = observer(() => {
                                     <option value='weak'>Any signal (★)</option>
                                 </select>
                             </label>
+                            <label className='pps-ai__real'>
+                                <input
+                                    type='checkbox'
+                                    checked={cfg.confirmEvery}
+                                    disabled={running}
+                                    onChange={e => set('confirmEvery', e.target.checked)}
+                                />
+                                Wait for hit and confirmation before every trade (slower)
+                            </label>
                             <p className='pps-ai__note'>
-                                Option 1 trades Over 2 at stake × martingale after the first loss, keeping that stake, until two
-                                recovery wins (about 1.4 times the lost stake at martingale 2). Option 2 places one Over 3 trade at
-                                stake × martingale and then goes back to normal, win or lose. On Under signals it uses Under 7 and
-                                Under 6.
+                                Recovery: Over 2 after an Over 1 loss, Under 7 after an Under 8 loss. The first recovery stake is
+                                stake × martingale and stays the same until the loss is won back. "Recovery trades" is how many it
+                                may place; set it to 1 for a single recovery trade.
                             </p>
                         </div>
                     )}
@@ -175,9 +215,9 @@ const AutoTrader = observer(() => {
                     {tab === 'evenodd' && (
                         <div className='pps-ai__body'>
                             <p className='pps-ai__desc'>
-                                Finds the market whose most frequent digit stands out. An even top digit means Even, an odd one
-                                means Odd. It starts at once with no entry digit. Top digit 12% or more: 15 runs or more. Below
-                                12%: 4 to 6 runs. After a loss it recovers on the same market, then scans again.
+                                Scans the digit percentages. If the even digits lead in total it trades Even, if the odd digits
+                                lead it trades Odd, starting at once. Top digit 12% or more: 15 runs or more. Below 12%: 4 to 6
+                                runs. After a loss it recovers on the same market, then scans again.
                             </p>
                             <div className='pps-ai__preview'>
                                 <span>Best market now</span>
@@ -185,8 +225,8 @@ const AutoTrader = observer(() => {
                                     <b>
                                         {evenOdd.side === 'even' ? 'Even' : 'Odd'} · {evenOdd.display_name}
                                         <small>
-                                            top digit {evenOdd.topDigit} ({evenOdd.topPct.toFixed(1)}%) ·{' '}
-                                            {evenOddRuns(evenOdd.topPct)} runs
+                                            even {evenOdd.evenPct.toFixed(1)}% vs odd {evenOdd.oddPct.toFixed(1)}% · top digit{' '}
+                                            {evenOdd.topDigit} ({evenOdd.topPct.toFixed(1)}%) · {evenOddRuns(evenOdd.topPct)} runs
                                         </small>
                                     </b>
                                 ) : (
@@ -254,8 +294,8 @@ const AutoTrader = observer(() => {
                     {tab === 'autopilot' && (
                         <div className='pps-ai__body'>
                             <p className='pps-ai__desc'>
-                                Scans once, picks one volatility and runs Differs, Over 1 and Over 2 on it in turn, with no entry
-                                digits. After a loss it scans for a recovery market, then picks a new volatility.
+                                Scans once, picks one volatility and runs Differs, Over 1 and Over 2 on it in turn. After a loss it
+                                recovers with Over 2 on the same volatility until the loss is won back, then scans for a new one.
                             </p>
                             <div className='pps-ai__preview'>
                                 <span>One volatility for every step</span>
@@ -293,7 +333,7 @@ const AutoTrader = observer(() => {
                                     <i>↺</i>
                                     <div>
                                         <b>After a loss</b>
-                                        <span>{apRecovery ? `${apRecovery.label} · ${apRecovery.display_name}` : 'Scanning…'}</span>
+                                        <span>{apMarket ? `Over 2 on ${apMarket.display_name} until recovered` : 'Waiting for a market'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -307,22 +347,9 @@ const AutoTrader = observer(() => {
                                 <Field label='Take profit' value={cfg.takeProfit} step={0.5} onChange={v => set('takeProfit', v)} disabled={running} />
                                 <Field label='Stop loss' value={cfg.stopLoss} step={0.5} onChange={v => set('stopLoss', v)} disabled={running} />
                                 <Field label='Max trades' value={cfg.maxRuns} onChange={v => set('maxRuns', Math.max(1, v))} disabled={running} />
-                                <Field label='Max recovery' value={cfg.maxRecovery} onChange={v => set('maxRecovery', Math.max(1, v))} disabled={running} />
+                                <Field label='Recovery trades' value={cfg.recoverySteps} onChange={v => set('recoverySteps', Math.max(1, v))} disabled={running} />
                                 <Field label='Threshold %' value={cfg.threshold} step={0.1} min={5} onChange={v => set('threshold', v)} disabled={running} />
                             </div>
-                            <label className='pps-ai__select'>
-                                <span>Recovery type</span>
-                                <select
-                                    value={cfg.recovery}
-                                    disabled={running}
-                                    onChange={e => set('recovery', e.target.value as TAutoConfig['recovery'])}
-                                >
-                                    <option value='evenodd'>Even/Odd market</option>
-                                    <option value='over'>Over 3 or Over 4</option>
-                                    <option value='under'>Under 5 or Under 6</option>
-                                    <option value='auto'>Best available (Over, Under, then Even/Odd)</option>
-                                </select>
-                            </label>
                         </div>
                     )}
 

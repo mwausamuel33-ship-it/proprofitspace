@@ -103,6 +103,8 @@ export interface EvenOddPick {
     topPct: number;
     entryDigit: number; // the lowest-percentage digit of the same parity
     entryPct: number;
+    evenPct: number; // % of ticks that end on an even digit
+    oddPct: number; // % of ticks that end on an odd digit
 }
 
 /**
@@ -121,6 +123,9 @@ export function pickEvenOdd(rows: MarketDigits[]): EvenOddPick | null {
         for (let d = 0; d < r.digit_pct.length; d++) {
             if (d % 2 === top % 2 && r.digit_pct[d] < r.digit_pct[entry]) entry = d;
         }
+        let evenPct = 0;
+        let oddPct = 0;
+        r.digit_pct.forEach((v, d) => (d % 2 === 0 ? (evenPct += v) : (oddPct += v)));
         const pick: EvenOddPick = {
             symbol: r.symbol,
             display_name: r.display_name,
@@ -129,6 +134,8 @@ export function pickEvenOdd(rows: MarketDigits[]): EvenOddPick | null {
             topPct: r.digit_pct[top],
             entryDigit: entry,
             entryPct: r.digit_pct[entry],
+            evenPct,
+            oddPct,
         };
         if (best === null || pick.topPct > best.topPct) best = pick;
     }
@@ -242,7 +249,7 @@ export function pickMatches(rows: MarketDigits[], maxGap = 0.5): MatchesPick | n
 
 /* ------------------------------------------------------------------ SmartScan: prefer Over 1 */
 
-export type SignalFilter = 'over1first' | 'over1only' | 'all';
+export type SignalFilter = 'both' | 'over' | 'under';
 
 /** Best market for Over 1 (digits 0 and 1 below the threshold), no weaker than `minStrength`. */
 export function pickOver1Signal(
@@ -279,18 +286,52 @@ export function pickOver1Signal(
     return best;
 }
 
-/** SmartScan pick: Over 1 first (safer than Over 2), then any signal unless the filter says Over 1 only. */
+/** Best market for Under 8 (digits 8 and 9 below the threshold), no weaker than `minStrength`. Mirror of Over 1. */
+export function pickUnder8Signal(
+    rows: MarketDigits[],
+    threshold = DEFAULT_THRESHOLD,
+    minStrength: DestroyerStrength = 'good'
+): BestSignal | null {
+    let best: BestSignal | null = null;
+    for (const r of rows) {
+        const p8 = r.digit_pct[8];
+        const p9 = r.digit_pct[9];
+        if (!(p8 < threshold && p9 < threshold)) continue;
+        const avg = (p8 + p9) / 2;
+        const max = Math.max(p8, p9);
+        const strength: DestroyerStrength = max < FAIR_SHARE ? 'strong' : avg < FAIR_SHARE ? 'good' : 'weak';
+        if (RANK[strength] > RANK[minStrength]) continue;
+        const signal: DestroyerSignal = {
+            side: 'under',
+            prediction: 8,
+            recoveryPrediction: 7,
+            entryDigits: [7, 4, 3],
+            losingDigits: [8, 9],
+            avgLosingPct: avg,
+            maxLosingPct: max,
+            deviation: FAIR_SHARE - avg,
+            strength,
+            label: 'Under 8',
+            reason: '8 and 9 are below the threshold',
+        };
+        if (best === null || compareSignals(signal, best.signal) < 0) {
+            best = { symbol: r.symbol, display_name: r.display_name, signal };
+        }
+    }
+    return best;
+}
+
+/** SmartScan pick: Over 1 and/or Under 8, whichever the filter allows. With 'both' the stronger signal wins. */
 export function pickSmartSignal(
     rows: MarketDigits[],
     threshold = DEFAULT_THRESHOLD,
     minStrength: DestroyerStrength = 'good',
-    filter: SignalFilter = 'over1first'
+    filter: SignalFilter = 'both'
 ): BestSignal | null {
-    if (filter !== 'all') {
-        const over1 = pickOver1Signal(rows, threshold, minStrength);
-        if (over1 || filter === 'over1only') return over1;
-    }
-    return pickBestSignal(rows, threshold, minStrength);
+    const over1 = filter === 'under' ? null : pickOver1Signal(rows, threshold, minStrength);
+    const under8 = filter === 'over' ? null : pickUnder8Signal(rows, threshold, minStrength);
+    if (over1 && under8) return compareSignals(over1.signal, under8.signal) <= 0 ? over1 : under8;
+    return over1 ?? under8;
 }
 
 /* ------------------------------------------------------------------ Under recovery + Autopilot helpers */

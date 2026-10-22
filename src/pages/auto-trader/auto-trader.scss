@@ -120,6 +120,41 @@
         cursor: pointer;
     }
 
+    &__switch {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        padding: 4px;
+        background: var(--ai-surface);
+        border-radius: 12px;
+    }
+
+    &__switch-btn {
+        padding: 8px;
+        border: none;
+        border-radius: 9px;
+        background: transparent;
+        color: var(--ai-muted);
+        font-weight: 800;
+        font-size: 13px;
+        cursor: pointer;
+
+        &--on {
+            background: rgba(52, 211, 153, 0.2);
+            color: var(--ai-good);
+        }
+
+        &--real.pps-ai__switch-btn--on {
+            background: rgba(251, 113, 133, 0.2);
+            color: var(--ai-bad);
+        }
+
+        &:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+    }
+
     &__tabs {
         display: grid;
         grid-template-columns: repeat(4, 1fr);

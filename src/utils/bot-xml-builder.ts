@@ -23,6 +23,18 @@ export interface BotSpec {
     martingale?: number; // recover loop
     maxRuns?: number; // recover loop: wins before the bot stops
     recovery?: RecoverySpec; // recover loop
+    confirm?: ConfirmSpec; // recover loop: wait for a hit digit, then a confirming digit, before buying
+}
+
+/**
+ * Entry filter. Over <barrier>: a "hit" is a last digit <= barrier (a losing digit), the confirmation is a digit above it.
+ * Under <barrier>: a hit is a last digit >= barrier, the confirmation is a digit below it.
+ * `every`: repeat hit + confirmation before every trade; otherwise only before the first one.
+ */
+export interface ConfirmSpec {
+    side: 'over' | 'under';
+    barrier: number;
+    every: boolean;
 }
 
 export interface RecoverySpec {
@@ -31,6 +43,7 @@ export interface RecoverySpec {
     winsNeeded: number; // recovery wins needed to finish the recovery
     maxSteps: number; // recovery trades allowed
     escalate: boolean; // multiply the stake again after each recovery loss (the first loss always multiplies once)
+    untilRecovered?: boolean; // keep recovering (win or lose) until the loss is won back, up to maxSteps trades; the AI Trade hook ends the bot once the profit is back
 }
 
 const CONTRACT: Record<BotKind, { contract: string; tradeType: string }> = {
@@ -102,6 +115,7 @@ const V = {
     pred: ['vPred', 'Prediction'],
     rec: ['vRec', 'RecoverySteps'],
     maxRec: ['vMaxRec', 'MaxRecoverySteps'],
+    hit: ['vHit', 'EntryHit'],
 } as const;
 
 const makeBlocks = () => {
@@ -116,8 +130,12 @@ const makeBlocks = () => {
     const arith = (op: string, a: string, b: string) =>
         `<block type="math_arithmetic" id="${id()}"><field name="OP">${op}</field><value name="A">${a}</value><value name="B">${b}</value></block>`;
     const round = (x: string) => `<block type="math_round" id="${id()}"><field name="OP">ROUND</field><value name="NUM">${x}</value></block>`;
-    const ifElse = (cond: string, thenX: string, elseX?: string) =>
-        `<block type="controls_if" id="${id()}">${elseX !== undefined ? '<mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>' : ''}<value name="IF0">${cond}</value><statement name="DO0">${thenX}</statement>${elseX !== undefined ? `<statement name="ELSE">${elseX}</statement>` : ''}</block>`;
+    const ifElse = (cond: string, thenX: string, elseX?: string, next?: string) =>
+        `<block type="controls_if" id="${id()}">${elseX !== undefined ? '<mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>' : ''}<value name="IF0">${cond}</value><statement name="DO0">${thenX}</statement>${elseX !== undefined ? `<statement name="ELSE">${elseX}</statement>` : ''}${next ? `<next>${next}</next>` : ''}</block>`;
+    const lastDigit = () => `<block type="last_digit" id="${id()}"></block>`;
+    const and = (a: string, c: string) => `<block type="logic_operation" id="${id()}"><field name="OP">AND</field><value name="A">${a}</value><value name="B">${c}</value></block>`;
+    /** An `if` with no else, usable inside chain(). */
+    const when = (cond: string, thenX: string) => (next?: string) => ifElse(cond, thenX, undefined, next);
     const notify = (type: string, text: string) =>
         `<block type="notify" id="${id()}"><field name="NOTIFICATION_TYPE">${type}</field><field name="NOTIFICATION_SOUND">silent</field><value name="MESSAGE"><block type="text" id="${id()}"><field name="TEXT">${text}</field></block></value></block>`;
     const again = () => `<block type="trade_again" id="${id()}"></block>`;
@@ -134,17 +152,46 @@ const makeBlocks = () => {
     };
     const set = (v: TVar, value: string) => (next?: string) => setVar(v, value, next);
 
-    return { num, get, cmp, arith, ifElse, notify, again, purchase, result, stakeTimesMartingale, chain, set };
+    return { num, get, cmp, arith, ifElse, notify, again, purchase, result, stakeTimesMartingale, chain, set, lastDigit, and, when };
 };
 
 /** The purchase and after-purchase blocks of the 'recover' loop. */
-export function buildRecoverBlocks(main: string, flipTo: string | null, r: RecoverySpec) {
+export function buildRecoverBlocks(main: string, flipTo: string | null, r: RecoverySpec, confirm?: ConfirmSpec) {
     const b = makeBlocks();
 
-    const purchaseStack = flipTo
-        ? b.ifElse(b.cmp('EQ', b.get(V.mode), b.num(0)), b.purchase(main), b.purchase(flipTo))
-        : b.purchase(main);
+    const buy = flipTo ? b.ifElse(b.cmp('EQ', b.get(V.mode), b.num(0)), b.purchase(main), b.purchase(flipTo)) : b.purchase(main);
+
+    // Without a filter: buy on every tick. With one, EntryHit walks 0 (waiting for a hit digit) -> 1 (hit seen,
+    // waiting for the confirming digit) -> 2 (armed: buy on every tick).
+    let purchaseStack = buy;
+    if (confirm) {
+        const hitOp = confirm.side === 'over' ? 'LTE' : 'GTE';
+        const confirmOp = confirm.side === 'over' ? 'GT' : 'LT';
+        purchaseStack = b.chain(
+            b.when(
+                b.and(b.cmp('EQ', b.get(V.hit), b.num(0)), b.cmp(hitOp, b.lastDigit(), b.num(confirm.barrier))),
+                b.chain(b.set(V.hit, b.num(1)))
+            ),
+            b.when(
+                b.and(b.cmp('EQ', b.get(V.hit), b.num(1)), b.cmp(confirmOp, b.lastDigit(), b.num(confirm.barrier))),
+                b.chain(b.set(V.hit, b.num(2)))
+            ),
+            b.when(b.cmp('EQ', b.get(V.hit), b.num(2)), buy)
+        );
+    }
     const before = `<block type="before_purchase" id="b116" deletable="false" x="0" y="900"><statement name="BEFOREPURCHASE_STACK">${purchaseStack}</statement></block>`;
+
+    // After each recovery trade (untilRecovered): count it, stop when the allowed trades are used up, else go again.
+    const recoveryTradeDone = () =>
+        b.chain(
+            b.set(V.rec, b.arith('ADD', b.get(V.rec), b.num(1))),
+            () =>
+                b.ifElse(
+                    b.cmp('GTE', b.get(V.rec), b.get(V.maxRec)),
+                    b.notify('error', 'Recovery trades used up - bot stopped'),
+                    b.again()
+                )
+        );
 
     // a win: in the normal phase count the run, in recovery count recovery wins
     const normalWin = b.chain(
@@ -153,21 +200,23 @@ export function buildRecoverBlocks(main: string, flipTo: string | null, r: Recov
             b.ifElse(
                 b.cmp('GTE', b.get(V.runs), b.get(V.maxRuns)),
                 b.notify('success', 'Runs complete - bot stopped'),
-                b.again()
+                // with "every trade" the filter starts again before the next trade
+                confirm?.every ? b.chain(b.set(V.hit, b.num(0)), () => b.again()) : b.again()
             )
     );
-    const recoveryWin =
-        r.winsNeeded > 1
-            ? b.chain(
-                  b.set(V.runs, b.arith('ADD', b.get(V.runs), b.num(1))),
-                  () =>
-                      b.ifElse(
-                          b.cmp('GTE', b.get(V.runs), b.num(r.winsNeeded)),
-                          b.notify('success', 'Recovery complete - bot stopped'),
-                          b.again()
-                      )
-              )
-            : b.notify('success', 'Recovery complete - bot stopped');
+    const recoveryWin = r.untilRecovered
+        ? recoveryTradeDone()
+        : r.winsNeeded > 1
+          ? b.chain(
+                b.set(V.runs, b.arith('ADD', b.get(V.runs), b.num(1))),
+                () =>
+                    b.ifElse(
+                        b.cmp('GTE', b.get(V.runs), b.num(r.winsNeeded)),
+                        b.notify('success', 'Recovery complete - bot stopped'),
+                        b.again()
+                    )
+            )
+          : b.notify('success', 'Recovery complete - bot stopped');
     const onWin = b.ifElse(b.cmp('EQ', b.get(V.mode), b.num(0)), normalWin, recoveryWin);
 
     // a loss: the first one starts the recovery, later ones continue or end it
@@ -176,18 +225,21 @@ export function buildRecoverBlocks(main: string, flipTo: string | null, r: Recov
         b.set(V.runs, b.num(0)),
         ...(r.barrier !== undefined ? [b.set(V.pred, b.num(r.barrier))] : []),
         b.set(V.stake, b.stakeTimesMartingale()),
-        b.set(V.rec, b.num(1)),
+        b.set(V.rec, b.num(r.untilRecovered ? 0 : 1)),
+        ...(confirm ? [b.set(V.hit, b.num(2))] : []), // recovery trades are placed right away
         () => b.again()
     );
-    const nextLoss = b.chain(
-        b.set(V.rec, b.arith('ADD', b.get(V.rec), b.num(1))),
-        () =>
-            b.ifElse(
-                b.cmp('GT', b.get(V.rec), b.get(V.maxRec)),
-                b.notify('error', 'Recovery ended - bot stopped'),
-                b.chain(...(r.escalate ? [b.set(V.stake, b.stakeTimesMartingale())] : []), () => b.again())
-            )
-    );
+    const nextLoss = r.untilRecovered
+        ? recoveryTradeDone()
+        : b.chain(
+              b.set(V.rec, b.arith('ADD', b.get(V.rec), b.num(1))),
+              () =>
+                  b.ifElse(
+                      b.cmp('GT', b.get(V.rec), b.get(V.maxRec)),
+                      b.notify('error', 'Recovery ended - bot stopped'),
+                      b.chain(...(r.escalate ? [b.set(V.stake, b.stakeTimesMartingale())] : []), () => b.again())
+                  )
+          );
     const onLoss = b.ifElse(b.cmp('EQ', b.get(V.mode), b.num(0)), firstLoss, nextLoss);
 
     const after = `<block type="after_purchase" id="b117" x="0" y="1500"><statement name="AFTERPURCHASE_STACK">${b.ifElse(b.result('win'), onWin, onLoss)}</statement></block>`;
@@ -211,7 +263,9 @@ export function buildBotXml(template: string, spec: BotSpec): string {
 
     x = setNum(x, 'b1', spec.stake);
 
-    if (spec.entryDigits && spec.entryDigits.length) {
+    if (spec.loop === 'recover' && spec.confirm) {
+        x = setNum(x, 'b17', 0); // EntryHit = 0: wait for a hit digit, then a confirming digit
+    } else if (spec.entryDigits && spec.entryDigits.length) {
         const e = [spec.entryDigits[0], spec.entryDigits[1] ?? spec.entryDigits[0], spec.entryDigits[2] ?? spec.entryDigits[0]];
         x = setNum(x, 'b17', 0); // EntryHit = 0: wait for an entry digit
         ['b22', 'b25', 'b29'].forEach((id, i) => (x = setNum(x, id, e[i])));
@@ -226,7 +280,7 @@ export function buildBotXml(template: string, spec: BotSpec): string {
         x = setNum(x, 'b9', rec.maxSteps); // MaxRecoverySteps
         const flipTo = rec.flip && (spec.kind === 'even' || spec.kind === 'odd') ? (spec.kind === 'even' ? 'DIGITODD' : 'DIGITEVEN') : null;
         if (flipTo) x = x.replace(/(<field name="TYPE_LIST">)[^<]*/, '$1both'); // allow both contract types
-        const { before, after } = buildRecoverBlocks(contract, flipTo, rec);
+        const { before, after } = buildRecoverBlocks(contract, flipTo, rec, spec.confirm);
         x = replaceBlock(x, 'before_purchase', before);
         return replaceBlock(x, 'after_purchase', after);
     }

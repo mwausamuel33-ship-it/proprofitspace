@@ -55,7 +55,7 @@ export const scanMarkets = async (ticks = 1000, isCancelled: () => boolean = () 
         .filter(s => s.market === 'synthetic_index' && s.submarket === 'random_index')
         .map(s => ({
             symbol: (s.symbol || s.underlying_symbol) as string,
-            display_name: (s.display_name || s.symbol) as string,
+            display_name: (s.display_name || s.symbol || s.underlying_symbol) as string,
         }));
 
     if (!markets.length || !api_base?.api) return null;

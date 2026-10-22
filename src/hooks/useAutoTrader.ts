@@ -74,10 +74,33 @@ interface TStats {
 
 const STOP_MSG = 'AUTO_TRADE_STOPPED';
 const TRIES_MSG = 'NO_MATCH_IN_TRIES';
+const RECOVERED_MSG = 'LOSS_RECOVERED';
 const SINGLE_BOT_MAX_MS = 5 * 60 * 1000;
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const signed = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}`;
+
+/**
+ * Watches the live stats of one bot run. When the first loss shows up it remembers the profit level the bot was at
+ * just before that loss; `recovered` is true once the profit is back at (or above) that level.
+ */
+const makeRecoveryTracker = () => {
+    let seen: TStats = { won: 0, lost: 0, profit: 0 };
+    let target: number | null = null;
+    return {
+        observe(live: TStats) {
+            if (live.won < seen.won || live.lost < seen.lost) {
+                seen = { won: live.won, lost: live.lost, profit: live.profit }; // summary was reset
+                return;
+            }
+            if (target === null && live.lost > seen.lost) target = seen.profit;
+            seen = { won: live.won, lost: live.lost, profit: live.profit };
+        },
+        get recovered() {
+            return target !== null && seen.profit >= target - 0.005;
+        },
+    };
+};
 
 export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
     const store: any = useStore_();
@@ -175,17 +198,17 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
             const r = await scanMarkets(1000, () => !activeRef.current);
             checkActive();
             if (r && r.length) return r;
-            await sleep(1500);
+            await sleep(1000);
         }
         throw new Error('Could not read market data. Check your connection.');
     };
 
     const ensureWorkspace = async () => {
         if (!window.location.hash.includes('bot_builder')) window.location.hash = 'bot_builder';
-        for (let i = 0; i < 40; i++) {
+        for (let i = 0; i < 80; i++) {
             const ws = window.Blockly?.derivWorkspace;
             if (ws) return ws;
-            await sleep(250);
+            await sleep(125);
             checkActive();
         }
         throw new Error('The Bot Builder workspace did not open.');
@@ -330,19 +353,31 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
 
             if (!spec) {
                 waits += 1;
-                setStage('No market fits yet. Scanning again in 15s…');
-                if (waits === 1 || waits % 6 === 0) addLog('info', 'No market fits the rules yet. Scanning again soon.');
-                await sleepActive(15000);
+                setStage('No market fits yet. Scanning again in 5s…');
+                if (waits === 1 || waits % 12 === 0) addLog('info', 'No market fits the rules yet. Scanning again soon.');
+                await sleepActive(5000);
                 continue;
             }
             waits = 0;
 
             addLog('info', `${title}. ${runs} runs. ${note}`);
             setStage(`Trading ${title}`);
-            const r = await runBot(botFor(spec), `AI - ${title}`, live => limitHit(c, live), Infinity);
+            const tracker = makeRecoveryTracker();
+            const r = await runBot(
+                botFor(spec),
+                `AI - ${title}`,
+                live => {
+                    tracker.observe(live);
+                    // SmartScan recovery keeps trading until the profit is back where it was before the loss
+                    if (untilRecovered && tracker.recovered) return RECOVERED_MSG;
+                    return limitHit(c, live);
+                },
+                Infinity
+            );
+            tracker.observe(r);
             commit(r);
 
-            if (r.stopReason) {
+            if (r.stopReason && r.stopReason !== RECOVERED_MSG) {
                 addLog('warn', r.stopReason);
                 return;
             }
@@ -363,7 +398,7 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
                 addLog('good', `${r.won} runs won. Session ${signed(sess.current.pnl)}. Scanning for the best market.`);
             } else if (untilRecovered) {
                 // The bot ends when the loss is recovered, or when it runs out of recovery trades.
-                if (r.profit >= 0) {
+                if (tracker.recovered) {
                     addLog('good', `Loss recovered. Session ${signed(sess.current.pnl)}. Scanning for the best market.`);
                 } else {
                     addLog('bad', `Stopped: ${c.recoverySteps} recovery trades did not recover the loss. Session ${signed(sess.current.pnl)}.`);
@@ -392,9 +427,9 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
             const p = pickMatches(rows, c.maxGap);
             if (!p) {
                 waits += 1;
-                setStage(`No market has its top two digits within ${c.maxGap}%. Scanning again in 15s…`);
-                if (waits === 1 || waits % 6 === 0) addLog('info', `No market has its top two digits within ${c.maxGap} points yet.`);
-                await sleepActive(15000);
+                setStage(`No market has its top two digits within ${c.maxGap}%. Scanning again in 5s…`);
+                if (waits === 1 || waits % 12 === 0) addLog('info', `No market has its top two digits within ${c.maxGap} points yet.`);
+                await sleepActive(5000);
                 continue;
             }
             waits = 0;
@@ -454,9 +489,9 @@ export const useAutoTrader = (cfg: TAutoConfig, panel_open: boolean) => {
                 market = pickAutopilotMarket(rows, c.threshold);
                 if (!market) {
                     waits += 1;
-                    setStage('No volatility fits yet. Scanning again in 15s…');
-                    if (waits === 1 || waits % 6 === 0) addLog('info', 'No volatility has digits 0 and 1 below the threshold yet. Scanning again soon.');
-                    await sleepActive(15000);
+                    setStage('No volatility fits yet. Scanning again in 5s…');
+                    if (waits === 1 || waits % 12 === 0) addLog('info', 'No volatility has digits 0 and 1 below the threshold yet. Scanning again soon.');
+                    await sleepActive(5000);
                     rows = await scanOnce();
                     continue;
                 }

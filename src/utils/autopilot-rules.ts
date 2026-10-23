@@ -424,3 +424,118 @@ export function pickAutopilotMarket(rows: MarketDigits[], threshold = DEFAULT_TH
     }
     return best;
 }
+
+/* ------------------------------------------------------------------ SmartScan: Over 1 / Over 2 / Under 8 / Under 7 */
+
+/** auto: the strength of the signal picks the barrier. safer: Over 1 / Under 8. riskier: Over 2 / Under 7. */
+export type RiskChoice = 'auto' | 'safer' | 'riskier';
+
+export interface SmartPick {
+    symbol: string;
+    display_name: string;
+    side: 'over' | 'under';
+    prediction: 1 | 2 | 7 | 8;
+    label: string; // 'Over 1', 'Over 2', 'Under 8', 'Under 7'
+    strength: DestroyerStrength;
+    deviation: number; // points the losing digits sit below the fair 10%
+    losingDigits: number[]; // the digits that lose this contract; they are watched while trading
+    trigger: number; // trigger digit: Over uses 1, Under uses 8
+    confirmGt?: number; // Over: the confirmation digit is above this
+    confirmLt?: number; // Under: the confirmation digit is below this (digit 0 is not used)
+    baseline: number[]; // digit percentages when the market was picked
+}
+
+const lowestDigitOf = (p: number[]) => {
+    let low = 0;
+    for (let d = 1; d < p.length; d++) if (p[d] < p[low]) low = d;
+    return low;
+};
+
+const rateDigits = (p: number[], digits: number[]) => {
+    const avg = digits.reduce((sum, d) => sum + p[d], 0) / digits.length;
+    const max = Math.max(...digits.map(d => p[d]));
+    const strength: DestroyerStrength = max < FAIR_SHARE ? 'strong' : avg < FAIR_SHARE ? 'good' : 'weak';
+    return { avg, strength };
+};
+
+/**
+ * SmartScan markets (all digit percentages are over the last 1000 ticks).
+ *  - Over 1 / Over 2: digits 0, 1 and 2 are all below the threshold. Trigger digit 1, then a digit above the barrier.
+ *  - Under 8: digits 8 and 9 are below the threshold. Under 7: digits 7, 8 and 9 are below it.
+ *    Trigger digit 8, then a digit below the barrier (digit 0 is not used).
+ *  - The lowest-percentage digit of the market (the red bar) must not be one of the losing digits of the chosen
+ *    barrier: 0 and 1 for Over 1, 0-2 for Over 2, 8 and 9 for Under 8, 7-9 for Under 7.
+ *  - auto: a strong signal trades the riskier barrier (Over 2 / Under 7), anything else the safer one.
+ * Markets in `exclude` are skipped.
+ */
+export function pickSmartMarket(
+    rows: MarketDigits[],
+    threshold = DEFAULT_THRESHOLD,
+    minStrength: DestroyerStrength = 'good',
+    filter: SignalFilter = 'both',
+    risk: RiskChoice = 'auto',
+    exclude: string[] = []
+): SmartPick | null {
+    let best: SmartPick | null = null;
+
+    const consider = (pick: SmartPick) => {
+        if (RANK[pick.strength] > RANK[minStrength]) return;
+        if (best === null || RANK[pick.strength] < RANK[best.strength] || (pick.strength === best.strength && pick.deviation > best.deviation)) {
+            best = pick;
+        }
+    };
+
+    for (const r of rows) {
+        if (exclude.includes(r.symbol)) continue;
+        const p = r.digit_pct;
+        const low = lowestDigitOf(p);
+
+        if (filter !== 'under' && p[0] < threshold && p[1] < threshold && p[2] < threshold) {
+            const rated = rateDigits(p, [0, 1, 2]);
+            const over1Ok = low !== 0 && low !== 1;
+            const over2Ok = over1Ok && low !== 2;
+            const want2 = risk === 'riskier' || (risk === 'auto' && rated.strength === 'strong');
+            const prediction: 1 | 2 | null = want2 && over2Ok ? 2 : over1Ok ? 1 : null;
+            if (prediction) {
+                consider({
+                    symbol: r.symbol,
+                    display_name: r.display_name,
+                    side: 'over',
+                    prediction,
+                    label: `Over ${prediction}`,
+                    strength: rated.strength,
+                    deviation: FAIR_SHARE - rated.avg,
+                    losingDigits: prediction === 2 ? [0, 1, 2] : [0, 1],
+                    trigger: 1,
+                    confirmGt: prediction,
+                    baseline: p,
+                });
+            }
+        }
+
+        if (filter !== 'over' && p[8] < threshold && p[9] < threshold) {
+            const under8Ok = low !== 8 && low !== 9;
+            const under7Ok = under8Ok && p[7] < threshold && low !== 7;
+            const rated7 = rateDigits(p, [7, 8, 9]);
+            const want7 = risk === 'riskier' || (risk === 'auto' && rated7.strength === 'strong');
+            const prediction: 7 | 8 | null = want7 && under7Ok ? 7 : under8Ok ? 8 : null;
+            if (prediction) {
+                const rated = prediction === 7 ? rated7 : rateDigits(p, [8, 9]);
+                consider({
+                    symbol: r.symbol,
+                    display_name: r.display_name,
+                    side: 'under',
+                    prediction,
+                    label: `Under ${prediction}`,
+                    strength: rated.strength,
+                    deviation: FAIR_SHARE - rated.avg,
+                    losingDigits: prediction === 7 ? [7, 8, 9] : [8, 9],
+                    trigger: 8,
+                    confirmLt: prediction,
+                    baseline: p,
+                });
+            }
+        }
+    }
+    return best;
+}

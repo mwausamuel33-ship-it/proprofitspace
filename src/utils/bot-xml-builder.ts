@@ -81,9 +81,9 @@ const AFTER_PURCHASE: Record<Exclude<BotLoop, 'recover'>, string> = {
 const setNum = (xml: string, id: string, val: number | string) =>
     xml.replace(new RegExp(`(<block type="math_number" id="${id}"><field name="NUM">)[^<]*`), `$1${val}`);
 
-/** Replaces one whole <block type="..."> ... </block> (including nested blocks). */
-export function replaceBlock(xml: string, type: string, replacement: string): string {
-    const start = xml.indexOf(`<block type="${type}"`);
+/** Replaces the whole block that starts at `marker` (for example '<block type="math_arithmetic" id="x"'), nested blocks included. */
+export function replaceBlockAt(xml: string, marker: string, replacement: string): string {
+    const start = xml.indexOf(marker);
     if (start < 0) return xml;
     let depth = 0;
     let i = start;
@@ -101,6 +101,11 @@ export function replaceBlock(xml: string, type: string, replacement: string): st
         }
     }
     return xml;
+}
+
+/** Replaces one whole <block type="..."> ... </block> (including nested blocks). */
+export function replaceBlock(xml: string, type: string, replacement: string): string {
+    return replaceBlockAt(xml, `<block type="${type}"`, replacement);
 }
 
 /* ---------- small block-XML helpers for the 'recover' loop ---------- */
@@ -152,7 +157,7 @@ const makeBlocks = () => {
     };
     const set = (v: TVar, value: string) => (next?: string) => setVar(v, value, next);
 
-    return { num, get, cmp, arith, ifElse, notify, again, purchase, result, stakeTimesMartingale, chain, set, lastDigit, and, when };
+    return { num, get, cmp, arith, round, ifElse, notify, again, purchase, result, stakeTimesMartingale, chain, set, lastDigit, and, when };
 };
 
 /** The purchase and after-purchase blocks of the 'recover' loop. */
@@ -286,4 +291,95 @@ export function buildBotXml(template: string, spec: BotSpec): string {
     }
 
     return replaceBlock(x, 'after_purchase', AFTER_PURCHASE[spec.loop]);
+}
+
+/* ------------------------------------------------------------------ the simple over/under martingale bot (SmartScan) */
+
+export interface SimpleBotSpec {
+    symbol: string;
+    side: 'over' | 'under';
+    prediction: number; // the barrier: Over 1, Over 2, Under 7, Under 8
+    stake: number;
+    martingale: number; // stake multiplier after each loss; the bot goes back to the base stake after a win
+    durationTicks: number; // 2 for the 1-second volatilities, 1 for the plain ones
+    trigger: number; // trigger digit: when it appears we start watching for a confirmation digit
+    confirmGt?: number; // Over: the confirmation digit is above this
+    confirmLt?: number; // Under: the confirmation digit is below this (digit 0 is not used)
+    confirmEvery?: boolean; // wait for trigger + confirmation before every trade, not only the first
+}
+
+// The app enforces take profit and stop loss (it also knows about the whole session), so the bot's own limits are out of reach.
+const BIG_LIMIT = 1000000000;
+
+/**
+ * Patches the attached bot (src/xml/sammee_simple_over.xml): market, barrier, stake, martingale, tick duration and
+ * the entry. Entry: wait for the trigger digit, then a confirmation digit, then buy on every tick (or repeat the
+ * trigger + confirmation before every trade). A loss multiplies the stake (rounded to cents), a win resets it.
+ */
+export function buildSimpleBotXml(template: string, spec: SimpleBotSpec): string {
+    const contract = spec.side === 'over' ? 'DIGITOVER' : 'DIGITUNDER';
+    let x = template.replace(/DIGIT(OVER|UNDER)/g, contract);
+    x = x.replace(/(<field name="SYMBOL_LIST">)[^<]*/, `$1${spec.symbol}`);
+    x = x.replace(/(<field name="SUBMARKET_LIST">)[^<]*/, `$1${submarketFor(spec.symbol)}`);
+
+    const shadow = (id: string, val: number) => {
+        x = x.replace(new RegExp(`(<shadow type="math_number_positive" id="${id}">\\s*<field name="NUM">)[^<]*`), `$1${val}`);
+    };
+    shadow('opt_pred_shadow', spec.prediction);
+    shadow('opt_amt_shadow', spec.stake);
+    shadow('opt_dur_shadow', spec.durationTicks);
+    x = setNum(x, 'i1v', spec.stake); // stake
+    x = setNum(x, 'i2v', spec.stake); // stakeW: the stake after a win
+    x = setNum(x, 'i3v', BIG_LIMIT); // stoploss (enforced by the app)
+    x = setNum(x, 'i4v', BIG_LIMIT); // takeprofit (enforced by the app)
+    x = setNum(x, 'i5v', spec.durationTicks);
+    x = setNum(x, 'i6v', spec.martingale);
+
+    const b = makeBlocks();
+    const ENTRY: TVar = ['v_entry', 'entryStage'];
+
+    // a new variable, set to 0 at the start: 0 = waiting for the trigger, 1 = trigger seen, 2 = confirmed
+    x = x.replace('</variables>', '<variable id="v_entry">entryStage</variable></variables>');
+    const afterI6 = x.indexOf('</value>', x.indexOf('id="i6v"'));
+    const closeI6 = x.indexOf('</block>', afterI6);
+    x = `${x.slice(0, closeI6)}<next>${b.set(ENTRY, b.num(0))()}</next>${x.slice(closeI6)}`;
+
+    // purchase only after the trigger digit and then a confirmation digit
+    const confirm =
+        spec.side === 'over'
+            ? b.cmp('GT', b.lastDigit(), b.num(spec.confirmGt ?? spec.prediction))
+            : b.and(b.cmp('LT', b.lastDigit(), b.num(spec.confirmLt ?? spec.prediction)), b.cmp('GT', b.lastDigit(), b.num(0)));
+    const stack = b.chain(
+        b.when(
+            b.and(b.cmp('EQ', b.get(ENTRY), b.num(0)), b.cmp('EQ', b.lastDigit(), b.num(spec.trigger))),
+            b.set(ENTRY, b.num(1))()
+        ),
+        b.when(b.and(b.cmp('EQ', b.get(ENTRY), b.num(1)), confirm), b.set(ENTRY, b.num(2))()),
+        b.when(b.cmp('EQ', b.get(ENTRY), b.num(2)), b.purchase(contract))
+    );
+    x = replaceBlock(
+        x,
+        'before_purchase',
+        `<block type="before_purchase" id="bp1" deletable="false" x="0" y="500"><statement name="BEFOREPURCHASE_STACK">${stack}</statement></block>`
+    );
+
+    // after a loss: stake x martingale, rounded to cents (the API refuses more than 2 decimals)
+    const rounded = b.arith(
+        'DIVIDE',
+        b.round(b.arith('MULTIPLY', b.arith('MULTIPLY', b.get(['v_stake', 'stake']), b.get(['v_martingale', 'martingaleAfterLoss'])), b.num(100))),
+        b.num(100)
+    );
+    x = replaceBlockAt(x, '<block type="math_arithmetic" id="ap_loss_bump_v"', rounded);
+
+    // optional: trigger + confirmation again before every trade
+    if (spec.confirmEvery) {
+        const marker = '<statement name="AFTERPURCHASE_STACK">';
+        const at = x.indexOf(marker, x.indexOf('<block type="after_purchase"')) + marker.length;
+        const resetOpen = `<block type="variables_set" id="er1"><field name="VAR" id="v_entry">entryStage</field><value name="VALUE"><block type="math_number" id="er2"><field name="NUM">0</field></block></value><next>`;
+        x = x.slice(0, at) + resetOpen + x.slice(at);
+        const end = x.lastIndexOf('</statement>');
+        x = `${x.slice(0, end)}</next></block>${x.slice(end)}`;
+    }
+
+    return x;
 }

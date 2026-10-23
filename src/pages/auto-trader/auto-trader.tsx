@@ -9,7 +9,7 @@ import {
     pickAutopilotMarket,
     pickEvenOdd,
     pickMatches,
-    pickSmartSignal,
+    pickSmartMarket,
 } from '@/utils/autopilot-rules';
 import { DestroyerStrength } from '@/utils/destroyer-rules';
 import '@/styles/pps-theme.scss';
@@ -108,7 +108,7 @@ const AutoTrader = observer(() => {
 
     // live previews from the latest background scan
     const rows = t.scan.rows;
-    const best = pickSmartSignal(rows, cfg.threshold, cfg.minStrength, cfg.signalFilter);
+    const best = pickSmartMarket(rows, cfg.threshold, cfg.minStrength, cfg.signalFilter, cfg.riskChoice);
     const evenOdd = pickEvenOdd(rows);
     const matches = pickMatches(rows, cfg.maxGap);
     const apMarket = pickAutopilotMarket(rows, cfg.threshold);
@@ -146,16 +146,17 @@ const AutoTrader = observer(() => {
                     {tab === 'smartscan' && (
                         <div className='pps-ai__body'>
                             <p className='pps-ai__desc'>
-                                Scans once and picks an Over 1 market (digits 0 and 1 low) or an Under 8 market (digits 8 and 9
-                                low). For Over 1 it waits for a 0 or 1 to hit, then an over digit to confirm, then trades. Under 8
-                                works the same with 8 or 9 and an under digit. After a loss it recovers on the same market, and
-                                only then scans again.
+                                Scans once and picks a market. Over 1 / Over 2: digits 0, 1 and 2 are below the threshold, the
+                                trigger digit is 1 and the confirmation is a digit above the barrier. Under 8 / Under 7: digits
+                                8 and 9 (and 7 for Under 7) are below it, the trigger digit is 8 and the confirmation is a digit
+                                below the barrier. A loss is recovered on the same barrier. If a losing digit rises, the bot stops
+                                once it is in profit and the next scan picks another volatility.
                             </p>
                             <div className='pps-ai__preview'>
                                 <span>Best signal now</span>
                                 {best ? (
                                     <b>
-                                        {best.signal.label} · {best.display_name} · {STARS[best.signal.strength]}
+                                        {best.label} · {best.display_name} · {STARS[best.strength]}
                                     </b>
                                 ) : (
                                     <b className='pps-ai__none'>{rows.length ? 'None strong enough yet' : 'Scanning…'}</b>
@@ -166,8 +167,7 @@ const AutoTrader = observer(() => {
                                 <Field label='Martingale ×' value={cfg.martingale} step={0.1} min={1} onChange={v => set('martingale', v)} disabled={running} />
                                 <Field label='Take profit' value={cfg.takeProfit} step={0.5} onChange={v => set('takeProfit', v)} disabled={running} />
                                 <Field label='Stop loss' value={cfg.stopLoss} step={0.5} onChange={v => set('stopLoss', v)} disabled={running} />
-                                <Field label='Runs per scan' value={cfg.runsPerScan} onChange={v => set('runsPerScan', Math.max(1, v))} disabled={running} />
-                                <Field label='Recovery trades' value={cfg.recoverySteps} onChange={v => set('recoverySteps', Math.max(1, v))} disabled={running} />
+                                <Field label='Stop if digits rise %' value={cfg.riseTrigger} step={0.1} min={0.1} onChange={v => set('riseTrigger', Math.max(0.1, v))} disabled={running} />
                                 <Field label='Max trades' value={cfg.maxRuns} onChange={v => set('maxRuns', Math.max(1, v))} disabled={running} />
                                 <Field label='Threshold %' value={cfg.threshold} step={0.1} min={5} onChange={v => set('threshold', v)} disabled={running} />
                             </div>
@@ -178,9 +178,21 @@ const AutoTrader = observer(() => {
                                     disabled={running}
                                     onChange={e => set('signalFilter', e.target.value as TAutoConfig['signalFilter'])}
                                 >
-                                    <option value='both'>Over 1 and Under 8 (best strength)</option>
-                                    <option value='over'>Over 1 only</option>
-                                    <option value='under'>Under 8 only</option>
+                                    <option value='both'>Over and Under markets (best strength)</option>
+                                    <option value='over'>Over markets only (Over 1 / Over 2)</option>
+                                    <option value='under'>Under markets only (Under 8 / Under 7)</option>
+                                </select>
+                            </label>
+                            <label className='pps-ai__select'>
+                                <span>Barrier</span>
+                                <select
+                                    value={cfg.riskChoice}
+                                    disabled={running}
+                                    onChange={e => set('riskChoice', e.target.value as TAutoConfig['riskChoice'])}
+                                >
+                                    <option value='auto'>Auto: stronger signal trades Over 2 / Under 7</option>
+                                    <option value='safer'>Safer: Over 1 / Under 8</option>
+                                    <option value='riskier'>Riskier: Over 2 / Under 7</option>
                                 </select>
                             </label>
                             <label className='pps-ai__select'>
@@ -202,12 +214,13 @@ const AutoTrader = observer(() => {
                                     disabled={running}
                                     onChange={e => set('confirmEvery', e.target.checked)}
                                 />
-                                Wait for hit and confirmation before every trade (slower)
+                                Wait for the trigger digit and confirmation before every trade (slower)
                             </label>
                             <p className='pps-ai__note'>
-                                Recovery: Over 2 after an Over 1 loss, Under 7 after an Under 8 loss. The first recovery stake is
-                                stake × martingale and stays the same until the loss is won back. "Recovery trades" is how many it
-                                may place; set it to 1 for a single recovery trade.
+                                After a loss the stake is multiplied (rounded to cents) and the same barrier is traded until the
+                                bot is back in profit. Take profit and stop loss end the session. 1-second volatilities use
+                                2-tick contracts, the others 1 tick. The market's lowest digit (red bar) must not be one of the
+                                losing digits.
                             </p>
                         </div>
                     )}

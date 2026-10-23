@@ -46,6 +46,13 @@ const scanSymbol = async (symbol: string, display_name: string, ticks: number): 
     }
 };
 
+/** Digit percentages of one market over its last `ticks` ticks, or null if they could not be read. */
+export const fetchDigitPct = async (symbol: string, ticks = 1000): Promise<number[] | null> => {
+    if (!api_base?.api) return null;
+    const row = await scanSymbol(symbol, symbol, ticks);
+    return row ? row.digit_pct : null;
+};
+
 /**
  * One scan of every Volatility index (Jump indices are not scanned). Returns null while the
  * connection is not ready yet. Used by the hook below and by the AI Trade engine.

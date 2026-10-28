@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useStore } from '@/hooks/useStore';
 import { AppClient, digitOf } from './api-client';
 import { DEFAULT_ENGINE, Signal, SignalEngine } from './signal-engine';
 import { AutoTrader, DEFAULT_TRADER, TraderConfig, TraderState } from './auto-trader';
 
 export function useProProfit() {
+  const store: any = useStore();
   const client = useMemo(() => new AppClient(), []);
   const engine = useMemo(() => new SignalEngine(DEFAULT_ENGINE), []);
   const trader = useMemo(() => new AutoTrader(client, engine, { ...DEFAULT_TRADER }), [client, engine]);
@@ -15,6 +17,22 @@ export function useProProfit() {
   const [cfg, setCfgState] = useState<TraderConfig>(trader.cfg);
   const [account, setAccount] = useState({ virtual: false, balance: 0, currency: 'USD' });
   const offs = useRef<(() => void)[]>([]);
+
+  // Feed trades into the site's Summary / Transactions / Journal panels (never let a UI error stop trading)
+  useEffect(() => {
+    trader.reporter = {
+      contract: (c) => {
+        try { store?.transactions?.onBotContractEvent(c); } catch { /* ignore */ }
+        try { store?.summary_card?.onBotContractEvent(c); } catch { /* ignore */ }
+      },
+      log: (msg, kind) => {
+        try {
+          if (kind === 'error') store?.journal?.onError(msg);
+          else store?.journal?.onNotify({ message: msg, className: kind === 'success' ? 'journal__text--success' : '', message_type: kind === 'success' ? 'success' : 'notify', sound: 'silent' });
+        } catch { /* ignore */ }
+      },
+    };
+  }, [store, trader]);
 
   useEffect(() => {
     let alive = true;
@@ -43,7 +61,7 @@ export function useProProfit() {
         } catch { /* skip markets this account cannot access */ }
       }
     };
-    start().catch((e) => setTstate((s) => ({ ...s, status: 'stopped', stopReason: e.message })));
+    start().catch((e) => setTstate((s) => ({ ...s, status: 'stopped', stopReason: e.message, note: e.message })));
 
     const iv = setInterval(() => {
       setReport(engine.report());

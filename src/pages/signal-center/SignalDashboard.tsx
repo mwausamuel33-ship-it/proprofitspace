@@ -1,6 +1,7 @@
 import React from 'react';
 import { useProProfit } from './useProProfit';
-import { TraderConfig } from './auto-trader';
+import { RecoveryChoice, TraderConfig } from './auto-trader';
+import { Candidate, FAMILIES, FAMILY_LABEL, Family } from './signal-engine';
 
 const C = { bg: '#0b1220', card: '#111827', line: '#1f2937', text: '#e5e7eb', dim: '#9ca3af', green: '#22c55e', red: '#ef4444', blue: '#38bdf8', amber: '#f59e0b' };
 const card: React.CSSProperties = { background: C.card, color: C.text, borderRadius: 16, padding: 16, marginBottom: 14, border: `1px solid ${C.line}` };
@@ -19,15 +20,28 @@ const Tile = ({ label, value, color }: { label: string; value: React.ReactNode; 
   </div>
 );
 
+/** One cell per window (50..1000): green = beats fair odds in that window, red = below. */
+const HeatStrip = ({ c, windows }: { c: Candidate; windows: number[] }) => (
+  <div style={{ display: 'flex', gap: 3, margin: '6px 0' }}>
+    {c.zs.map((z, i) => (
+      <div key={i} title={`${windows[i]} ticks: z ${z.toFixed(2)}`}
+        style={{ flex: 1, height: 14, borderRadius: 3, background: z > 0 ? C.green : C.red, opacity: Math.min(1, 0.35 + Math.abs(z) / 3) }} />
+    ))}
+  </div>
+);
+
+const WINDOWS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
+
 export default function SignalDashboard() {
   const p = useProProfit();
-  const { cfg, setCfg, trader, account } = p;
+  const { cfg, setCfg, setFamily, trader, account } = p;
 
   const rows = trader.journal;
   const wins = rows.filter((r) => r.profit > 0).length;
   const losses = rows.length - wins;
   const winRate = rows.length ? Math.round((wins / rows.length) * 100) : 0;
   const pl = trader.sessionProfit;
+  const stateColor = trader.status === 'trading' ? C.green : trader.status === 'stopped' ? C.red : C.blue;
 
   const Num = ({ label, k, hint }: { label: string; k: keyof TraderConfig; hint?: string }) => (
     <label style={{ fontSize: 12, color: C.dim }}>
@@ -38,7 +52,56 @@ export default function SignalDashboard() {
     </label>
   );
 
-  const stateColor = trader.status === 'trading' ? C.green : trader.status === 'stopped' ? C.red : C.blue;
+  const FamilyCard = ({ f }: { f: Family }) => {
+    const fc = cfg.families[f];
+    const board = p.boards[f];
+    const famRows = rows.filter((r) => r.family === f);
+    const famPl = Math.round(famRows.reduce((a, r) => a + r.profit, 0) * 100) / 100;
+    return (
+      <div style={{ ...card, borderColor: fc.enabled ? C.green : C.line }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+          <div style={{ fontSize: 16, fontWeight: 800 }}>{FAMILY_LABEL[f]}</div>
+          <label style={{ fontWeight: 700 }}>
+            <input type="checkbox" checked={fc.enabled} onChange={(e) => setFamily(f, { enabled: e.target.checked })} /> Auto-run this strategy
+          </label>
+        </div>
+        <div style={{ fontSize: 12, color: C.dim, margin: '4px 0 10px' }}>
+          Trades only when ALL {WINDOWS.length} windows (50 to 1000 ticks) beat fair odds. Session: {famRows.length} trades, P/L {famPl}.
+        </div>
+
+        {board.length === 0 && <div style={{ color: C.dim }}>Analysing markets...</div>}
+        {board.map((c, i) => (
+          <div key={i} style={{ padding: '6px 0', borderTop: `1px solid ${C.line}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <b>{c.market} - {c.label}</b>
+              <span style={{ color: c.aligned === WINDOWS.length ? C.green : C.dim, fontWeight: 700 }}>
+                {c.aligned}/{WINDOWS.length} windows - {c.confidence}%
+              </span>
+            </div>
+            <HeatStrip c={c} windows={WINDOWS} />
+          </div>
+        ))}
+
+        <div style={{ ...grid(120), marginTop: 10 }}>
+          <label style={{ fontSize: 12, color: C.dim }}>Stake
+            <input style={input} type="number" step="any" defaultValue={fc.stake}
+              onChange={(e) => { const v = parseFloat(e.target.value); if (!Number.isNaN(v)) setFamily(f, { stake: v }); }} />
+          </label>
+          <label style={{ fontSize: 12, color: C.dim }}>Min confidence %
+            <input style={input} type="number" step="any" defaultValue={fc.minConfidence}
+              onChange={(e) => { const v = parseFloat(e.target.value); if (!Number.isNaN(v)) setFamily(f, { minConfidence: v }); }} />
+          </label>
+          <label style={{ fontSize: 12, color: C.dim }}>Recovery contract
+            <select style={input} value={fc.recovery} onChange={(e) => setFamily(f, { recovery: e.target.value as RecoveryChoice })}>
+              <option value="over2">Over 2</option>
+              <option value="over3">Over 3</option>
+              <option value="same">Same contract</option>
+            </select>
+          </label>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: 12, fontSize: 14 }}>
@@ -73,53 +136,38 @@ export default function SignalDashboard() {
         </div>
       </div>
 
+      {FAMILIES.map((f) => <FamilyCard key={f} f={f} />)}
+
       <div style={card}>
-        <div style={h}>Execution and risk</div>
-        <div style={grid(120)}>
-          <Num label="Stake" k="initialStake" />
+        <div style={h}>Risk and recovery (shared by all strategies)</div>
+        <div style={grid(130)}>
           <Num label="Take profit" k="takeProfit" />
           <Num label="Stop loss" k="stopLoss" />
           <Num label="Max stake" k="maxStake" />
-          <Num label="Min confidence %" k="minConfidence" />
+          <Num label="Max recovery steps" k="maxSteps" />
           <Num label="Cooldown (ms)" k="cooldownMs" />
-        </div>
-      </div>
-
-      <div style={card}>
-        <div style={h}>Recovery</div>
-        <div style={grid(130)}>
           <label style={{ fontSize: 12, color: C.dim }}>Recovery mode
             <select style={input} value={cfg.recoveryMode} onChange={(e) => setCfg({ recoveryMode: e.target.value as TraderConfig['recoveryMode'] })}>
               <option value="payout">Payout-based (exact)</option>
               <option value="multiplier">Multiplier</option>
             </select>
           </label>
-          <label style={{ fontSize: 12, color: C.dim }}>Recovery contract
-            <select style={input} value={cfg.recoveryBarrier} onChange={(e) => setCfg({ recoveryBarrier: Number(e.target.value) as 2 | 3 })}>
-              <option value={2}>Over 2</option>
-              <option value={3}>Over 3</option>
-            </select>
-          </label>
-          <Num label="Max recovery steps" k="maxSteps" />
           <Num label="Recovery profit target" k="recoveryTarget" hint="payout mode" />
           <Num label="Multiplier" k="multiplier" hint="multiplier mode" />
           <label style={{ fontSize: 12, color: C.dim, alignSelf: 'end', paddingBottom: 10 }}>
-            <input type="checkbox" checked={cfg.waitRecoveryDigit} onChange={(e) => setCfg({ waitRecoveryDigit: e.target.checked })} /> Wait for digit above barrier
+            <input type="checkbox" checked={cfg.waitRecoveryDigit} onChange={(e) => setCfg({ waitRecoveryDigit: e.target.checked })} /> Wait for digit above barrier (Over recovery)
           </label>
         </div>
       </div>
 
       <div style={card}>
         <div style={h}>Live signals</div>
-        {p.signals.length === 0 && <div style={{ color: C.dim }}>Scanning markets...</div>}
+        {p.signals.length === 0 && <div style={{ color: C.dim }}>Waiting for a signal where every window agrees...</div>}
         {p.signals.slice(0, 8).map((s) => (
           <div key={s.id} style={{ borderTop: `1px solid ${C.line}`, padding: '8px 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <b>{s.market} - {s.label}</b>
+              <b>{FAMILY_LABEL[s.family]}: {s.market} - {s.label}</b>
               <span style={{ color: s.confidence >= 95 ? C.green : C.blue, fontWeight: 700 }}>{s.confidence}%</span>
-            </div>
-            <div style={{ height: 4, background: C.bg, borderRadius: 4, margin: '4px 0' }}>
-              <div style={{ height: 4, borderRadius: 4, width: `${s.confidence}%`, background: s.confidence >= 95 ? C.green : C.blue }} />
             </div>
             <div style={{ fontSize: 12, color: C.dim }}>{new Date(s.ts).toLocaleTimeString()} - {s.reasons.join(' | ')}</div>
           </div>

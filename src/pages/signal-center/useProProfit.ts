@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '@/hooks/useStore';
 import { AppClient, digitOf } from './api-client';
-import { DEFAULT_ENGINE, Signal, SignalEngine } from './signal-engine';
-import { AutoTrader, DEFAULT_TRADER, TraderConfig, TraderState } from './auto-trader';
+import { Candidate, DEFAULT_ENGINE, Family, FAMILIES, Signal, SignalEngine } from './signal-engine';
+import { AutoTrader, DEFAULT_TRADER, FamilyCfg, TraderConfig, TraderState } from './auto-trader';
 
 export function useProProfit() {
   const store: any = useStore();
@@ -13,6 +13,7 @@ export function useProProfit() {
   const [status, setStatus] = useState<'connecting' | 'open' | 'closed'>('closed');
   const [signals, setSignals] = useState<Signal[]>([]);
   const [report, setReport] = useState(engine.report());
+  const [boards, setBoards] = useState<Record<Family, Candidate[]>>({ overunder: [], evenodd: [], matchesdiffers: [] });
   const [tstate, setTstate] = useState<TraderState>(trader.state);
   const [cfg, setCfgState] = useState<TraderConfig>(trader.cfg);
   const [account, setAccount] = useState({ virtual: false, balance: 0, currency: 'USD' });
@@ -48,7 +49,7 @@ export function useProProfit() {
       for (const m of DEFAULT_ENGINE.markets) {
         if (!alive) return;
         try {
-          const h = await client.history(m, 500);
+          const h = await client.history(m, 1000);
           engine.bootstrap(m, h.prices.map((p) => digitOf(p, h.pip)));
           const off = await client.subscribeTicks(m, (t) => {
             const fresh = engine.ingest(m, digitOf(t.quote, t.pip_size ?? h.pip));
@@ -65,6 +66,7 @@ export function useProProfit() {
 
     const iv = setInterval(() => {
       setReport(engine.report());
+      setBoards(Object.fromEntries(FAMILIES.map((f) => [f, engine.leaderboard(f, 3)])) as Record<Family, Candidate[]>);
       setAccount({ virtual: client.isVirtual, balance: client.balance, currency: client.currency });
     }, 1500);
     return () => { alive = false; clearInterval(iv); offs.current.forEach((f) => f()); offs.current = []; client.close(); };
@@ -75,5 +77,10 @@ export function useProProfit() {
     setCfgState(trader.cfg);
   }, [trader]);
 
-  return { status, signals, report, trader: tstate, cfg, setCfg, account, kill: () => trader.kill(), reset: () => trader.reset() };
+  const setFamily = useCallback((f: Family, patch: Partial<FamilyCfg>) => {
+    trader.cfg = { ...trader.cfg, families: { ...trader.cfg.families, [f]: { ...trader.cfg.families[f], ...patch } } };
+    setCfgState(trader.cfg);
+  }, [trader]);
+
+  return { status, signals, report, boards, setFamily, trader: tstate, cfg, setCfg, account, kill: () => trader.kill(), reset: () => trader.reset() };
 }

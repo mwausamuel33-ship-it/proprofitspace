@@ -1,34 +1,46 @@
 import { AppClient } from './api-client';
-import { Signal, SignalEngine } from './signal-engine';
+import { Family, Signal, SignalEngine } from './signal-engine';
 
 export type Mode = 'alert' | 'shadow' | 'auto';
 export type RecoveryMode = 'payout' | 'multiplier';
+export type RecoveryChoice = 'over2' | 'over3' | 'same';
+
+/** Each strategy family is switched on/off and tuned separately. */
+export interface FamilyCfg {
+  enabled: boolean;
+  stake: number;
+  minConfidence: number;
+  recovery: RecoveryChoice;    // over2 / over3 = recover with that Over contract, same = repeat the same contract
+}
 
 export interface TraderConfig {
   mode: Mode;
   allowReal: boolean;
-  initialStake: number;
+  families: Record<Family, FamilyCfg>;
   recoveryMode: RecoveryMode;  // payout = exact loss/payout maths, multiplier = fixed multiplier
-  recoveryBarrier: 2 | 3;      // recovery = DIGITOVER <barrier>
   recoveryTarget: number;      // extra profit on top of recovered loss (payout mode)
   multiplier: number;          // stake multiplier (multiplier mode)
-  waitRecoveryDigit: boolean;  // wait for last digit above the recovery barrier
+  waitRecoveryDigit: boolean;  // wait for last digit above the barrier (Over recoveries)
   takeProfit: number;
   stopLoss: number;
   maxSteps: number;
   maxStake: number;
   cooldownMs: number;
-  minConfidence: number;
 }
 
 export const DEFAULT_TRADER: TraderConfig = {
-  mode: 'alert', allowReal: false, initialStake: 1, recoveryMode: 'payout', recoveryBarrier: 3,
-  recoveryTarget: 0, multiplier: 2.1, waitRecoveryDigit: true, takeProfit: 10, stopLoss: 30,
-  maxSteps: 6, maxStake: 50, cooldownMs: 5000, minConfidence: 90,
+  mode: 'alert', allowReal: false,
+  families: {
+    overunder: { enabled: true, stake: 1, minConfidence: 90, recovery: 'over3' },
+    evenodd: { enabled: false, stake: 1, minConfidence: 90, recovery: 'over3' },
+    matchesdiffers: { enabled: false, stake: 1, minConfidence: 92, recovery: 'over3' },
+  },
+  recoveryMode: 'payout', recoveryTarget: 0, multiplier: 2.1, waitRecoveryDigit: true,
+  takeProfit: 10, stopLoss: 30, maxSteps: 6, maxStake: 50, cooldownMs: 5000,
 };
 
 export interface JournalRow {
-  ts: number; market: string; label: string; stake: number; profit: number; step: number;
+  ts: number; family: Family; market: string; label: string; stake: number; profit: number; step: number;
 }
 export interface TraderState {
   status: 'idle' | 'trading' | 'stopped';
@@ -73,7 +85,9 @@ export class AutoTrader {
   async onSignal(s: Signal) {
     const c = this.cfg;
     if (c.mode !== 'auto' || this.locked || this.killed || this.state.status === 'stopped') return;
-    if (Date.now() > s.expiresAt || s.confidence < c.minConfidence || Date.now() < this.cooldownUntil) return;
+    const fam = c.families[s.family];
+    if (!fam.enabled || s.confidence < fam.minConfidence) return;
+    if (Date.now() > s.expiresAt || Date.now() < this.cooldownUntil) return;
     if (!this.client.isVirtual && !c.allowReal) { this.stop('Real account blocked - enable allowReal'); return; }
     this.locked = true;
     this.state.status = 'trading'; this.emit();
@@ -99,8 +113,9 @@ export class AutoTrader {
 
   private async cycle(sig: Signal) {
     const c = this.cfg;
-    let kind = sig.contract, barrier = sig.barrier, label = sig.label;
-    let stake = c.initialStake, cycleLoss = 0, step = 0;
+    const fam = c.families[sig.family];
+    let kind: string = sig.contract, barrier = sig.barrier, label = sig.label;
+    let stake = fam.stake, cycleLoss = 0, step = 0;
     const market = sig.market;
     this.reporter.log(`Signal ${market} ${label} (${sig.confidence}% confidence)`, 'info');
 
@@ -109,7 +124,7 @@ export class AutoTrader {
       this.note(step === 0 ? `Trading ${label} on ${market} - stake ${stake}` : `Recovering step ${step}/${c.maxSteps} on ${market} - stake ${stake}`);
       const res = await this.trade(market, kind, barrier, stake, label);
       this.state.sessionProfit = r2(this.state.sessionProfit + res.profit);
-      this.state.journal.push({ ts: Date.now(), market, label, stake, profit: res.profit, step });
+      this.state.journal.push({ ts: Date.now(), family: sig.family, market, label, stake, profit: res.profit, step });
       this.state.step = step; this.emit();
       this.reporter.log(
         `${res.profit > 0 ? 'WIN' : 'LOSS'} ${market} ${label} stake ${stake} -> ${res.profit} (session ${this.state.sessionProfit})`,
@@ -124,7 +139,8 @@ export class AutoTrader {
       step++;
       if (step > c.maxSteps) return this.stop('Max recovery steps reached');
 
-      kind = 'DIGITOVER'; barrier = c.recoveryBarrier; label = `Recovery Over ${barrier}`;
+      if (fam.recovery === 'same') { kind = sig.contract; barrier = sig.barrier; label = `Recovery ${sig.label}`; }
+      else { kind = 'DIGITOVER'; barrier = fam.recovery === 'over2' ? 2 : 3; label = `Recovery Over ${barrier}`; }
       if (c.recoveryMode === 'multiplier') {
         stake = r2(Math.max(0.35, stake * c.multiplier));
       } else {
@@ -132,8 +148,8 @@ export class AutoTrader {
         stake = r2(Math.max(0.35, (cycleLoss + c.recoveryTarget) / rate));
       }
       if (stake > c.maxStake) return this.stop('Max stake reached');
-      this.reporter.log(`Recovery step ${step}: Over ${barrier} on ${market}, stake ${stake} (loss to recover ${cycleLoss})`, 'info');
-      if (c.waitRecoveryDigit) {
+      this.reporter.log(`Recovery step ${step}: ${label} on ${market}, stake ${stake} (loss to recover ${cycleLoss})`, 'info');
+      if (c.waitRecoveryDigit && kind === 'DIGITOVER' && barrier !== undefined) {
         this.note(`Recovery step ${step}: waiting for a digit above ${barrier} on ${market}`);
         await this.waitDigitAbove(market, barrier, 30000);
       }

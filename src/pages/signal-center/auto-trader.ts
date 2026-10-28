@@ -130,13 +130,11 @@ export class AutoTrader {
   }
 
   private async trade(market: string, kind: string, barrier: number | undefined, stake: number): Promise<{ profit: number }> {
-    const buy = await this.client.send({
-      buy: 1, price: stake,
-      parameters: {
-        amount: stake, basis: 'stake', contract_type: kind, currency: this.client.currency,
-        duration: 1, duration_unit: 't', symbol: market, ...(barrier !== undefined && { barrier: String(barrier) }),
-      },
+    const prop = await this.client.send({
+      proposal: 1, amount: stake, basis: 'stake', contract_type: kind, currency: this.client.currency,
+      duration: 1, duration_unit: 't', symbol: market, ...(barrier !== undefined && { barrier: String(barrier) }),
     });
+    const buy = await this.client.send({ buy: prop.proposal.id, price: prop.proposal.ask_price });
     const id = buy.buy.contract_id;
     const t0 = Date.now();
     while (Date.now() - t0 < 30000) {

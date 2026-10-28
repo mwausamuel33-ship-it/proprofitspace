@@ -6,7 +6,11 @@ import { api_base } from '@/external/bot-skeleton';
 import { isDemoAccount } from '@/utils/account-helpers';
 
 const getApi = () => (api_base as any)?.api as any;
-const errMsg = (e: any) => e?.error?.message ?? e?.message ?? 'API error';
+const errMsg = (e: any) => {
+  const m = e?.error?.message ?? e?.message ?? 'API error';
+  const d = e?.error?.details;
+  return d ? `${m} ${JSON.stringify(d)}` : m;
+};
 
 export const digitOf = (price: number, pip: number) => Number(price.toFixed(pip).slice(-1));
 

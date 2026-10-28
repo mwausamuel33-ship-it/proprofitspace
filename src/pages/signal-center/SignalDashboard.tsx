@@ -11,7 +11,7 @@ export default function SignalDashboard() {
   const p = useProProfit();
   const { cfg, setCfg, trader, account } = p;
   const num = (k: keyof typeof cfg) => (
-    <input type="number" value={cfg[k] as number} style={{ width: 70, marginRight: 8 }}
+    <input type="number" step="any" defaultValue={cfg[k] as number} style={{ width: 70, marginRight: 8 }}
       onChange={(e) => setCfg({ [k]: Number(e.target.value) } as any)} />
   );
 

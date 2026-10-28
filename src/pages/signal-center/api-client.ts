@@ -33,12 +33,16 @@ export class AppClient {
 
   /** Re-read account type/balance (call before trading: user may have switched account). */
   async refresh() {
-    try { this.isVirtual = !!(isDemoAccount as any)(); } catch { this.isVirtual = false; }
+    let loginid = '';
     try {
       const b = await this.send({ balance: 1 });
       this.currency = b.balance.currency || this.currency;
       this.balance = b.balance.balance;
+      loginid = b.balance.loginid || '';
     } catch { /* keep previous */ }
+    if (!loginid) loginid = (api_base as any)?.account_id || '';
+    // unknown account => treated as REAL (safe default)
+    this.isVirtual = loginid ? isDemoAccount(loginid) : false;
   }
 
   async connect() {

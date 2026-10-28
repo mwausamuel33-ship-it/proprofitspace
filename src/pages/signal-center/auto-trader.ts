@@ -122,7 +122,7 @@ export class AutoTrader {
   private async profitRate(market: string, kind: string, barrier: number | undefined, stake: number) {
     const p = await this.client.send({
       proposal: 1, amount: stake, basis: 'stake', contract_type: kind, currency: this.client.currency,
-      duration: 1, duration_unit: 't', symbol: market, ...(barrier !== undefined && { barrier: String(barrier) }),
+      duration: 1, duration_unit: 't', underlying_symbol: market, ...(barrier !== undefined && { barrier: String(barrier) }),
     });
     const rate = p.proposal.payout / p.proposal.ask_price - 1;
     if (!(rate > 0)) throw new Error('Could not read payout rate');
@@ -132,7 +132,7 @@ export class AutoTrader {
   private async trade(market: string, kind: string, barrier: number | undefined, stake: number): Promise<{ profit: number }> {
     const prop = await this.client.send({
       proposal: 1, amount: stake, basis: 'stake', contract_type: kind, currency: this.client.currency,
-      duration: 1, duration_unit: 't', symbol: market, ...(barrier !== undefined && { barrier: String(barrier) }),
+      duration: 1, duration_unit: 't', underlying_symbol: market, ...(barrier !== undefined && { barrier: String(barrier) }),
     });
     const buy = await this.client.send({ buy: prop.proposal.id, price: prop.proposal.ask_price });
     const id = buy.buy.contract_id;

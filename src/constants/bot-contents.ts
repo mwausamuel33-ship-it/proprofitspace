@@ -22,6 +22,7 @@ export const DBOT_TABS: TDashboardTabIndex = Object.freeze({
     ENTRY_SCANNER: 7,
     AI_ASSISTANT: 8,
     TUTORIAL: 9,
+    SIGNAL_CENTER: 10,
 });
 
 export const MAX_STRATEGIES = 10;
@@ -37,6 +38,7 @@ export const TAB_IDS = [
     'id-entry-scanner',
     'id-ai-assistant',
     'id-tutorials',
+    'id-signal-center',
 ];
 
 export const DEBOUNCE_INTERVAL_TIME = 500;

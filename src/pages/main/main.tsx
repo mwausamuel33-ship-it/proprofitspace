@@ -56,6 +56,7 @@ const TradingBots = lazy(() => import('../trading-bots'));
 const AnalysisTool = lazy(() => import('../analysis-tool'));
 const SignalScanner = lazy(() => import('../signal-scanner'));
 const BulkTrader = lazy(() => import('../bulk-trader'));
+const SignalCenter = lazy(() => import('../signal-center'));
 const EntryScanner = lazy(() => import('../entry-scanner'));
 const AIAssistant = lazy(() => import('@/components/ai-assistant'));
 
@@ -577,6 +578,25 @@ const AppWrapper = observer(() => {
                                         <Tutorial handleTabChange={handleTabChange} />
                                     </Suspense>
                                 </div>
+                            </div>
+                            <div
+                                label={
+                                    <>
+                                        <LabelPairedCircleDotCaptionFillIcon
+                                            height='24px'
+                                            width='24px'
+                                            fill='var(--text-general)'
+                                        />
+                                        <Localize i18n_default_text='Signal Center' />
+                                    </>
+                                }
+                                id='id-signal-center'
+                            >
+                                <Suspense
+                                    fallback={<ChunkLoader message={localize('Please wait, loading signal center...')} />}
+                                >
+                                    <SignalCenter />
+                                </Suspense>
                             </div>
                         </Tabs>
                         {!isDesktop && right_tab_shadow && <span className='tabs-shadow tabs-shadow--right' />}{' '}

@@ -3,40 +3,45 @@ import { Family, Signal, SignalEngine } from './signal-engine';
 
 export type Mode = 'alert' | 'shadow' | 'auto';
 export type RecoveryMode = 'payout' | 'multiplier';
-export type RecoveryChoice = 'over2' | 'over3' | 'same';
+export type RecoveryChoice = 'smart' | 'over2' | 'over3' | 'same';
 
 /** Each strategy family is switched on/off and tuned separately. */
 export interface FamilyCfg {
   enabled: boolean;
   stake: number;
   minConfidence: number;
-  recovery: RecoveryChoice;    // over2 / over3 = recover with that Over contract, same = repeat the same contract
+  recovery: RecoveryChoice;    // smart = safest strong contract (Over 1-3 / Under 6-9) that fits max stake
 }
 
 export interface TraderConfig {
   mode: Mode;
   allowReal: boolean;
   families: Record<Family, FamilyCfg>;
+  runsPerSignal: number;       // trades taken while a signal stays strong
+  stayConfidence: number;      // signal must stay at/above this to keep trading it
   recoveryMode: RecoveryMode;  // payout = exact loss/payout maths, multiplier = fixed multiplier
-  recoveryTarget: number;      // extra profit on top of recovered loss (payout mode)
-  multiplier: number;          // stake multiplier (multiplier mode)
-  waitRecoveryDigit: boolean;  // wait for last digit above the barrier (Over recoveries)
+  recoveryStages: number;      // recover the loss in 1, 2 or 3 wins (smaller, safer stakes)
+  recoveryTarget: number;      // extra profit on top of the recovered loss
+  multiplier: number;
+  waitRecoveryDigit: boolean;  // wait for a favourable last digit before a recovery trade
   takeProfit: number;
   stopLoss: number;
   maxSteps: number;
   maxStake: number;
   cooldownMs: number;
+  scanMs: number;              // how long to collect signals before picking the best market
 }
 
 export const DEFAULT_TRADER: TraderConfig = {
   mode: 'alert', allowReal: false,
   families: {
-    overunder: { enabled: true, stake: 1, minConfidence: 90, recovery: 'over3' },
-    evenodd: { enabled: false, stake: 1, minConfidence: 90, recovery: 'over3' },
-    matchesdiffers: { enabled: false, stake: 1, minConfidence: 92, recovery: 'over3' },
+    overunder: { enabled: true, stake: 1, minConfidence: 90, recovery: 'smart' },
+    evenodd: { enabled: false, stake: 1, minConfidence: 90, recovery: 'smart' },
+    matchesdiffers: { enabled: false, stake: 1, minConfidence: 92, recovery: 'smart' },
   },
-  recoveryMode: 'payout', recoveryTarget: 0, multiplier: 2.1, waitRecoveryDigit: true,
-  takeProfit: 10, stopLoss: 30, maxSteps: 6, maxStake: 50, cooldownMs: 5000,
+  runsPerSignal: 3, stayConfidence: 80,
+  recoveryMode: 'payout', recoveryStages: 1, recoveryTarget: 0, multiplier: 2.1, waitRecoveryDigit: true,
+  takeProfit: 10, stopLoss: 30, maxSteps: 6, maxStake: 50, cooldownMs: 5000, scanMs: 1500,
 };
 
 export interface JournalRow {
@@ -59,6 +64,7 @@ export interface Reporter {
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const fresh = (): TraderState => ({ status: 'idle', note: 'Waiting for a signal', sessionProfit: 0, step: 0, journal: [] });
+type Pick = { kind: string; barrier?: number; label: string };
 
 export class AutoTrader {
   state: TraderState = fresh();
@@ -66,6 +72,8 @@ export class AutoTrader {
   private locked = false;
   private cooldownUntil = 0;
   private killed = false;
+  private queue: Signal[] = [];
+  private scanTimer?: ReturnType<typeof setTimeout>;
   onUpdate: (s: TraderState) => void = () => {};
 
   constructor(private client: AppClient, private engine: SignalEngine, public cfg: TraderConfig) {}
@@ -78,23 +86,36 @@ export class AutoTrader {
     this.emit();
   }
 
-  kill() { this.killed = true; this.stop('Kill switch pressed'); }
-  reset() { this.killed = false; this.locked = false; this.state = fresh(); this.emit(); }
+  kill() { this.killed = true; this.queue = []; this.stop('Kill switch pressed'); }
+  reset() { this.killed = false; this.locked = false; this.queue = []; this.state = fresh(); this.emit(); }
 
-  /** Call for every fresh signal. Only acts in auto mode. */
-  async onSignal(s: Signal) {
+  /** Collects signals for a short window, then trades the strongest one (best market). */
+  onSignal(s: Signal) {
     const c = this.cfg;
     if (c.mode !== 'auto' || this.locked || this.killed || this.state.status === 'stopped') return;
     const fam = c.families[s.family];
-    if (!fam.enabled || s.confidence < fam.minConfidence) return;
-    if (Date.now() > s.expiresAt || Date.now() < this.cooldownUntil) return;
+    if (!fam.enabled || s.confidence < fam.minConfidence || Date.now() < this.cooldownUntil) return;
+    this.queue.push(s);
+    if (!this.scanTimer) {
+      this.note('Scanning markets for the best signal...');
+      this.scanTimer = setTimeout(() => { this.scanTimer = undefined; this.pickBest(); }, c.scanMs);
+    }
+  }
+
+  private async pickBest() {
+    const now = Date.now();
+    const valid = this.queue.filter((s) => s.expiresAt > now);
+    this.queue = [];
+    if (!valid.length || this.locked || this.killed || this.state.status === 'stopped') { this.note('Waiting for a signal'); return; }
+    const best = valid.sort((a, b) => b.confidence - a.confidence)[0];
+    const c = this.cfg;
     if (!this.client.isVirtual && !c.allowReal) { this.stop('Real account blocked - enable allowReal'); return; }
     this.locked = true;
     this.state.status = 'trading'; this.emit();
     try {
       await this.client.refresh(); // account may have been switched
       if (!this.client.isVirtual && !c.allowReal) { this.stop('Real account blocked - enable allowReal'); return; }
-      await this.cycle(s);
+      await this.cycle(best);
     }
     catch (e) { this.stop(`Error: ${(e as Error).message}`); }
     finally {
@@ -111,57 +132,102 @@ export class AutoTrader {
     return null;
   }
 
-  private async cycle(sig: Signal) {
-    const c = this.cfg;
-    const fam = c.families[sig.family];
-    let kind: string = sig.contract, barrier = sig.barrier, label = sig.label;
-    let stake = fam.stake, cycleLoss = 0, step = 0;
+  /** One trade: place it, record it, report it, check take-profit / stop-loss. */
+  private async exec(sig: Signal, pick: Pick, stake: number, step: number): Promise<{ profit: number; stopped: boolean }> {
     const market = sig.market;
-    this.reporter.log(`Signal ${market} ${label} (${sig.confidence}% confidence)`, 'info');
+    this.state.step = step;
+    this.note(step === 0 ? `Trading ${pick.label} on ${market} - stake ${stake}` : `Recovery step ${step}/${this.cfg.maxSteps}: ${pick.label} on ${market} - stake ${stake}`);
+    const res = await this.trade(market, pick.kind, pick.barrier, stake, pick.label);
+    this.state.sessionProfit = r2(this.state.sessionProfit + res.profit);
+    this.state.journal.push({ ts: Date.now(), family: sig.family, market, label: pick.label, stake, profit: res.profit, step });
+    this.emit();
+    this.reporter.log(`${res.profit > 0 ? 'WIN' : 'LOSS'} ${market} ${pick.label} stake ${stake} -> ${res.profit} (session ${this.state.sessionProfit})`, res.profit > 0 ? 'success' : 'error');
+    const lim = this.limitHit();
+    if (lim) { this.stop(lim); return { profit: res.profit, stopped: true }; }
+    return { profit: res.profit, stopped: false };
+  }
+
+  private async cycle(sig: Signal) {
+    const c = this.cfg, fam = c.families[sig.family];
+    let pick: Pick = { kind: sig.contract, barrier: sig.barrier, label: sig.label };
+    let runs = 0;
+    this.reporter.log(`Signal ${sig.market} ${sig.label} (${sig.confidence}% confidence)`, 'info');
 
     for (;;) {
       if (this.killed) return;
-      this.note(step === 0 ? `Trading ${label} on ${market} - stake ${stake}` : `Recovering step ${step}/${c.maxSteps} on ${market} - stake ${stake}`);
-      const res = await this.trade(market, kind, barrier, stake, label);
-      this.state.sessionProfit = r2(this.state.sessionProfit + res.profit);
-      this.state.journal.push({ ts: Date.now(), family: sig.family, market, label, stake, profit: res.profit, step });
-      this.state.step = step; this.emit();
-      this.reporter.log(
-        `${res.profit > 0 ? 'WIN' : 'LOSS'} ${market} ${label} stake ${stake} -> ${res.profit} (session ${this.state.sessionProfit})`,
-        res.profit > 0 ? 'success' : 'error',
-      );
-
-      const lim = this.limitHit();
-      if (lim) return this.stop(lim);
-      if (res.profit > 0) return; // win (normal or recovery) -> rescan for best market
-
-      cycleLoss = r2(cycleLoss + stake);
-      step++;
-      if (step > c.maxSteps) return this.stop('Max recovery steps reached');
-
-      if (fam.recovery === 'same') { kind = sig.contract; barrier = sig.barrier; label = `Recovery ${sig.label}`; }
-      else { kind = 'DIGITOVER'; barrier = fam.recovery === 'over2' ? 2 : 3; label = `Recovery Over ${barrier}`; }
-      if (c.recoveryMode === 'multiplier') {
-        stake = r2(Math.max(0.35, stake * c.multiplier));
-      } else {
-        const rate = await this.profitRate(market, kind, barrier, Math.max(0.35, cycleLoss));
-        stake = r2(Math.max(0.35, (cycleLoss + c.recoveryTarget) / rate));
-      }
-      if (stake > c.maxStake) return this.stop('Max stake reached');
-      this.reporter.log(`Recovery step ${step}: ${label} on ${market}, stake ${stake} (loss to recover ${cycleLoss})`, 'info');
-      if (c.waitRecoveryDigit && kind === 'DIGITOVER' && barrier !== undefined) {
-        this.note(`Recovery step ${step}: waiting for a digit above ${barrier} on ${market}`);
-        await this.waitDigitAbove(market, barrier, 30000);
-      }
+      const res = await this.exec(sig, pick, fam.stake, 0);
+      if (res.stopped) return;
+      if (res.profit <= 0) { await this.recover(sig, fam.stake); return; }   // loss -> recover, then rescan
+      runs++;
+      if (runs >= c.runsPerSignal) { this.reporter.log(`${runs} runs done on ${sig.market} - rescanning markets`, 'info'); return; }
+      const next = this.engine.check(sig, c.stayConfidence);
+      if (!next) { this.reporter.log(`Signal on ${sig.market} weakened - rescanning markets`, 'info'); return; }
+      pick = { kind: next.contract, barrier: next.barrier, label: sig.family === 'overunder' ? `${next.label} (bias ${sig.trigger.label})` : next.label };
     }
   }
 
-  private waitDigitAbove(market: string, barrier: number, timeoutMs: number) {
+  /** Recover the loss with less risky contracts, in 1-3 stages, until the loss is won back. */
+  private async recover(sig: Signal, firstLoss: number) {
+    const c = this.cfg, fam = c.families[sig.family];
+    let remaining = r2(firstLoss), stagesLeft = Math.max(1, Math.round(c.recoveryStages)), step = 1, lastStake = firstLoss;
+    this.reporter.log(`Loss on ${sig.market}: recovering ${remaining} in ${stagesLeft} stage(s) with safer contracts`, 'info');
+
+    while (remaining > 0.009) {
+      if (this.killed) return;
+      if (step > c.maxSteps) return this.stop('Max recovery steps reached');
+      const target = r2(remaining / stagesLeft + (stagesLeft === 1 ? c.recoveryTarget : 0));
+      const ch = await this.chooseRecovery(sig, fam.recovery, target, lastStake);
+      if (!ch) return this.stop('No safe recovery contract fits the max stake');
+      this.reporter.log(`Recovery step ${step}: ${ch.label} on ${sig.market}, stake ${ch.stake} (to recover ${remaining}, target ${target})`, 'info');
+      if (c.waitRecoveryDigit) { this.note(`Recovery step ${step}: waiting for a favourable digit on ${sig.market}`); await this.waitDigit(sig.market, ch.kind, ch.barrier, 30000); }
+      const res = await this.exec(sig, ch, ch.stake, step);
+      if (res.stopped) return;
+      lastStake = ch.stake;
+      if (res.profit > 0) {
+        remaining = r2(remaining - res.profit);
+        stagesLeft = Math.max(1, stagesLeft - 1);
+        if (remaining > 0.009) this.reporter.log(`Recovery win: ${remaining} still to recover`, 'info');
+      } else {
+        remaining = r2(remaining + ch.stake);
+      }
+      step++;
+    }
+    this.reporter.log(`Loss recovered on ${sig.market} - rescanning markets`, 'success');
+  }
+
+  /** Pick the safest strong contract on this market whose required stake fits the limits. */
+  private async chooseRecovery(sig: Signal, choice: RecoveryChoice, target: number, lastStake: number): Promise<(Pick & { stake: number }) | null> {
+    const c = this.cfg;
+    let opts: Pick[];
+    if (choice === 'over2') opts = [{ kind: 'DIGITOVER', barrier: 2, label: 'Recovery Over 2' }];
+    else if (choice === 'over3') opts = [{ kind: 'DIGITOVER', barrier: 3, label: 'Recovery Over 3' }];
+    else if (choice === 'same') opts = [{ kind: sig.contract, barrier: sig.barrier, label: `Recovery ${sig.label}` }];
+    else {
+      opts = this.engine.recoveryOptions(sig.market).map((x) => ({ kind: x.contract, barrier: x.barrier, label: `Recovery ${x.label}` }));
+      if (!opts.length) opts = [{ kind: 'DIGITOVER', barrier: 3, label: 'Recovery Over 3' }];
+    }
+    for (const o of opts) {
+      try {
+        let stake: number;
+        if (c.recoveryMode === 'multiplier') stake = r2(Math.max(0.35, lastStake * c.multiplier));
+        else {
+          const rate = await this.profitRate(sig.market, o.kind, o.barrier, Math.max(0.35, target));
+          stake = r2(Math.max(0.35, target / rate));
+        }
+        if (stake <= c.maxStake) return { ...o, stake };
+      } catch { /* try the next contract */ }
+    }
+    return null;
+  }
+
+  private waitDigit(market: string, kind: string, barrier: number | undefined, timeoutMs: number) {
+    if (barrier === undefined || (kind !== 'DIGITOVER' && kind !== 'DIGITUNDER')) return Promise.resolve();
     return new Promise<void>((res) => {
       const t0 = Date.now();
       const iv = setInterval(() => {
         const d = this.engine.lastDigit(market);
-        if ((d !== undefined && d > barrier) || Date.now() - t0 > timeoutMs || this.killed) { clearInterval(iv); res(); }
+        const ok = d !== undefined && (kind === 'DIGITOVER' ? d > barrier : d < barrier);
+        if (ok || Date.now() - t0 > timeoutMs || this.killed) { clearInterval(iv); res(); }
       }, 50);
     });
   }

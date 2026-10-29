@@ -82,5 +82,12 @@ export function useProProfit() {
     setCfgState(trader.cfg);
   }, [trader]);
 
-  return { status, signals, report, boards, setFamily, trader: tstate, cfg, setCfg, account, kill: () => trader.kill(), reset: () => trader.reset() };
+  const setOnly = useCallback((f: Family | 'all') => {
+    const fams = { ...trader.cfg.families };
+    (Object.keys(fams) as Family[]).forEach((k) => { fams[k] = { ...fams[k], enabled: f === 'all' || k === f }; });
+    trader.cfg = { ...trader.cfg, families: fams };
+    setCfgState(trader.cfg);
+  }, [trader]);
+
+  return { status, signals, report, boards, setFamily, setOnly, trader: tstate, cfg, setCfg, account, kill: () => trader.kill(), reset: () => trader.reset() };
 }

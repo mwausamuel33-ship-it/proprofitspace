@@ -1,5 +1,5 @@
 import { AppClient } from './api-client';
-import { ContractRisk, Family, Signal, SignalEngine } from './signal-engine';
+import { ContractRisk, EntryMode, Family, Signal, SignalEngine } from './signal-engine';
 import { effectiveStop, riskPlan } from './risk';
 
 export type Mode = 'alert' | 'shadow' | 'auto';
@@ -36,6 +36,8 @@ export interface TraderConfig {
   maxCycleRiskPct: number;     // max % of balance one loss + recovery cycle may risk
   stopLossPct: number;         // session stop loss as % of starting balance (0 = off)
   contractRisk: ContractRisk;  // which safer Over/Under contracts may be traded
+  entryMode: EntryMode;        // wait for confirmation before buying (no blind entries)
+  entryTimeoutMs: number;      // skip the signal if not confirmed in this time
 }
 
 export const DEFAULT_TRADER: TraderConfig = {
@@ -49,6 +51,7 @@ export const DEFAULT_TRADER: TraderConfig = {
   recoveryMode: 'payout', recoveryStages: 1, recoveryTarget: 0, multiplier: 2.1, waitRecoveryDigit: true,
   takeProfit: 10, stopLoss: 30, maxSteps: 6, maxStake: 50, cooldownMs: 5000, scanMs: 1500,
   autoStake: false, riskPerTradePct: 1, maxCycleRiskPct: 5, stopLossPct: 10, contractRisk: 'standard',
+  entryMode: 'standard', entryTimeoutMs: 15000,
 };
 
 export interface JournalRow {
@@ -125,7 +128,9 @@ export class AutoTrader {
       await this.client.refresh(); // account may have been switched
       if (!this.state.startBalance) this.state.startBalance = this.client.balance;
       if (!this.client.isVirtual && !c.allowReal) { this.stop('Real account blocked - enable allowReal'); return; }
-      await this.cycle(best);
+      const entered = await this.waitEntry(best);
+      if (!entered) return;
+      await this.cycle(entered);
     }
     catch (e) { this.stop(`Error: ${(e as Error).message}`); }
     finally {
@@ -146,6 +151,26 @@ export class AutoTrader {
     const c = this.cfg, p = this.state.sessionProfit;
     if (p >= c.takeProfit) return 'Take profit reached';
     if (p <= -effectiveStop(this.state.startBalance || this.client.balance, c)) return 'Stop loss reached';
+    return null;
+  }
+
+  /** Entry point: never buy blind - wait until the signal is still strong and the latest digit(s) confirm it. */
+  private async waitEntry(sig: Signal): Promise<Signal | null> {
+    const c = this.cfg, t0 = Date.now();
+    let lastWhy = '';
+    while (Date.now() - t0 < c.entryTimeoutMs) {
+      if (this.killed) return null;
+      const e = this.engine.entryReady(sig, c.entryMode, c.stayConfidence);
+      if (!e.pick) { this.reporter.log(`Entry skipped on ${sig.market}: ${e.why}`, 'info'); return null; }
+      if (e.ok) {
+        const label = sig.family === 'overunder' ? `${e.pick.label} (bias ${sig.trigger.label})` : e.pick.label;
+        this.reporter.log(`Entry confirmed on ${sig.market}: ${e.why}`, 'info');
+        return { ...sig, contract: e.pick.contract, barrier: e.pick.barrier, label };
+      }
+      if (e.why !== lastWhy) { lastWhy = e.why; this.note(`Waiting for entry on ${sig.market}: ${e.why}`); }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    this.reporter.log(`Entry not confirmed on ${sig.market} within ${Math.round(c.entryTimeoutMs / 1000)}s - skipped`, 'info');
     return null;
   }
 

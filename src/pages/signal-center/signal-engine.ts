@@ -41,6 +41,23 @@ export const DEFAULT_ENGINE: EngineConfig = {
 };
 export interface ShadowStat { n: number; wins: number; expectedSum: number }
 
+export type EntryMode = 'off' | 'standard' | 'strict';
+export interface ScanRow { market: string; ou?: Candidate; eo?: Candidate; md?: Candidate; last?: number; hot: number; cold: number }
+
+/** Plain-English entry point for a signal (what the bot waits for before buying). */
+export function entryHintFor(s: Signal, mode: EntryMode): string {
+  if (mode === 'off') return 'entry filter off - buys at once';
+  const need = mode === 'strict' ? '2 in a row' : '1';
+  switch (s.contract) {
+    case 'DIGITOVER': return `after ${need} digit(s) above ${s.barrier}, signal still strong`;
+    case 'DIGITUNDER': return `after ${need} digit(s) below ${s.barrier}, signal still strong`;
+    case 'DIGITEVEN': return `after ${need} even digit(s), signal still strong`;
+    case 'DIGITODD': return `after ${need} odd digit(s), signal still strong`;
+    case 'DIGITDIFF': return `after ${need} digit(s) other than ${s.barrier}, signal still strong`;
+    default: return 'while the signal is still strong';
+  }
+}
+
 const cdf = (z: number) => {
   const t = 1 / (1 + 0.2316419 * Math.abs(z));
   const d = 0.3989423 * Math.exp((-z * z) / 2);
@@ -92,6 +109,41 @@ export class SignalEngine {
   bootstrap(market: string, digits: number[]) { this.digits.set(market, digits.slice(-this.maxWin())); }
   lastDigit(market: string): number | undefined { const a = this.digits.get(market); return a?.[a.length - 1]; }
   ready(market: string) { return (this.digits.get(market)?.length ?? 0) >= this.maxWin(); }
+  recentDigits(market: string, n: number): number[] { return (this.digits.get(market) ?? []).slice(-n); }
+
+  /** Entry point: the signal must still be strong AND the latest digit(s) must confirm it before we buy. */
+  entryReady(sig: Signal, mode: EntryMode, stay: number): { ok: boolean; why: string; pick?: Candidate } {
+    const pick = this.check(sig, stay);
+    if (!pick) return { ok: false, why: 'signal weakened' };
+    if (mode === 'off' || pick.contract === 'DIGITMATCH') return { ok: true, why: 'signal strength confirmed', pick };
+    const need = mode === 'strict' ? 2 : 1;
+    const last = this.recentDigits(sig.market, 10);
+    const tail = last.slice(-need);
+    if (tail.length < need) return { ok: false, why: 'collecting digits', pick };
+    const confirm = tail.every((d) => wins(pick.contract, pick.barrier, d));
+    const hit10 = last.filter((d) => wins(pick.contract, pick.barrier, d)).length / Math.max(1, last.length);
+    const momentum = mode !== 'strict' || hit10 >= pick.p;
+    const ok = confirm && momentum;
+    const why = ok ? `confirmed by last digit(s) ${tail.join(',')}`
+      : confirm ? `waiting for the recent hit rate to reach ${Math.round(pick.p * 100)}% (now ${Math.round(hit10 * 100)}%)`
+      : `waiting for ${need} winning digit(s) for ${pick.label} (last ${tail.join(',')})`;
+    return { ok, why, pick };
+  }
+
+  /** One row per market: best trigger of each strategy, for the market scanner table. */
+  scanTable(): ScanRow[] {
+    const rows: ScanRow[] = [];
+    for (const market of this.cfg.markets) {
+      const cands = this.latest.get(market);
+      const arr = this.digits.get(market);
+      if (!cands || !arr) continue;
+      const best = (fam: Family) => cands.filter((c) => c.family === fam && (fam !== 'overunder' || isTrigger(c))).sort((a, b) => b.aligned - a.aligned || b.meanZ - a.meanZ)[0];
+      const freq = new Array(10).fill(0);
+      arr.forEach((d) => freq[d]++);
+      rows.push({ market, ou: best('overunder'), eo: best('evenodd'), md: best('matchesdiffers'), last: arr[arr.length - 1], hot: freq.indexOf(Math.max(...freq)), cold: freq.indexOf(Math.min(...freq)) });
+    }
+    return rows;
+  }
 
   /** Score every candidate of one market across all windows (one pass over the digits). */
   analyze(market: string): Candidate[] {

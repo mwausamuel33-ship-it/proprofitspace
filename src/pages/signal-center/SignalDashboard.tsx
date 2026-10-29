@@ -1,7 +1,8 @@
 import React from 'react';
 import { useProProfit } from './useProProfit';
 import { FamilyCfg, JournalRow, RecoveryChoice, TraderConfig } from './auto-trader';
-import { Candidate, FAMILIES, FAMILY_LABEL, Family } from './signal-engine';
+import { Candidate, FAMILIES, FAMILY_LABEL, Family, ScanRow, entryHintFor } from './signal-engine';
+import { AccuConfig, AccuState } from './accumulator';
 import { riskPlan } from './risk';
 
 const C = { bg: '#0b1220', card: '#111827', line: '#1f2937', text: '#e5e7eb', dim: '#9ca3af', green: '#22c55e', red: '#ef4444', blue: '#38bdf8', amber: '#f59e0b' };
@@ -63,6 +64,126 @@ const Field = ({ label, value, onCommit, hint }: { label: string; value: number;
     {hint && <span style={{ fontSize: 11 }}>{hint}</span>}
   </label>
 );
+
+/** Entry points: the bot waits for confirmation instead of buying blind. */
+const EntryCard = ({ cfg, setCfg }: { cfg: TraderConfig; setCfg: (p: Partial<TraderConfig>) => void }) => (
+  <div style={card}>
+    <div style={h}>Entry points (no blind entries)</div>
+    <div style={{ fontSize: 12, color: C.dim, marginBottom: 10 }}>
+      After a signal appears the bot waits until it is still strong and the latest digit(s) confirm the contract. If that does not happen in time, the signal is skipped. This stops entries in the middle of a cold streak; it cannot change the odds of a random digit.
+    </div>
+    <div style={grid(150)}>
+      <label style={{ fontSize: 12, color: C.dim }}>Entry filter
+        <select style={input} value={cfg.entryMode} onChange={(e) => setCfg({ entryMode: e.target.value as TraderConfig['entryMode'] })}>
+          <option value="off">Off (buy at once)</option>
+          <option value="standard">Standard (1 confirming digit)</option>
+          <option value="strict">Strict (2 in a row + recent hit rate)</option>
+        </select>
+      </label>
+      <Field label="Entry timeout (seconds)" value={cfg.entryTimeoutMs / 1000} onCommit={(v) => setCfg({ entryTimeoutMs: v * 1000 })} />
+    </div>
+  </div>
+);
+
+const candColor = (c?: Candidate) => (!c ? C.dim : c.aligned === WINDOWS.length ? C.green : c.aligned >= 9 ? C.amber : C.dim);
+const Cell = ({ c }: { c?: Candidate }) => (
+  c ? <span style={{ color: candColor(c), fontWeight: 700 }}>{c.label} {c.aligned}/{WINDOWS.length} {c.confidence}%</span> : <span style={{ color: C.dim }}>-</span>
+);
+
+/** Every market at a glance: best candidate of each strategy and how many windows agree. */
+const ScannerCard = ({ rows }: { rows: ScanRow[] }) => (
+  <div style={card}>
+    <div style={h}>Market scanner</div>
+    <div style={{ fontSize: 12, color: C.dim, marginBottom: 8 }}>Best candidate per strategy for every market. Green = all {WINDOWS.length} windows agree.</div>
+    <div style={{ overflowX: 'auto' }}>
+      <div style={{ minWidth: 640, fontSize: 13 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.4fr 1.2fr 1.5fr 0.8fr', gap: 6, fontSize: 12, color: C.dim, paddingBottom: 4 }}>
+          <span>Market</span><span>Over / Under</span><span>Even / Odd</span><span>Matches / Differs</span><span>Hot / cold</span>
+        </div>
+        {rows.length === 0 && <div style={{ color: C.dim }}>Analysing markets...</div>}
+        {rows.map((r) => (
+          <div key={r.market} style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.4fr 1.2fr 1.5fr 0.8fr', gap: 6, padding: '4px 0', borderTop: `1px solid ${C.line}` }}>
+            <b>{r.market}</b><Cell c={r.ou} /><Cell c={r.eo} /><Cell c={r.md} /><span>{r.hot} / {r.cold}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+/** Accumulators: compound growth per tick inside a barrier. A knockout loses the stake (no recovery here). */
+const AccumulatorCard = ({ s, cfg, setCfg }: { s: AccuState; cfg: AccuConfig; setCfg: (p: Partial<AccuConfig>) => void }) => {
+  const wins = s.rows.filter((r) => r.profit > 0).length;
+  const knock = s.rows.length - wins;
+  const n = (k: keyof AccuConfig) => (v: number) => setCfg({ [k]: v } as Partial<AccuConfig>);
+  const col = s.status === 'trading' ? C.green : s.status === 'stopped' ? C.red : C.blue;
+  const sh = s.shadow;
+  return (
+    <div style={{ ...card, borderColor: cfg.mode === 'auto' ? C.green : C.line }}>
+      <div style={h}>Accumulators</div>
+      <div style={{ fontSize: 12, color: C.dim, marginBottom: 8 }}>
+        The payout grows every tick the price stays inside the barrier; one tick outside loses the whole stake. There is no recovery or martingale here. The bot only enters calm markets, estimates the expected value from the live barrier, takes profit after your target ticks, and pauses after a knockout streak.
+      </div>
+      <div style={{ color: col, fontWeight: 700, marginBottom: 10 }}>{cfg.mode.toUpperCase()} - {s.status.toUpperCase()} - {s.note}</div>
+      <div style={grid(110)}>
+        <Tile label="Session P/L" value={s.sessionProfit} color={s.sessionProfit >= 0 ? C.green : C.red} />
+        <Tile label="Trades" value={s.rows.length} />
+        <Tile label="Target hit" value={wins} color={C.green} />
+        <Tile label="Knockouts" value={knock} color={C.red} />
+        <Tile label="Knockout streak" value={`${s.lossStreak}/${cfg.maxLossStreak}`} color={s.lossStreak ? C.amber : C.text} />
+      </div>
+      <div style={{ margin: '12px 0', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {(['off', 'shadow', 'auto'] as const).map((m) => (
+          <button key={m} style={btn(cfg.mode === m)} onClick={() => setCfg({ mode: m })}>{m.toUpperCase()}</button>
+        ))}
+      </div>
+      <div style={grid(130)}>
+        <Field label="Stake" value={cfg.stake} onCommit={n('stake')} />
+        <Field label="Auto stake (% of balance)" value={cfg.riskPct} onCommit={n('riskPct')} />
+        <label style={{ fontSize: 12, color: C.dim }}>Growth rate per tick
+          <select style={input} value={cfg.growthRate} onChange={(e) => setCfg({ growthRate: Number(e.target.value) })}>
+            {[0.01, 0.02, 0.03, 0.04, 0.05].map((g) => <option key={g} value={g}>{Math.round(g * 100)}%</option>)}
+          </select>
+        </label>
+        <Field label="Take profit after (ticks)" value={cfg.targetTicks} onCommit={n('targetTicks')} />
+        <Field label="Skip if expected loss worse than (%)" value={cfg.maxEdgeLossPct} onCommit={n('maxEdgeLossPct')} />
+        <Field label="Stop after knockouts in a row" value={cfg.maxLossStreak} onCommit={n('maxLossStreak')} />
+        <Field label="Session take profit" value={cfg.takeProfit} onCommit={n('takeProfit')} />
+        <Field label="Session stop loss" value={cfg.stopLoss} onCommit={n('stopLoss')} />
+        <Field label="Cooldown (ms)" value={cfg.cooldownMs} onCommit={n('cooldownMs')} />
+      </div>
+      <div style={{ margin: '10px 0', display: 'flex', flexWrap: 'wrap', gap: 14 }}>
+        <label><input type="checkbox" checked={cfg.autoStake} onChange={(e) => setCfg({ autoStake: e.target.checked })} /> Auto stake from balance</label>
+        <label><input type="checkbox" checked={cfg.calmEntry} onChange={(e) => setCfg({ calmEntry: e.target.checked })} /> Calm-market entry only</label>
+      </div>
+
+      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Calmest markets now</div>
+      {s.board.length === 0 && <div style={{ color: C.dim }}>{cfg.mode === 'off' ? 'Switch to SHADOW or AUTO to start scanning.' : 'Collecting data...'}</div>}
+      {s.board.map((b) => (
+        <div key={b.market} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '3px 0', borderTop: `1px solid ${C.line}` }}>
+          <span><b>{b.market}</b> calm {b.calm.score}/100{b.calm.spike ? ' (recent spike)' : ''}</span>
+          <span style={{ color: b.ev !== undefined && b.ev >= 0 ? C.green : C.dim }}>
+            {b.ev !== undefined ? `expected ${(b.ev * 100).toFixed(1)}% - breach ${((b.breach ?? 0) * 100).toFixed(1)}% per tick` : 'no quote yet'}
+          </span>
+        </div>
+      ))}
+
+      <div style={{ fontSize: 13, fontWeight: 700, margin: '10px 0 4px' }}>Shadow results (no money)</div>
+      <div style={{ color: C.dim }}>
+        {sh.n === 0 ? 'No shadow entries scored yet.' : `${sh.survived}/${sh.n} reached the ${cfg.targetTicks}-tick target (${Math.round((sh.survived / sh.n) * 100)}% observed vs ${Math.round((sh.expected / sh.n) * 100)}% expected)`}
+      </div>
+
+      <div style={{ fontSize: 13, fontWeight: 700, margin: '10px 0 4px' }}>Accumulator journal</div>
+      {s.rows.length === 0 && <div style={{ color: C.dim }}>No trades yet.</div>}
+      {s.rows.slice(-10).reverse().map((r, i) => (
+        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '2px 0', color: r.profit > 0 ? C.green : C.red }}>
+          <span>{new Date(r.ts).toLocaleTimeString()} {r.market} {r.kind}</span>
+          <span>stake {r.stake} - {r.profit}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 /** Shows what to stake for this balance and checks that recovery cannot blow the account. */
 const AccountCard = ({ cfg, setCfg, balance, currency }: { cfg: TraderConfig; setCfg: (p: Partial<TraderConfig>) => void; balance: number; currency: string }) => {
@@ -225,6 +346,12 @@ export default function SignalDashboard() {
 
         <AccountCard cfg={cfg} setCfg={setCfg} balance={account.balance} currency={account.currency} />
 
+        <EntryCard cfg={cfg} setCfg={setCfg} />
+
+        <ScannerCard rows={p.scan} />
+
+        <AccumulatorCard s={p.accu} cfg={p.accuCfg} setCfg={p.setAccu} />
+
         {FAMILIES.map((f) => (
           <FamilyCard key={f} f={f} fc={cfg.families[f]} board={p.boards[f]} rows={rows} setFamily={setFamily} />
         ))}
@@ -277,6 +404,7 @@ export default function SignalDashboard() {
                 <span style={{ color: s.confidence >= 95 ? C.green : C.blue, fontWeight: 700 }}>{s.confidence}%</span>
               </div>
               <div style={{ fontSize: 12, color: C.dim }}>{new Date(s.ts).toLocaleTimeString()} - {s.reasons.join(' | ')}</div>
+              <div style={{ fontSize: 12, color: C.blue }}>Entry point: {entryHintFor(s, cfg.entryMode)}</div>
             </div>
           ))}
         </div>

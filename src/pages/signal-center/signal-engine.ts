@@ -11,6 +11,13 @@ export const FAMILIES: Family[] = ['overunder', 'evenodd', 'matchesdiffers'];
 export const FAMILY_LABEL: Record<Family, string> = { overunder: 'Over / Under', evenodd: 'Even / Odd', matchesdiffers: 'Matches / Differs' };
 export const SAFE_OVER = [1, 2, 3];
 export const SAFE_UNDER = [9, 8, 7, 6];
+/** Which safer contracts Over/Under may trade (safest first). */
+export type ContractRisk = 'safest' | 'standard' | 'wide';
+export const RISK_PRESETS: Record<ContractRisk, { over: number[]; under: number[] }> = {
+  safest: { over: [1], under: [8] },
+  standard: { over: [1, 2], under: [8, 7] },
+  wide: { over: [1, 2, 3], under: [9, 8, 7] },
+};
 
 export interface Candidate {
   market: string; family: Family; contract: ContractKind; barrier?: number; label: string;
@@ -66,6 +73,7 @@ export class SignalEngine {
   readonly stats = new Map<string, ShadowStat>();
   private seq = 0;
   private specs: Spec[];
+  allowed: { over: number[]; under: number[] } = RISK_PRESETS.standard;
 
   constructor(public cfg: EngineConfig = DEFAULT_ENGINE) {
     const all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -113,11 +121,12 @@ export class SignalEngine {
     });
   }
 
-  /** Strongest SAFER Over/Under contract (all windows aligned) in the trigger's direction. */
+  /** Least risky allowed Over/Under contract (all windows aligned) in the trigger's direction - safest first. */
   private pickSafe(cands: Candidate[], dir: 'over' | 'under'): Candidate | undefined {
+    const list = dir === 'over' ? this.allowed.over : this.allowed.under;
     return cands
-      .filter((c) => isSafe(c) && c.contract === (dir === 'over' ? 'DIGITOVER' : 'DIGITUNDER') && c.aligned === this.N())
-      .sort((a, b) => b.confidence - a.confidence || b.p - a.p)[0];
+      .filter((c) => isSafe(c) && c.contract === (dir === 'over' ? 'DIGITOVER' : 'DIGITUNDER') && list.includes(c.barrier as number) && c.aligned === this.N())
+      .sort((a, b) => b.p - a.p || b.confidence - a.confidence)[0];
   }
 
   /** Feed one tick. Resolves shadow trades for this market and returns fresh signals. */
@@ -177,9 +186,9 @@ export class SignalEngine {
   }
 
   /** Less-risky contracts for recovery on this market, best first (Over 1-3 / Under 6-9). */
-  recoveryOptions(market: string, n = 4): Candidate[] {
+  recoveryOptions(market: string, n = 7): Candidate[] {
     return (this.latest.get(market) ?? []).filter(isSafe)
-      .sort((a, b) => b.aligned - a.aligned || b.confidence - a.confidence || b.p - a.p).slice(0, n);
+      .sort((a, b) => Number(b.aligned === this.N()) - Number(a.aligned === this.N()) || b.p - a.p || b.confidence - a.confidence).slice(0, n);
   }
 
   /** Best candidates of a family across all markets (triggers only for Over/Under). */

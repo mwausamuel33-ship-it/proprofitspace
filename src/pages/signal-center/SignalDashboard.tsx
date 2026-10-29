@@ -2,6 +2,7 @@ import React from 'react';
 import { useProProfit } from './useProProfit';
 import { FamilyCfg, JournalRow, RecoveryChoice, TraderConfig } from './auto-trader';
 import { Candidate, FAMILIES, FAMILY_LABEL, Family } from './signal-engine';
+import { riskPlan } from './risk';
 
 const C = { bg: '#0b1220', card: '#111827', line: '#1f2937', text: '#e5e7eb', dim: '#9ca3af', green: '#22c55e', red: '#ef4444', blue: '#38bdf8', amber: '#f59e0b' };
 const card: React.CSSProperties = { background: C.card, color: C.text, borderRadius: 16, padding: 16, marginBottom: 14, border: `1px solid ${C.line}` };
@@ -62,6 +63,56 @@ const Field = ({ label, value, onCommit, hint }: { label: string; value: number;
     {hint && <span style={{ fontSize: 11 }}>{hint}</span>}
   </label>
 );
+
+/** Shows what to stake for this balance and checks that recovery cannot blow the account. */
+const AccountCard = ({ cfg, setCfg, balance, currency }: { cfg: TraderConfig; setCfg: (p: Partial<TraderConfig>) => void; balance: number; currency: string }) => {
+  const plan = riskPlan(balance, cfg, cfg.families.overunder.stake);
+  const useRecommended = () => {
+    const fams = { ...cfg.families };
+    (Object.keys(fams) as Family[]).forEach((k) => { fams[k] = { ...fams[k], stake: plan.recommended }; });
+    setCfg({ families: fams });
+  };
+  const num = (k: keyof TraderConfig) => (v: number) => setCfg({ [k]: v } as Partial<TraderConfig>);
+  return (
+    <div style={card}>
+      <div style={h}>Account protection</div>
+      <div style={{ ...grid(130), marginBottom: 10 }}>
+        <Tile label="Balance" value={`${balance} ${currency}`} />
+        <Tile label="Recommended stake" value={plan.recommended} color={C.green} />
+        <Tile label="Max risk per cycle" value={plan.cap} color={C.amber} />
+        <Tile label="Session stop loss" value={plan.stopLoss} color={C.red} />
+      </div>
+      <div style={{ fontSize: 12, color: C.dim, marginBottom: 10 }}>
+        The first stake is chosen so a loss plus the first recovery trade still fits inside the cycle risk limit. Any recovery trade that would break the limit is blocked and the bot stops.
+      </div>
+      <div style={grid(130)}>
+        <Field label="Risk per trade (% of balance)" value={cfg.riskPerTradePct} onCommit={num('riskPerTradePct')} />
+        <Field label="Max risk per cycle (% of balance)" value={cfg.maxCycleRiskPct} onCommit={num('maxCycleRiskPct')} />
+        <Field label="Stop loss (% of starting balance)" value={cfg.stopLossPct} onCommit={num('stopLossPct')} hint="0 = use the fixed stop loss" />
+        <label style={{ fontSize: 12, color: C.dim }}>Over/Under contract risk
+          <select style={input} value={cfg.contractRisk} onChange={(e) => setCfg({ contractRisk: e.target.value as TraderConfig['contractRisk'] })}>
+            <option value="safest">Safest: Over 1 / Under 8</option>
+            <option value="standard">Standard: Over 1-2 / Under 8-7</option>
+            <option value="wide">Wide: Over 1-3 / Under 9-7</option>
+          </select>
+        </label>
+      </div>
+      <div style={{ margin: '10px 0', display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+        <label style={{ fontWeight: 700 }}>
+          <input type="checkbox" checked={cfg.autoStake} onChange={(e) => setCfg({ autoStake: e.target.checked })} /> Auto stake from balance
+        </label>
+        <button style={btn(false, C.blue)} onClick={useRecommended}>Use recommended stake ({plan.recommended})</button>
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Worst case if every recovery trade loses (stake in use: {plan.stake})</div>
+      {plan.chain.map((s) => (
+        <div key={s.step} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0', color: s.ok ? C.text : C.red }}>
+          <span>{s.label}: stake {s.stake}</span>
+          <span>total at risk {s.atRisk} - {s.ok ? 'allowed' : 'BLOCKED by protection'}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const FamilyCard = ({ f, fc, board, rows, setFamily }: {
   f: Family; fc: FamilyCfg; board: Candidate[]; rows: JournalRow[]; setFamily: (f: Family, patch: Partial<FamilyCfg>) => void;
@@ -171,6 +222,8 @@ export default function SignalDashboard() {
           ))}
           <div style={{ marginTop: 8 }}><button style={btn(false)} onClick={() => setOnly('all')}>Enable all</button></div>
         </div>
+
+        <AccountCard cfg={cfg} setCfg={setCfg} balance={account.balance} currency={account.currency} />
 
         {FAMILIES.map((f) => (
           <FamilyCard key={f} f={f} fc={cfg.families[f]} board={p.boards[f]} rows={rows} setFamily={setFamily} />

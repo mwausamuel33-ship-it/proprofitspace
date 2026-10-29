@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '@/hooks/useStore';
 import { AppClient, digitOf } from './api-client';
-import { Candidate, DEFAULT_ENGINE, Family, FAMILIES, Signal, SignalEngine } from './signal-engine';
+import { Candidate, DEFAULT_ENGINE, Family, FAMILIES, RISK_PRESETS, Signal, SignalEngine } from './signal-engine';
 import { AutoTrader, DEFAULT_TRADER, FamilyCfg, TraderConfig, TraderState } from './auto-trader';
 
 export function useProProfit() {
@@ -18,6 +18,9 @@ export function useProProfit() {
   const [cfg, setCfgState] = useState<TraderConfig>(trader.cfg);
   const [account, setAccount] = useState({ virtual: false, balance: 0, currency: 'USD' });
   const offs = useRef<(() => void)[]>([]);
+
+  // Which safer Over/Under contracts the engine may pick (safest / standard / wide)
+  useEffect(() => { engine.allowed = RISK_PRESETS[cfg.contractRisk]; }, [engine, cfg.contractRisk]);
 
   // Feed trades into the site's Summary / Transactions / Journal panels (never let a UI error stop trading)
   useEffect(() => {

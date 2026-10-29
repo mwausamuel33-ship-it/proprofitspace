@@ -1,5 +1,6 @@
 import { AppClient } from './api-client';
-import { Family, Signal, SignalEngine } from './signal-engine';
+import { ContractRisk, Family, Signal, SignalEngine } from './signal-engine';
+import { effectiveStop, riskPlan } from './risk';
 
 export type Mode = 'alert' | 'shadow' | 'auto';
 export type RecoveryMode = 'payout' | 'multiplier';
@@ -30,6 +31,11 @@ export interface TraderConfig {
   maxStake: number;
   cooldownMs: number;
   scanMs: number;              // how long to collect signals before picking the best market
+  autoStake: boolean;          // size the first stake from the account balance
+  riskPerTradePct: number;     // % of balance risked on a first trade
+  maxCycleRiskPct: number;     // max % of balance one loss + recovery cycle may risk
+  stopLossPct: number;         // session stop loss as % of starting balance (0 = off)
+  contractRisk: ContractRisk;  // which safer Over/Under contracts may be traded
 }
 
 export const DEFAULT_TRADER: TraderConfig = {
@@ -42,6 +48,7 @@ export const DEFAULT_TRADER: TraderConfig = {
   runsPerSignal: 3, stayConfidence: 80,
   recoveryMode: 'payout', recoveryStages: 1, recoveryTarget: 0, multiplier: 2.1, waitRecoveryDigit: true,
   takeProfit: 10, stopLoss: 30, maxSteps: 6, maxStake: 50, cooldownMs: 5000, scanMs: 1500,
+  autoStake: false, riskPerTradePct: 1, maxCycleRiskPct: 5, stopLossPct: 10, contractRisk: 'standard',
 };
 
 export interface JournalRow {
@@ -53,6 +60,7 @@ export interface TraderState {
   note: string;
   sessionProfit: number;
   step: number;
+  startBalance: number;
   journal: JournalRow[];
 }
 
@@ -63,7 +71,7 @@ export interface Reporter {
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
-const fresh = (): TraderState => ({ status: 'idle', note: 'Waiting for a signal', sessionProfit: 0, step: 0, journal: [] });
+const fresh = (): TraderState => ({ status: 'idle', note: 'Waiting for a signal', sessionProfit: 0, step: 0, startBalance: 0, journal: [] });
 type Pick = { kind: string; barrier?: number; label: string };
 
 export class AutoTrader {
@@ -72,6 +80,7 @@ export class AutoTrader {
   private locked = false;
   private cooldownUntil = 0;
   private killed = false;
+  private cycleBalance = 0;
   private queue: Signal[] = [];
   private scanTimer?: ReturnType<typeof setTimeout>;
   onUpdate: (s: TraderState) => void = () => {};
@@ -114,6 +123,7 @@ export class AutoTrader {
     this.state.status = 'trading'; this.emit();
     try {
       await this.client.refresh(); // account may have been switched
+      if (!this.state.startBalance) this.state.startBalance = this.client.balance;
       if (!this.client.isVirtual && !c.allowReal) { this.stop('Real account blocked - enable allowReal'); return; }
       await this.cycle(best);
     }
@@ -125,10 +135,17 @@ export class AutoTrader {
     }
   }
 
+  /** Max total a loss + recovery cycle may risk, from the balance at the start of the cycle. */
+  private cycleCap() { return r2((this.cycleBalance * this.cfg.maxCycleRiskPct) / 100); }
+
+  private firstStake(manual: number) {
+    return this.cfg.autoStake ? riskPlan(this.cycleBalance, this.cfg, manual).stake : manual;
+  }
+
   private limitHit(): string | null {
     const c = this.cfg, p = this.state.sessionProfit;
     if (p >= c.takeProfit) return 'Take profit reached';
-    if (p <= -c.stopLoss) return 'Stop loss reached';
+    if (p <= -effectiveStop(this.state.startBalance || this.client.balance, c)) return 'Stop loss reached';
     return null;
   }
 
@@ -139,6 +156,7 @@ export class AutoTrader {
     this.note(step === 0 ? `Trading ${pick.label} on ${market} - stake ${stake}` : `Recovery step ${step}/${this.cfg.maxSteps}: ${pick.label} on ${market} - stake ${stake}`);
     const res = await this.trade(market, pick.kind, pick.barrier, stake, pick.label);
     this.state.sessionProfit = r2(this.state.sessionProfit + res.profit);
+    await this.client.refresh(); // keep the balance current for the protection checks
     this.state.journal.push({ ts: Date.now(), family: sig.family, market, label: pick.label, stake, profit: res.profit, step });
     this.emit();
     this.reporter.log(`${res.profit > 0 ? 'WIN' : 'LOSS'} ${market} ${pick.label} stake ${stake} -> ${res.profit} (session ${this.state.sessionProfit})`, res.profit > 0 ? 'success' : 'error');
@@ -155,9 +173,13 @@ export class AutoTrader {
 
     for (;;) {
       if (this.killed) return;
-      const res = await this.exec(sig, pick, fam.stake, 0);
+      this.cycleBalance = this.client.balance;
+      const stake = this.firstStake(fam.stake);
+      const cap = this.cycleCap();
+      if (stake > cap || stake > c.maxStake || stake > this.client.balance) { this.stop(`Balance protection: stake ${stake} is above the limit (cycle risk cap ${cap}, max stake ${c.maxStake})`); return; }
+      const res = await this.exec(sig, pick, stake, 0);
       if (res.stopped) return;
-      if (res.profit <= 0) { await this.recover(sig, fam.stake); return; }   // loss -> recover, then rescan
+      if (res.profit <= 0) { await this.recover(sig, stake); return; }   // loss -> recover, then rescan
       runs++;
       if (runs >= c.runsPerSignal) { this.reporter.log(`${runs} runs done on ${sig.market} - rescanning markets`, 'info'); return; }
       const next = this.engine.check(sig, c.stayConfidence);
@@ -176,8 +198,8 @@ export class AutoTrader {
       if (this.killed) return;
       if (step > c.maxSteps) return this.stop('Max recovery steps reached');
       const target = r2(remaining / stagesLeft + (stagesLeft === 1 ? c.recoveryTarget : 0));
-      const ch = await this.chooseRecovery(sig, fam.recovery, target, lastStake);
-      if (!ch) return this.stop('No safe recovery contract fits the max stake');
+      const ch = await this.chooseRecovery(sig, fam.recovery, target, lastStake, remaining);
+      if (!ch) return this.stop(`Balance protection: no safe recovery fits the limits (loss ${remaining}, cycle cap ${this.cycleCap()})`);
       this.reporter.log(`Recovery step ${step}: ${ch.label} on ${sig.market}, stake ${ch.stake} (to recover ${remaining}, target ${target})`, 'info');
       if (c.waitRecoveryDigit) { this.note(`Recovery step ${step}: waiting for a favourable digit on ${sig.market}`); await this.waitDigit(sig.market, ch.kind, ch.barrier, 30000); }
       const res = await this.exec(sig, ch, ch.stake, step);
@@ -196,7 +218,7 @@ export class AutoTrader {
   }
 
   /** Pick the safest strong contract on this market whose required stake fits the limits. */
-  private async chooseRecovery(sig: Signal, choice: RecoveryChoice, target: number, lastStake: number): Promise<(Pick & { stake: number }) | null> {
+  private async chooseRecovery(sig: Signal, choice: RecoveryChoice, target: number, lastStake: number, remaining: number): Promise<(Pick & { stake: number }) | null> {
     const c = this.cfg;
     let opts: Pick[];
     if (choice === 'over2') opts = [{ kind: 'DIGITOVER', barrier: 2, label: 'Recovery Over 2' }];
@@ -214,7 +236,7 @@ export class AutoTrader {
           const rate = await this.profitRate(sig.market, o.kind, o.barrier, Math.max(0.35, target));
           stake = r2(Math.max(0.35, target / rate));
         }
-        if (stake <= c.maxStake) return { ...o, stake };
+        if (stake <= c.maxStake && stake <= this.client.balance && r2(remaining + stake) <= this.cycleCap()) return { ...o, stake };
       } catch { /* try the next contract */ }
     }
     return null;

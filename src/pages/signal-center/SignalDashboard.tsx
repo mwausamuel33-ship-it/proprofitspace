@@ -2,7 +2,7 @@ import React from 'react';
 import { useProProfit } from './useProProfit';
 import { FamilyCfg, JournalRow, RecoveryChoice, TraderConfig } from './auto-trader';
 import { Candidate, FAMILIES, FAMILY_LABEL, Family, ScanRow, entryHintFor } from './signal-engine';
-import { AccuConfig, AccuState } from './accumulator';
+import { AccuConfig, AccuState, accuPlanner } from './accumulator';
 import { riskPlan } from './risk';
 
 const C = { bg: '#0b1220', card: '#111827', line: '#1f2937', text: '#e5e7eb', dim: '#9ca3af', green: '#22c55e', red: '#ef4444', blue: '#38bdf8', amber: '#f59e0b' };
@@ -111,8 +111,33 @@ const ScannerCard = ({ rows }: { rows: ScanRow[] }) => (
   </div>
 );
 
-/** Accumulators: compound growth per tick inside a barrier. A knockout loses the stake (no recovery here). */
-const AccumulatorCard = ({ s, cfg, setCfg }: { s: AccuState; cfg: AccuConfig; setCfg: (p: Partial<AccuConfig>) => void }) => {
+/** Accumulator maths: survival rate needed to break even, and the stake needed to win back one loss. */
+const AccuPlanner = ({ balance, cfg }: { balance: number; cfg: AccuConfig }) => {
+  const rows = accuPlanner(balance, cfg).filter((r) => r.n === 5 || r.n === 10);
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Recovery planner (your balance and settings)</div>
+      <div style={{ fontSize: 12, color: C.dim, marginBottom: 6 }}>
+        "Needs" is how often a position must reach the target just to break even. "Recovery stake" is how many times the lost stake you must bet to win it back in one trade. Green = fits inside your cycle risk limit.
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <div style={{ minWidth: 420, fontSize: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 0.8fr 1fr 1fr 1.3fr', gap: 6, color: C.dim }}>
+            <span>Growth</span><span>Ticks</span><span>Profit</span><span>Needs</span><span>Recovery stake</span>
+          </div>
+          {rows.map((r) => (
+            <div key={`${r.g}-${r.n}`} style={{ display: 'grid', gridTemplateColumns: '0.8fr 0.8fr 1fr 1fr 1.3fr', gap: 6, padding: '2px 0', color: r.allowed ? C.green : C.dim }}>
+              <span>{Math.round(r.g * 100)}%</span><span>{r.n}</span><span>{r.profitPct.toFixed(1)}%</span><span>{r.needSurvive.toFixed(1)}%</span><span>{r.recoveryMult.toFixed(1)}x the loss</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/** Accumulators: compound growth per tick inside a barrier. Recovery is optional, calculated and capped. */
+const AccumulatorCard = ({ s, cfg, setCfg, balance }: { s: AccuState; cfg: AccuConfig; setCfg: (p: Partial<AccuConfig>) => void; balance: number }) => {
   const wins = s.rows.filter((r) => r.profit > 0).length;
   const knock = s.rows.length - wins;
   const n = (k: keyof AccuConfig) => (v: number) => setCfg({ [k]: v } as Partial<AccuConfig>);
@@ -122,7 +147,7 @@ const AccumulatorCard = ({ s, cfg, setCfg }: { s: AccuState; cfg: AccuConfig; se
     <div style={{ ...card, borderColor: cfg.mode === 'auto' ? C.green : C.line }}>
       <div style={h}>Accumulators</div>
       <div style={{ fontSize: 12, color: C.dim, marginBottom: 8 }}>
-        The payout grows every tick the price stays inside the barrier; one tick outside loses the whole stake. There is no recovery or martingale here. The bot only enters calm markets, estimates the expected value from the live barrier, takes profit after your target ticks, and pauses after a knockout streak.
+        The payout grows every tick the price stays inside the barrier; one tick outside loses the whole stake. Recovery is OFF by default; if you turn it on it uses a calculated, capped stake and never doubles blindly. The bot only enters calm markets, estimates the expected value from the live barrier, takes profit after your target ticks, and pauses after a knockout streak.
       </div>
       <div style={{ color: col, fontWeight: 700, marginBottom: 10 }}>{cfg.mode.toUpperCase()} - {s.status.toUpperCase()} - {s.note}</div>
       <div style={grid(110)}>
@@ -131,6 +156,8 @@ const AccumulatorCard = ({ s, cfg, setCfg }: { s: AccuState; cfg: AccuConfig; se
         <Tile label="Target hit" value={wins} color={C.green} />
         <Tile label="Knockouts" value={knock} color={C.red} />
         <Tile label="Knockout streak" value={`${s.lossStreak}/${cfg.maxLossStreak}`} color={s.lossStreak ? C.amber : C.text} />
+        <Tile label="Still to recover" value={s.cycleLoss} color={s.cycleLoss ? C.amber : C.text} />
+        <Tile label="Smaller-stake trades left" value={s.defensive} />
       </div>
       <div style={{ margin: '12px 0', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {(['off', 'shadow', 'auto'] as const).map((m) => (
@@ -152,6 +179,30 @@ const AccumulatorCard = ({ s, cfg, setCfg }: { s: AccuState; cfg: AccuConfig; se
         <Field label="Session stop loss" value={cfg.stopLoss} onCommit={n('stopLoss')} />
         <Field label="Cooldown (ms)" value={cfg.cooldownMs} onCommit={n('cooldownMs')} />
       </div>
+
+      <div style={{ fontSize: 13, fontWeight: 700, margin: '12px 0 4px' }}>Growth plan and recovery</div>
+      <div style={grid(130)}>
+        <label style={{ fontSize: 12, color: C.dim }}>Recovery after a knockout
+          <select style={input} value={cfg.recovery} onChange={(e) => setCfg({ recovery: e.target.value as AccuConfig['recovery'] })}>
+            <option value="off">Off (accept the loss)</option>
+            <option value="capped">Capped recovery (calculated stake)</option>
+          </select>
+        </label>
+        <label style={{ fontSize: 12, color: C.dim }}>Recovery growth rate
+          <select style={input} value={cfg.recoveryGrowth} onChange={(e) => setCfg({ recoveryGrowth: Number(e.target.value) })}>
+            {[0.01, 0.02, 0.03, 0.04, 0.05].map((g) => <option key={g} value={g}>{Math.round(g * 100)}%</option>)}
+          </select>
+        </label>
+        <Field label="Recovery target (ticks)" value={cfg.recoveryTicks} onCommit={n('recoveryTicks')} />
+        <Field label="Max recovery attempts" value={cfg.maxRecoveryTries} onCommit={n('maxRecoveryTries')} />
+        <Field label="Max risk per cycle (% of balance)" value={cfg.cycleRiskPct} onCommit={n('cycleRiskPct')} />
+        <Field label="Smaller stakes after a knockout (trades)" value={cfg.defensiveTrades} onCommit={n('defensiveTrades')} />
+        <Field label="Stake multiplier while smaller" value={cfg.defensiveMult} onCommit={n('defensiveMult')} />
+        <Field label="Session goal (% gain, then stop)" value={cfg.goalPct} onCommit={n('goalPct')} />
+        <Field label="Session loss limit (% of balance)" value={cfg.lossPct} onCommit={n('lossPct')} />
+        <Field label="Max trades per session" value={cfg.maxTrades} onCommit={n('maxTrades')} />
+      </div>
+      <AccuPlanner balance={balance} cfg={cfg} />
       <div style={{ margin: '10px 0', display: 'flex', flexWrap: 'wrap', gap: 14 }}>
         <label><input type="checkbox" checked={cfg.autoStake} onChange={(e) => setCfg({ autoStake: e.target.checked })} /> Auto stake from balance</label>
         <label><input type="checkbox" checked={cfg.calmEntry} onChange={(e) => setCfg({ calmEntry: e.target.checked })} /> Calm-market entry only</label>
@@ -177,7 +228,7 @@ const AccumulatorCard = ({ s, cfg, setCfg }: { s: AccuState; cfg: AccuConfig; se
       {s.rows.length === 0 && <div style={{ color: C.dim }}>No trades yet.</div>}
       {s.rows.slice(-10).reverse().map((r, i) => (
         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '2px 0', color: r.profit > 0 ? C.green : C.red }}>
-          <span>{new Date(r.ts).toLocaleTimeString()} {r.market} {r.kind}</span>
+          <span>{new Date(r.ts).toLocaleTimeString()} {r.market} {r.rec ? 'recovery ' : ''}{r.kind}</span>
           <span>stake {r.stake} - {r.profit}</span>
         </div>
       ))}
@@ -350,7 +401,7 @@ export default function SignalDashboard() {
 
         <ScannerCard rows={p.scan} />
 
-        <AccumulatorCard s={p.accu} cfg={p.accuCfg} setCfg={p.setAccu} />
+        <AccumulatorCard s={p.accu} cfg={p.accuCfg} setCfg={p.setAccu} balance={account.balance} />
 
         {FAMILIES.map((f) => (
           <FamilyCard key={f} f={f} fc={cfg.families[f]} board={p.boards[f]} rows={rows} setFamily={setFamily} />

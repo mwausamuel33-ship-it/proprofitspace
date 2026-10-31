@@ -15,10 +15,11 @@ import {
 } from '@/utils/digit-stats';
 import { computeDigitStats, computeEvenOddSignal, computeOverUnderSignal, TSignal } from '@/utils/signal-engine';
 import { Localize } from '@deriv-com/translations';
+import { DigitCircles, MarketSuggestions, isAnalysisMarket, marketOrder } from '@/pages/signal-center/analysis-widgets';
 import './analysis-tool.scss';
 
 const MAX_FETCH = 5000;
-const MIN_WINDOW = 50;
+const MIN_WINDOW = 10;
 const MAX_WINDOW = 5000;
 
 const AnalysisTool = observer(() => {
@@ -32,7 +33,9 @@ const AnalysisTool = observer(() => {
 
     useEffect(() => {
         if (connectionStatus === CONNECTION_STATUS.OPENED) {
-            const list = getSyntheticMarkets();
+            const list = getSyntheticMarkets()
+                .filter(m => isAnalysisMarket(m.symbol))
+                .sort((a, b) => marketOrder(a.symbol) - marketOrder(b.symbol));
             if (list.length) {
                 setMarkets(list);
                 setSymbol(prev => prev || list[0].symbol);
@@ -150,21 +153,15 @@ const AnalysisTool = observer(() => {
                         {Math.min(windowed_prices.length, ticks_window)}/{ticks_window}
                     </span>
                 </div>
-                <div className='pps-analysis-tool__digit-grid'>
-                    {stats.map(({ digit, percentage, is_hot, is_cold, streak }) => (
-                        <div
-                            key={digit}
-                            className={classNames('pps-digit-item', {
-                                'pps-digit-item--hot': is_hot,
-                                'pps-digit-item--cold': is_cold,
-                            })}
-                        >
-                            <span className='pps-digit-item__digit'>{digit}</span>
-                            <span className='pps-digit-item__pct'>{percentage.toFixed(1)}%</span>
-                            {streak > 0 && <span className='pps-digit-item__streak'>🔥{streak}</span>}
-                        </div>
-                    ))}
-                </div>
+                <DigitCircles
+                    stats={stats}
+                    current={current_digit}
+                    window={ticks_window}
+                    onWindow={w => {
+                        setTicksWindow(w);
+                        setTicksWindowInput(String(w));
+                    }}
+                />
             </div>
 
             <div className='pps-analysis-tool__section'>
@@ -179,6 +176,13 @@ const AnalysisTool = observer(() => {
                         <span>Odd {even_odd.odd_percentage.toFixed(1)}%</span>
                     </div>
                 </div>
+            </div>
+
+            <div className='pps-analysis-tool__section'>
+                <div className='pps-analysis-tool__section-header'>
+                    <span><Localize i18n_default_text='Market suggestions by strategy' /></span>
+                </div>
+                <MarketSuggestions />
             </div>
 
             <div className='pps-analysis-tool__section'>

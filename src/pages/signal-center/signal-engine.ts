@@ -109,6 +109,8 @@ export class SignalEngine {
   bootstrap(market: string, digits: number[]) { this.digits.set(market, digits.slice(-this.maxWin())); }
   lastDigit(market: string): number | undefined { const a = this.digits.get(market); return a?.[a.length - 1]; }
   ready(market: string) { return (this.digits.get(market)?.length ?? 0) >= this.maxWin(); }
+  /** Re-score a market after bootstrap (the Analysis Tool polls history instead of streaming ticks). */
+  refresh(market: string) { this.latest.set(market, this.analyze(market)); }
   recentDigits(market: string, n: number): number[] { return (this.digits.get(market) ?? []).slice(-n); }
 
   /** Entry point: the signal must still be strong AND the latest digit(s) must confirm it before we buy. */

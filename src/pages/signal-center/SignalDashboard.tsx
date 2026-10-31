@@ -244,6 +244,16 @@ const AccountCard = ({ cfg, setCfg, balance, currency }: { cfg: TraderConfig; se
     (Object.keys(fams) as Family[]).forEach((k) => { fams[k] = { ...fams[k], stake: plan.recommended }; });
     setCfg({ families: fams });
   };
+  // One click for a $2-$5 account: Even/Odd only, minimum stake, one recovery step, tight limits.
+  const smallAccount = () => setCfg({
+    families: {
+      overunder: { ...cfg.families.overunder, enabled: false },
+      evenodd: { ...cfg.families.evenodd, enabled: true, stake: 0.35, minConfidence: 90, recovery: 'same' },
+      matchesdiffers: { ...cfg.families.matchesdiffers, enabled: false },
+    },
+    entryMode: 'standard', autoStake: false, runsPerSignal: 1, recoveryStages: 1, recoveryMode: 'payout', recoveryTarget: 0,
+    maxSteps: 1, maxStake: 1, takeProfit: 1, stopLoss: 1, stopLossPct: 30, maxCycleRiskPct: 40, cooldownMs: 5000,
+  });
   const num = (k: keyof TraderConfig) => (v: number) => setCfg({ [k]: v } as Partial<TraderConfig>);
   return (
     <div style={card}>
@@ -274,6 +284,10 @@ const AccountCard = ({ cfg, setCfg, balance, currency }: { cfg: TraderConfig; se
           <input type="checkbox" checked={cfg.autoStake} onChange={(e) => setCfg({ autoStake: e.target.checked })} /> Auto stake from balance
         </label>
         <button style={btn(false, C.blue)} onClick={useRecommended}>Use recommended stake ({plan.recommended})</button>
+        <button style={btn(false, C.amber)} onClick={smallAccount}>Small account preset ($2-$5)</button>
+      </div>
+      <div style={{ fontSize: 12, color: C.dim, marginBottom: 8 }}>
+        Small account preset: Even/Odd only, $0.35 stake, one recovery step, stop after about $1 of loss, one run per signal. Worst case is about $0.75 lost in a session. Use only money you can afford to lose; the margin on every trade means this cannot be relied on to grow.
       </div>
       <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Worst case if every recovery trade loses (stake in use: {plan.stake})</div>
       {plan.chain.map((s) => (

@@ -1,11 +1,14 @@
+import { OUR_BOTS } from './our-bots';
+
 export type TPremiumBot = {
     id: string;
     name: string;
     rating: number;
     description: string;
+    xml?: () => string; // present when the bot loads straight into Bot Builder
 };
 
-export const PREMIUM_BOTS: TPremiumBot[] = [
+const SHOWCASE_BOTS: TPremiumBot[] = [
     {
         id: 'cmv-pro',
         name: 'THE CMV PRO',
@@ -56,3 +59,5 @@ export const PREMIUM_BOTS: TPremiumBot[] = [
             'Professional Under 7 bot with an R56 recovery mechanism, featuring intelligent risk management for consistent returns.',
     },
 ];
+
+export const PREMIUM_BOTS: TPremiumBot[] = [...OUR_BOTS, ...SHOWCASE_BOTS];

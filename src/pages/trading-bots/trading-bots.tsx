@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { LabelPairedCheckCaptionFillIcon, LabelPairedSearchCaptionRegularIcon } from '@deriv/quill-icons/LabelPaired';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { localize } from '@deriv-com/translations';
-import { PREMIUM_BOTS } from './data';
+import { load } from '@/external/bot-skeleton';
+import { PREMIUM_BOTS, TPremiumBot } from './data';
 import './trading-bots.scss';
 
 type TTradingBotsProps = {
@@ -21,13 +22,40 @@ const TradingBots = ({ handleTabChange }: TTradingBotsProps) => {
         );
     }, [search]);
 
-    const handleLoad = (bot_name: string) => {
-        setNote(
-            localize('{{bot_name}} is a showcase strategy. Opening Bot Builder — import its .xml file there to load it.', {
-                bot_name,
-            })
-        );
+    const handleLoad = async (bot: TPremiumBot) => {
+        if (!bot.xml) {
+            setNote(
+                localize('{{bot_name}} is a showcase strategy. Opening Bot Builder — import its .xml file there to load it.', {
+                    bot_name: bot.name,
+                })
+            );
+            handleTabChange(DBOT_TABS.BOT_BUILDER);
+            return;
+        }
         handleTabChange(DBOT_TABS.BOT_BUILDER);
+        try {
+            let workspace = window.Blockly?.derivWorkspace;
+            for (let i = 0; i < 80 && !workspace; i++) {
+                await new Promise(resolve => setTimeout(resolve, 125));
+                workspace = window.Blockly?.derivWorkspace;
+            }
+            if (!workspace) throw new Error(localize('The Bot Builder workspace did not open.'));
+            const xml = bot.xml();
+            await load({
+                block_string: xml,
+                file_name: bot.name,
+                strategy_id: null,
+                workspace,
+                from: 'trading_bots',
+                drop_event: {},
+                showIncompatibleStrategyDialog: false,
+                show_snackbar: true,
+            });
+            workspace.strategy_to_load = xml;
+            setNote(localize('{{bot_name}} is loaded in Bot Builder. Check the settings, then press Run.', { bot_name: bot.name }));
+        } catch (e) {
+            setNote((e as Error).message);
+        }
     };
 
     return (
@@ -66,7 +94,7 @@ const TradingBots = ({ handleTabChange }: TTradingBotsProps) => {
                             ))}
                         </div>
                         <p className='trading-bots__description'>{bot.description}</p>
-                        <button className='trading-bots__load-button' onClick={() => handleLoad(bot.name)}>
+                        <button className='trading-bots__load-button' onClick={() => handleLoad(bot)}>
                             {localize('LOAD PREMIUM BOT')}
                         </button>
                     </div>

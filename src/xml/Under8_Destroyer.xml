@@ -1,0 +1,2064 @@
+<xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true" collection="false">
+  <variables>
+    <variable id="var_BaseStake">BaseStake</variable>
+    <variable id="var_TP">TP</variable>
+    <variable id="var_SL">SL</variable>
+    <variable id="var_MaxStake">MaxStake</variable>
+    <variable id="var_MaxRec">MaxRec</variable>
+    <variable id="var_Mult">Mult</variable>
+    <variable id="var_Window">Window</variable>
+    <variable id="var_LowPct">LowPct</variable>
+    <variable id="var_HighPct">HighPct</variable>
+    <variable id="var_Stake">Stake</variable>
+    <variable id="var_Prediction">Prediction</variable>
+    <variable id="var_Phase">Phase</variable>
+    <variable id="var_Loss">Loss</variable>
+    <variable id="var_RecCount">RecCount</variable>
+    <variable id="var_LastProfit">LastProfit</variable>
+    <variable id="var_Pay">Pay</variable>
+    <variable id="var_n">n</variable>
+    <variable id="var_dg">dg</variable>
+    <variable id="var_Digits">Digits</variable>
+    <variable id="var_c0">c0</variable>
+    <variable id="var_c1">c1</variable>
+    <variable id="var_c2">c2</variable>
+    <variable id="var_c3">c3</variable>
+    <variable id="var_c4">c4</variable>
+    <variable id="var_c5">c5</variable>
+    <variable id="var_c6">c6</variable>
+    <variable id="var_c7">c7</variable>
+    <variable id="var_c8">c8</variable>
+    <variable id="var_c9">c9</variable>
+    <variable id="var_p0">p0</variable>
+    <variable id="var_p1">p1</variable>
+    <variable id="var_p2">p2</variable>
+    <variable id="var_p3">p3</variable>
+    <variable id="var_p4">p4</variable>
+    <variable id="var_p5">p5</variable>
+    <variable id="var_p6">p6</variable>
+    <variable id="var_p7">p7</variable>
+    <variable id="var_p8">p8</variable>
+    <variable id="var_p9">p9</variable>
+  </variables>
+  <block type="trade_definition" id="b0851" deletable="false" x="0" y="0">
+    <statement name="TRADE_OPTIONS">
+      <block type="trade_definition_market" id="b0839" deletable="false" movable="false">
+        <field name="MARKET_LIST">synthetic_index</field>
+        <field name="SUBMARKET_LIST">random_index</field>
+        <field name="SYMBOL_LIST">1HZ100V</field>
+        <next>
+          <block type="trade_definition_tradetype" id="b0840" deletable="false" movable="false">
+            <field name="TRADETYPE_CATEGORY_LIST">digits</field>
+            <field name="TRADETYPE_LIST">overunder</field>
+            <next>
+              <block type="trade_definition_contracttype" id="b0841" deletable="false" movable="false">
+                <field name="TYPE_LIST">DIGITUNDER</field>
+                <next>
+                  <block type="trade_definition_candleinterval" id="b0842" deletable="false" movable="false">
+                    <field name="CANDLEINTERVAL_LIST">60</field>
+                    <next>
+                      <block type="trade_definition_restartbuysell" id="b0843" deletable="false" movable="false">
+                        <field name="TIME_MACHINE_ENABLED">FALSE</field>
+                        <next>
+                          <block type="trade_definition_restartonerror" id="b0844" deletable="false" movable="false">
+                            <field name="RESTARTONERROR">TRUE</field>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+    <statement name="INITIALIZATION">
+      <block type="variables_set" id="b0766">
+        <field name="VAR" id="var_BaseStake">BaseStake</field>
+        <value name="VALUE">
+          <block type="math_number" id="b0765">
+            <field name="NUM">0.5</field>
+          </block>
+        </value>
+        <next>
+          <block type="variables_set" id="b0768">
+            <field name="VAR" id="var_TP">TP</field>
+            <value name="VALUE">
+              <block type="math_number" id="b0767">
+                <field name="NUM">5</field>
+              </block>
+            </value>
+            <next>
+              <block type="variables_set" id="b0770">
+                <field name="VAR" id="var_SL">SL</field>
+                <value name="VALUE">
+                  <block type="math_number" id="b0769">
+                    <field name="NUM">12</field>
+                  </block>
+                </value>
+                <next>
+                  <block type="variables_set" id="b0772">
+                    <field name="VAR" id="var_MaxStake">MaxStake</field>
+                    <value name="VALUE">
+                      <block type="math_number" id="b0771">
+                        <field name="NUM">5</field>
+                      </block>
+                    </value>
+                    <next>
+                      <block type="variables_set" id="b0774">
+                        <field name="VAR" id="var_MaxRec">MaxRec</field>
+                        <value name="VALUE">
+                          <block type="math_number" id="b0773">
+                            <field name="NUM">3</field>
+                          </block>
+                        </value>
+                        <next>
+                          <block type="variables_set" id="b0776">
+                            <field name="VAR" id="var_Window">Window</field>
+                            <value name="VALUE">
+                              <block type="math_number" id="b0775">
+                                <field name="NUM">100</field>
+                              </block>
+                            </value>
+                            <next>
+                              <block type="variables_set" id="b0778">
+                                <field name="VAR" id="var_LowPct">LowPct</field>
+                                <value name="VALUE">
+                                  <block type="math_number" id="b0777">
+                                    <field name="NUM">10.5</field>
+                                  </block>
+                                </value>
+                                <next>
+                                  <block type="variables_set" id="b0780">
+                                    <field name="VAR" id="var_HighPct">HighPct</field>
+                                    <value name="VALUE">
+                                      <block type="math_number" id="b0779">
+                                        <field name="NUM">12</field>
+                                      </block>
+                                    </value>
+                                    <next>
+                                      <block type="variables_set" id="b0782">
+                                        <field name="VAR" id="var_Stake">Stake</field>
+                                        <value name="VALUE">
+                                          <block type="math_number" id="b0781">
+                                            <field name="NUM">0.5</field>
+                                          </block>
+                                        </value>
+                                        <next>
+                                          <block type="variables_set" id="b0784">
+                                            <field name="VAR" id="var_Prediction">Prediction</field>
+                                            <value name="VALUE">
+                                              <block type="math_number" id="b0783">
+                                                <field name="NUM">8</field>
+                                              </block>
+                                            </value>
+                                            <next>
+                                              <block type="variables_set" id="b0786">
+                                                <field name="VAR" id="var_Phase">Phase</field>
+                                                <value name="VALUE">
+                                                  <block type="math_number" id="b0785">
+                                                    <field name="NUM">1</field>
+                                                  </block>
+                                                </value>
+                                                <next>
+                                                  <block type="variables_set" id="b0788">
+                                                    <field name="VAR" id="var_Loss">Loss</field>
+                                                    <value name="VALUE">
+                                                      <block type="math_number" id="b0787">
+                                                        <field name="NUM">0</field>
+                                                      </block>
+                                                    </value>
+                                                    <next>
+                                                      <block type="variables_set" id="b0790">
+                                                        <field name="VAR" id="var_RecCount">RecCount</field>
+                                                        <value name="VALUE">
+                                                          <block type="math_number" id="b0789">
+                                                            <field name="NUM">0</field>
+                                                          </block>
+                                                        </value>
+                                                        <next>
+                                                          <block type="variables_set" id="b0792">
+                                                            <field name="VAR" id="var_LastProfit">LastProfit</field>
+                                                            <value name="VALUE">
+                                                              <block type="math_number" id="b0791">
+                                                                <field name="NUM">0</field>
+                                                              </block>
+                                                            </value>
+                                                            <next>
+                                                              <block type="variables_set" id="b0794">
+                                                                <field name="VAR" id="var_Pay">Pay</field>
+                                                                <value name="VALUE">
+                                                                  <block type="math_number" id="b0793">
+                                                                    <field name="NUM">0.36</field>
+                                                                  </block>
+                                                                </value>
+                                                                <next>
+                                                                  <block type="variables_set" id="b0796">
+                                                                    <field name="VAR" id="var_n">n</field>
+                                                                    <value name="VALUE">
+                                                                      <block type="math_number" id="b0795">
+                                                                        <field name="NUM">0</field>
+                                                                      </block>
+                                                                    </value>
+                                                                    <next>
+                                                                      <block type="variables_set" id="b0798">
+                                                                        <field name="VAR" id="var_dg">dg</field>
+                                                                        <value name="VALUE">
+                                                                          <block type="math_number" id="b0797">
+                                                                            <field name="NUM">0</field>
+                                                                          </block>
+                                                                        </value>
+                                                                        <next>
+                                                                          <block type="variables_set" id="b0800">
+                                                                            <field name="VAR" id="var_c0">c0</field>
+                                                                            <value name="VALUE">
+                                                                              <block type="math_number" id="b0799">
+                                                                                <field name="NUM">0</field>
+                                                                              </block>
+                                                                            </value>
+                                                                            <next>
+                                                                              <block type="variables_set" id="b0802">
+                                                                                <field name="VAR" id="var_c1">c1</field>
+                                                                                <value name="VALUE">
+                                                                                  <block type="math_number" id="b0801">
+                                                                                    <field name="NUM">0</field>
+                                                                                  </block>
+                                                                                </value>
+                                                                                <next>
+                                                                                  <block type="variables_set" id="b0804">
+                                                                                    <field name="VAR" id="var_c2">c2</field>
+                                                                                    <value name="VALUE">
+                                                                                      <block type="math_number" id="b0803">
+                                                                                        <field name="NUM">0</field>
+                                                                                      </block>
+                                                                                    </value>
+                                                                                    <next>
+                                                                                      <block type="variables_set" id="b0806">
+                                                                                        <field name="VAR" id="var_c3">c3</field>
+                                                                                        <value name="VALUE">
+                                                                                          <block type="math_number" id="b0805">
+                                                                                            <field name="NUM">0</field>
+                                                                                          </block>
+                                                                                        </value>
+                                                                                        <next>
+                                                                                          <block type="variables_set" id="b0808">
+                                                                                            <field name="VAR" id="var_c4">c4</field>
+                                                                                            <value name="VALUE">
+                                                                                              <block type="math_number" id="b0807">
+                                                                                                <field name="NUM">0</field>
+                                                                                              </block>
+                                                                                            </value>
+                                                                                            <next>
+                                                                                              <block type="variables_set" id="b0810">
+                                                                                                <field name="VAR" id="var_c5">c5</field>
+                                                                                                <value name="VALUE">
+                                                                                                  <block type="math_number" id="b0809">
+                                                                                                    <field name="NUM">0</field>
+                                                                                                  </block>
+                                                                                                </value>
+                                                                                                <next>
+                                                                                                  <block type="variables_set" id="b0812">
+                                                                                                    <field name="VAR" id="var_c6">c6</field>
+                                                                                                    <value name="VALUE">
+                                                                                                      <block type="math_number" id="b0811">
+                                                                                                        <field name="NUM">0</field>
+                                                                                                      </block>
+                                                                                                    </value>
+                                                                                                    <next>
+                                                                                                      <block type="variables_set" id="b0814">
+                                                                                                        <field name="VAR" id="var_c7">c7</field>
+                                                                                                        <value name="VALUE">
+                                                                                                          <block type="math_number" id="b0813">
+                                                                                                            <field name="NUM">0</field>
+                                                                                                          </block>
+                                                                                                        </value>
+                                                                                                        <next>
+                                                                                                          <block type="variables_set" id="b0816">
+                                                                                                            <field name="VAR" id="var_c8">c8</field>
+                                                                                                            <value name="VALUE">
+                                                                                                              <block type="math_number" id="b0815">
+                                                                                                                <field name="NUM">0</field>
+                                                                                                              </block>
+                                                                                                            </value>
+                                                                                                            <next>
+                                                                                                              <block type="variables_set" id="b0818">
+                                                                                                                <field name="VAR" id="var_c9">c9</field>
+                                                                                                                <value name="VALUE">
+                                                                                                                  <block type="math_number" id="b0817">
+                                                                                                                    <field name="NUM">0</field>
+                                                                                                                  </block>
+                                                                                                                </value>
+                                                                                                                <next>
+                                                                                                                  <block type="variables_set" id="b0820">
+                                                                                                                    <field name="VAR" id="var_p0">p0</field>
+                                                                                                                    <value name="VALUE">
+                                                                                                                      <block type="math_number" id="b0819">
+                                                                                                                        <field name="NUM">0</field>
+                                                                                                                      </block>
+                                                                                                                    </value>
+                                                                                                                    <next>
+                                                                                                                      <block type="variables_set" id="b0822">
+                                                                                                                        <field name="VAR" id="var_p1">p1</field>
+                                                                                                                        <value name="VALUE">
+                                                                                                                          <block type="math_number" id="b0821">
+                                                                                                                            <field name="NUM">0</field>
+                                                                                                                          </block>
+                                                                                                                        </value>
+                                                                                                                        <next>
+                                                                                                                          <block type="variables_set" id="b0824">
+                                                                                                                            <field name="VAR" id="var_p2">p2</field>
+                                                                                                                            <value name="VALUE">
+                                                                                                                              <block type="math_number" id="b0823">
+                                                                                                                                <field name="NUM">0</field>
+                                                                                                                              </block>
+                                                                                                                            </value>
+                                                                                                                            <next>
+                                                                                                                              <block type="variables_set" id="b0826">
+                                                                                                                                <field name="VAR" id="var_p3">p3</field>
+                                                                                                                                <value name="VALUE">
+                                                                                                                                  <block type="math_number" id="b0825">
+                                                                                                                                    <field name="NUM">0</field>
+                                                                                                                                  </block>
+                                                                                                                                </value>
+                                                                                                                                <next>
+                                                                                                                                  <block type="variables_set" id="b0828">
+                                                                                                                                    <field name="VAR" id="var_p4">p4</field>
+                                                                                                                                    <value name="VALUE">
+                                                                                                                                      <block type="math_number" id="b0827">
+                                                                                                                                        <field name="NUM">0</field>
+                                                                                                                                      </block>
+                                                                                                                                    </value>
+                                                                                                                                    <next>
+                                                                                                                                      <block type="variables_set" id="b0830">
+                                                                                                                                        <field name="VAR" id="var_p5">p5</field>
+                                                                                                                                        <value name="VALUE">
+                                                                                                                                          <block type="math_number" id="b0829">
+                                                                                                                                            <field name="NUM">0</field>
+                                                                                                                                          </block>
+                                                                                                                                        </value>
+                                                                                                                                        <next>
+                                                                                                                                          <block type="variables_set" id="b0832">
+                                                                                                                                            <field name="VAR" id="var_p6">p6</field>
+                                                                                                                                            <value name="VALUE">
+                                                                                                                                              <block type="math_number" id="b0831">
+                                                                                                                                                <field name="NUM">0</field>
+                                                                                                                                              </block>
+                                                                                                                                            </value>
+                                                                                                                                            <next>
+                                                                                                                                              <block type="variables_set" id="b0834">
+                                                                                                                                                <field name="VAR" id="var_p7">p7</field>
+                                                                                                                                                <value name="VALUE">
+                                                                                                                                                  <block type="math_number" id="b0833">
+                                                                                                                                                    <field name="NUM">0</field>
+                                                                                                                                                  </block>
+                                                                                                                                                </value>
+                                                                                                                                                <next>
+                                                                                                                                                  <block type="variables_set" id="b0836">
+                                                                                                                                                    <field name="VAR" id="var_p8">p8</field>
+                                                                                                                                                    <value name="VALUE">
+                                                                                                                                                      <block type="math_number" id="b0835">
+                                                                                                                                                        <field name="NUM">0</field>
+                                                                                                                                                      </block>
+                                                                                                                                                    </value>
+                                                                                                                                                    <next>
+                                                                                                                                                      <block type="variables_set" id="b0838">
+                                                                                                                                                        <field name="VAR" id="var_p9">p9</field>
+                                                                                                                                                        <value name="VALUE">
+                                                                                                                                                          <block type="math_number" id="b0837">
+                                                                                                                                                            <field name="NUM">0</field>
+                                                                                                                                                          </block>
+                                                                                                                                                        </value>
+                                                                                                                                                      </block>
+                                                                                                                                                    </next>
+                                                                                                                                                  </block>
+                                                                                                                                                </next>
+                                                                                                                                              </block>
+                                                                                                                                            </next>
+                                                                                                                                          </block>
+                                                                                                                                        </next>
+                                                                                                                                      </block>
+                                                                                                                                    </next>
+                                                                                                                                  </block>
+                                                                                                                                </next>
+                                                                                                                              </block>
+                                                                                                                            </next>
+                                                                                                                          </block>
+                                                                                                                        </next>
+                                                                                                                      </block>
+                                                                                                                    </next>
+                                                                                                                  </block>
+                                                                                                                </next>
+                                                                                                              </block>
+                                                                                                            </next>
+                                                                                                          </block>
+                                                                                                        </next>
+                                                                                                      </block>
+                                                                                                    </next>
+                                                                                                  </block>
+                                                                                                </next>
+                                                                                              </block>
+                                                                                            </next>
+                                                                                          </block>
+                                                                                        </next>
+                                                                                      </block>
+                                                                                    </next>
+                                                                                  </block>
+                                                                                </next>
+                                                                              </block>
+                                                                            </next>
+                                                                          </block>
+                                                                        </next>
+                                                                      </block>
+                                                                    </next>
+                                                                  </block>
+                                                                </next>
+                                                              </block>
+                                                            </next>
+                                                          </block>
+                                                        </next>
+                                                      </block>
+                                                    </next>
+                                                  </block>
+                                                </next>
+                                              </block>
+                                            </next>
+                                          </block>
+                                        </next>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+    <statement name="SUBMARKET">
+      <block type="trade_definition_tradeoptions" id="b0850">
+        <mutation xmlns="http://www.w3.org/1999/xhtml" has_first_barrier="false" has_second_barrier="false" has_prediction="true"/>
+        <field name="DURATIONTYPE_LIST">t</field>
+        <field name="CURRENCY_LIST">USD</field>
+        <value name="DURATION">
+          <shadow type="math_number_positive" id="b0845">
+            <field name="NUM">1</field>
+          </shadow>
+        </value>
+        <value name="AMOUNT">
+          <shadow type="math_number_positive" id="b0846">
+            <field name="NUM">1</field>
+          </shadow>
+          <block type="variables_get" id="b0847">
+            <field name="VAR" id="var_Stake">Stake</field>
+          </block>
+        </value>
+        <value name="PREDICTION">
+          <shadow type="math_number_positive" id="b0848">
+            <field name="NUM">1</field>
+          </shadow>
+          <block type="variables_get" id="b0849">
+            <field name="VAR" id="var_Prediction">Prediction</field>
+          </block>
+        </value>
+      </block>
+    </statement>
+  </block>
+  <block type="before_purchase" id="b0895" deletable="false" x="0" y="1300">
+    <statement name="BEFOREPURCHASE_STACK">
+      <block type="procedures_callnoreturn" id="b0882">
+        <mutation xmlns="http://www.w3.org/1999/xhtml" name="CalcStats"/>
+        <next>
+          <block type="controls_if" id="b0894">
+            <value name="IF0">
+              <block type="logic_compare" id="b0885">
+                <field name="OP">GTE</field>
+                <value name="A">
+                  <block type="variables_get" id="b0883">
+                    <field name="VAR" id="var_n">n</field>
+                  </block>
+                </value>
+                <value name="B">
+                  <block type="math_number" id="b0884">
+                    <field name="NUM">50</field>
+                  </block>
+                </value>
+              </block>
+            </value>
+            <statement name="DO0">
+              <block type="controls_if" id="b0893">
+                <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"/>
+                <value name="IF0">
+                  <block type="logic_compare" id="b0888">
+                    <field name="OP">EQ</field>
+                    <value name="A">
+                      <block type="variables_get" id="b0886">
+                        <field name="VAR" id="var_Phase">Phase</field>
+                      </block>
+                    </value>
+                    <value name="B">
+                      <block type="math_number" id="b0887">
+                        <field name="NUM">2</field>
+                      </block>
+                    </value>
+                  </block>
+                </value>
+                <statement name="DO0">
+                  <block type="purchase" id="b0889">
+                    <field name="PURCHASE_LIST">DIGITUNDER</field>
+                  </block>
+                </statement>
+                <statement name="ELSE">
+                  <block type="controls_if" id="b0892">
+                    <value name="IF0">
+                      <block type="logic_operation" id="b0890">
+                        <field name="OP">AND</field>
+                        <value name="A">
+                          <block type="logic_operation" id="b0858">
+                            <field name="OP">AND</field>
+                            <value name="A">
+                              <block type="logic_compare" id="b0854">
+                                <field name="OP">LT</field>
+                                <value name="A">
+                                  <block type="variables_get" id="b0852">
+                                    <field name="VAR" id="var_p8">p8</field>
+                                  </block>
+                                </value>
+                                <value name="B">
+                                  <block type="variables_get" id="b0853">
+                                    <field name="VAR" id="var_LowPct">LowPct</field>
+                                  </block>
+                                </value>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <block type="logic_compare" id="b0857">
+                                <field name="OP">LT</field>
+                                <value name="A">
+                                  <block type="variables_get" id="b0855">
+                                    <field name="VAR" id="var_p9">p9</field>
+                                  </block>
+                                </value>
+                                <value name="B">
+                                  <block type="variables_get" id="b0856">
+                                    <field name="VAR" id="var_LowPct">LowPct</field>
+                                  </block>
+                                </value>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                        <value name="B">
+                          <block type="logic_operation" id="b0881">
+                            <field name="OP">OR</field>
+                            <value name="A">
+                              <block type="logic_operation" id="b0873">
+                                <field name="OP">OR</field>
+                                <value name="A">
+                                  <block type="logic_operation" id="b0865">
+                                    <field name="OP">AND</field>
+                                    <value name="A">
+                                      <block type="logic_compare" id="b0861">
+                                        <field name="OP">EQ</field>
+                                        <value name="A">
+                                          <block type="last_digit" id="b0859"/>
+                                        </value>
+                                        <value name="B">
+                                          <block type="math_number" id="b0860">
+                                            <field name="NUM">4</field>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </value>
+                                    <value name="B">
+                                      <block type="logic_compare" id="b0864">
+                                        <field name="OP">LT</field>
+                                        <value name="A">
+                                          <block type="variables_get" id="b0862">
+                                            <field name="VAR" id="var_p4">p4</field>
+                                          </block>
+                                        </value>
+                                        <value name="B">
+                                          <block type="variables_get" id="b0863">
+                                            <field name="VAR" id="var_HighPct">HighPct</field>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </value>
+                                <value name="B">
+                                  <block type="logic_operation" id="b0872">
+                                    <field name="OP">AND</field>
+                                    <value name="A">
+                                      <block type="logic_compare" id="b0868">
+                                        <field name="OP">EQ</field>
+                                        <value name="A">
+                                          <block type="last_digit" id="b0866"/>
+                                        </value>
+                                        <value name="B">
+                                          <block type="math_number" id="b0867">
+                                            <field name="NUM">7</field>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </value>
+                                    <value name="B">
+                                      <block type="logic_compare" id="b0871">
+                                        <field name="OP">LT</field>
+                                        <value name="A">
+                                          <block type="variables_get" id="b0869">
+                                            <field name="VAR" id="var_p7">p7</field>
+                                          </block>
+                                        </value>
+                                        <value name="B">
+                                          <block type="variables_get" id="b0870">
+                                            <field name="VAR" id="var_HighPct">HighPct</field>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </value>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <block type="logic_operation" id="b0880">
+                                <field name="OP">AND</field>
+                                <value name="A">
+                                  <block type="logic_compare" id="b0876">
+                                    <field name="OP">EQ</field>
+                                    <value name="A">
+                                      <block type="last_digit" id="b0874"/>
+                                    </value>
+                                    <value name="B">
+                                      <block type="math_number" id="b0875">
+                                        <field name="NUM">9</field>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </value>
+                                <value name="B">
+                                  <block type="logic_compare" id="b0879">
+                                    <field name="OP">LT</field>
+                                    <value name="A">
+                                      <block type="variables_get" id="b0877">
+                                        <field name="VAR" id="var_p9">p9</field>
+                                      </block>
+                                    </value>
+                                    <value name="B">
+                                      <block type="variables_get" id="b0878">
+                                        <field name="VAR" id="var_HighPct">HighPct</field>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </value>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                    <statement name="DO0">
+                      <block type="purchase" id="b0891">
+                        <field name="PURCHASE_LIST">DIGITUNDER</field>
+                      </block>
+                    </statement>
+                  </block>
+                </statement>
+              </block>
+            </statement>
+          </block>
+        </next>
+      </block>
+    </statement>
+  </block>
+  <block type="during_purchase" id="b0896" deletable="false" x="450" y="1300">
+    <statement name="DURING_PURCHASE_STACK"/>
+  </block>
+  <block type="after_purchase" id="b0980" deletable="false" x="0" y="2200">
+    <statement name="AFTERPURCHASE_STACK">
+      <block type="variables_set" id="b0898">
+        <field name="VAR" id="var_LastProfit">LastProfit</field>
+        <value name="VALUE">
+          <block type="read_details" id="b0897">
+            <field name="DETAIL_INDEX">4</field>
+          </block>
+        </value>
+        <next>
+          <block type="controls_if" id="b0956">
+            <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"/>
+            <value name="IF0">
+              <block type="logic_compare" id="b0901">
+                <field name="OP">GT</field>
+                <value name="A">
+                  <block type="variables_get" id="b0899">
+                    <field name="VAR" id="var_LastProfit">LastProfit</field>
+                  </block>
+                </value>
+                <value name="B">
+                  <block type="math_number" id="b0900">
+                    <field name="NUM">0</field>
+                  </block>
+                </value>
+              </block>
+            </value>
+            <statement name="DO0">
+              <block type="controls_if" id="b0924">
+                <value name="IF0">
+                  <block type="logic_compare" id="b0904">
+                    <field name="OP">EQ</field>
+                    <value name="A">
+                      <block type="variables_get" id="b0902">
+                        <field name="VAR" id="var_Phase">Phase</field>
+                      </block>
+                    </value>
+                    <value name="B">
+                      <block type="math_number" id="b0903">
+                        <field name="NUM">2</field>
+                      </block>
+                    </value>
+                  </block>
+                </value>
+                <statement name="DO0">
+                  <block type="variables_set" id="b0908">
+                    <field name="VAR" id="var_Loss">Loss</field>
+                    <value name="VALUE">
+                      <block type="math_arithmetic" id="b0907">
+                        <field name="OP">MINUS</field>
+                        <value name="A">
+                          <block type="variables_get" id="b0905">
+                            <field name="VAR" id="var_Loss">Loss</field>
+                          </block>
+                        </value>
+                        <value name="B">
+                          <block type="variables_get" id="b0906">
+                            <field name="VAR" id="var_LastProfit">LastProfit</field>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                    <next>
+                      <block type="controls_if" id="b0923">
+                        <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"/>
+                        <value name="IF0">
+                          <block type="logic_compare" id="b0911">
+                            <field name="OP">LTE</field>
+                            <value name="A">
+                              <block type="variables_get" id="b0909">
+                                <field name="VAR" id="var_Loss">Loss</field>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <block type="math_number" id="b0910">
+                                <field name="NUM">0</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                        <statement name="DO0">
+                          <block type="variables_set" id="b0913">
+                            <field name="VAR" id="var_Loss">Loss</field>
+                            <value name="VALUE">
+                              <block type="math_number" id="b0912">
+                                <field name="NUM">0</field>
+                              </block>
+                            </value>
+                            <next>
+                              <block type="variables_set" id="b0915">
+                                <field name="VAR" id="var_RecCount">RecCount</field>
+                                <value name="VALUE">
+                                  <block type="math_number" id="b0914">
+                                    <field name="NUM">0</field>
+                                  </block>
+                                </value>
+                                <next>
+                                  <block type="variables_set" id="b0917">
+                                    <field name="VAR" id="var_Phase">Phase</field>
+                                    <value name="VALUE">
+                                      <block type="math_number" id="b0916">
+                                        <field name="NUM">1</field>
+                                      </block>
+                                    </value>
+                                    <next>
+                                      <block type="variables_set" id="b0919">
+                                        <field name="VAR" id="var_Prediction">Prediction</field>
+                                        <value name="VALUE">
+                                          <block type="math_number" id="b0918">
+                                            <field name="NUM">8</field>
+                                          </block>
+                                        </value>
+                                        <next>
+                                          <block type="variables_set" id="b0921">
+                                            <field name="VAR" id="var_Stake">Stake</field>
+                                            <value name="VALUE">
+                                              <block type="variables_get" id="b0920">
+                                                <field name="VAR" id="var_BaseStake">BaseStake</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </next>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </statement>
+                        <statement name="ELSE">
+                          <block type="procedures_callnoreturn" id="b0922">
+                            <mutation xmlns="http://www.w3.org/1999/xhtml" name="SetRecovery"/>
+                          </block>
+                        </statement>
+                      </block>
+                    </next>
+                  </block>
+                </statement>
+              </block>
+            </statement>
+            <statement name="ELSE">
+              <block type="variables_set" id="b0928">
+                <field name="VAR" id="var_Loss">Loss</field>
+                <value name="VALUE">
+                  <block type="math_arithmetic" id="b0927">
+                    <field name="OP">MINUS</field>
+                    <value name="A">
+                      <block type="variables_get" id="b0925">
+                        <field name="VAR" id="var_Loss">Loss</field>
+                      </block>
+                    </value>
+                    <value name="B">
+                      <block type="variables_get" id="b0926">
+                        <field name="VAR" id="var_LastProfit">LastProfit</field>
+                      </block>
+                    </value>
+                  </block>
+                </value>
+                <next>
+                  <block type="controls_if" id="b0940">
+                    <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"/>
+                    <value name="IF0">
+                      <block type="logic_compare" id="b0931">
+                        <field name="OP">EQ</field>
+                        <value name="A">
+                          <block type="variables_get" id="b0929">
+                            <field name="VAR" id="var_Phase">Phase</field>
+                          </block>
+                        </value>
+                        <value name="B">
+                          <block type="math_number" id="b0930">
+                            <field name="NUM">2</field>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                    <statement name="DO0">
+                      <block type="variables_set" id="b0935">
+                        <field name="VAR" id="var_RecCount">RecCount</field>
+                        <value name="VALUE">
+                          <block type="math_arithmetic" id="b0934">
+                            <field name="OP">ADD</field>
+                            <value name="A">
+                              <block type="variables_get" id="b0932">
+                                <field name="VAR" id="var_RecCount">RecCount</field>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <block type="math_number" id="b0933">
+                                <field name="NUM">1</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                      </block>
+                    </statement>
+                    <statement name="ELSE">
+                      <block type="variables_set" id="b0937">
+                        <field name="VAR" id="var_Phase">Phase</field>
+                        <value name="VALUE">
+                          <block type="math_number" id="b0936">
+                            <field name="NUM">2</field>
+                          </block>
+                        </value>
+                        <next>
+                          <block type="variables_set" id="b0939">
+                            <field name="VAR" id="var_RecCount">RecCount</field>
+                            <value name="VALUE">
+                              <block type="math_number" id="b0938">
+                                <field name="NUM">0</field>
+                              </block>
+                            </value>
+                          </block>
+                        </next>
+                      </block>
+                    </statement>
+                    <next>
+                      <block type="controls_if" id="b0955">
+                        <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"/>
+                        <value name="IF0">
+                          <block type="logic_compare" id="b0943">
+                            <field name="OP">GTE</field>
+                            <value name="A">
+                              <block type="variables_get" id="b0941">
+                                <field name="VAR" id="var_RecCount">RecCount</field>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <block type="variables_get" id="b0942">
+                                <field name="VAR" id="var_MaxRec">MaxRec</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                        <statement name="DO0">
+                          <block type="variables_set" id="b0945">
+                            <field name="VAR" id="var_Loss">Loss</field>
+                            <value name="VALUE">
+                              <block type="math_number" id="b0944">
+                                <field name="NUM">0</field>
+                              </block>
+                            </value>
+                            <next>
+                              <block type="variables_set" id="b0947">
+                                <field name="VAR" id="var_RecCount">RecCount</field>
+                                <value name="VALUE">
+                                  <block type="math_number" id="b0946">
+                                    <field name="NUM">0</field>
+                                  </block>
+                                </value>
+                                <next>
+                                  <block type="variables_set" id="b0949">
+                                    <field name="VAR" id="var_Phase">Phase</field>
+                                    <value name="VALUE">
+                                      <block type="math_number" id="b0948">
+                                        <field name="NUM">1</field>
+                                      </block>
+                                    </value>
+                                    <next>
+                                      <block type="variables_set" id="b0951">
+                                        <field name="VAR" id="var_Prediction">Prediction</field>
+                                        <value name="VALUE">
+                                          <block type="math_number" id="b0950">
+                                            <field name="NUM">8</field>
+                                          </block>
+                                        </value>
+                                        <next>
+                                          <block type="variables_set" id="b0953">
+                                            <field name="VAR" id="var_Stake">Stake</field>
+                                            <value name="VALUE">
+                                              <block type="variables_get" id="b0952">
+                                                <field name="VAR" id="var_BaseStake">BaseStake</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </next>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </statement>
+                        <statement name="ELSE">
+                          <block type="procedures_callnoreturn" id="b0954">
+                            <mutation xmlns="http://www.w3.org/1999/xhtml" name="SetRecovery"/>
+                          </block>
+                        </statement>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </statement>
+            <next>
+              <block type="controls_if" id="b0962">
+                <value name="IF0">
+                  <block type="logic_compare" id="b0959">
+                    <field name="OP">GT</field>
+                    <value name="A">
+                      <block type="variables_get" id="b0957">
+                        <field name="VAR" id="var_Stake">Stake</field>
+                      </block>
+                    </value>
+                    <value name="B">
+                      <block type="variables_get" id="b0958">
+                        <field name="VAR" id="var_MaxStake">MaxStake</field>
+                      </block>
+                    </value>
+                  </block>
+                </value>
+                <statement name="DO0">
+                  <block type="variables_set" id="b0961">
+                    <field name="VAR" id="var_Stake">Stake</field>
+                    <value name="VALUE">
+                      <block type="variables_get" id="b0960">
+                        <field name="VAR" id="var_MaxStake">MaxStake</field>
+                      </block>
+                    </value>
+                  </block>
+                </statement>
+                <next>
+                  <block type="controls_if" id="b0968">
+                    <value name="IF0">
+                      <block type="logic_compare" id="b0965">
+                        <field name="OP">LT</field>
+                        <value name="A">
+                          <block type="variables_get" id="b0963">
+                            <field name="VAR" id="var_Stake">Stake</field>
+                          </block>
+                        </value>
+                        <value name="B">
+                          <block type="math_number" id="b0964">
+                            <field name="NUM">0.35</field>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                    <statement name="DO0">
+                      <block type="variables_set" id="b0967">
+                        <field name="VAR" id="var_Stake">Stake</field>
+                        <value name="VALUE">
+                          <block type="math_number" id="b0966">
+                            <field name="NUM">0.35</field>
+                          </block>
+                        </value>
+                      </block>
+                    </statement>
+                    <next>
+                      <block type="controls_if" id="b0979">
+                        <value name="IF0">
+                          <block type="logic_operation" id="b0977">
+                            <field name="OP">AND</field>
+                            <value name="A">
+                              <block type="logic_compare" id="b0973">
+                                <field name="OP">GT</field>
+                                <value name="A">
+                                  <block type="total_profit" id="b0969"/>
+                                </value>
+                                <value name="B">
+                                  <block type="math_arithmetic" id="b0972">
+                                    <field name="OP">MINUS</field>
+                                    <value name="A">
+                                      <block type="math_number" id="b0970">
+                                        <field name="NUM">0</field>
+                                      </block>
+                                    </value>
+                                    <value name="B">
+                                      <block type="variables_get" id="b0971">
+                                        <field name="VAR" id="var_SL">SL</field>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </value>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <block type="logic_compare" id="b0976">
+                                <field name="OP">LT</field>
+                                <value name="A">
+                                  <block type="total_profit" id="b0974"/>
+                                </value>
+                                <value name="B">
+                                  <block type="variables_get" id="b0975">
+                                    <field name="VAR" id="var_TP">TP</field>
+                                  </block>
+                                </value>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                        <statement name="DO0">
+                          <block type="trade_again" id="b0978"/>
+                        </statement>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+  </block>
+  <block type="procedures_defnoreturn" id="b0741" x="900" y="0">
+    <field name="NAME">CalcStats</field>
+    <statement name="STACK">
+      <block type="variables_set" id="b0571">
+        <field name="VAR" id="var_Digits">Digits</field>
+        <value name="VALUE">
+          <block type="lists_getSublist" id="b0570">
+            <mutation xmlns="http://www.w3.org/1999/xhtml" at1="true" at2="false"/>
+            <field name="WHERE1">FROM_END</field>
+            <field name="WHERE2">LAST</field>
+            <value name="LIST">
+              <block type="lastDigitList" id="b0568"/>
+            </value>
+            <value name="AT1">
+              <block type="variables_get" id="b0569">
+                <field name="VAR" id="var_Window">Window</field>
+              </block>
+            </value>
+          </block>
+        </value>
+        <next>
+          <block type="variables_set" id="b0574">
+            <field name="VAR" id="var_n">n</field>
+            <value name="VALUE">
+              <block type="lists_length" id="b0573">
+                <value name="VALUE">
+                  <block type="variables_get" id="b0572">
+                    <field name="VAR" id="var_Digits">Digits</field>
+                  </block>
+                </value>
+              </block>
+            </value>
+            <next>
+              <block type="variables_set" id="b0576">
+                <field name="VAR" id="var_c0">c0</field>
+                <value name="VALUE">
+                  <block type="math_number" id="b0575">
+                    <field name="NUM">0</field>
+                  </block>
+                </value>
+                <next>
+                  <block type="variables_set" id="b0578">
+                    <field name="VAR" id="var_c1">c1</field>
+                    <value name="VALUE">
+                      <block type="math_number" id="b0577">
+                        <field name="NUM">0</field>
+                      </block>
+                    </value>
+                    <next>
+                      <block type="variables_set" id="b0580">
+                        <field name="VAR" id="var_c2">c2</field>
+                        <value name="VALUE">
+                          <block type="math_number" id="b0579">
+                            <field name="NUM">0</field>
+                          </block>
+                        </value>
+                        <next>
+                          <block type="variables_set" id="b0582">
+                            <field name="VAR" id="var_c3">c3</field>
+                            <value name="VALUE">
+                              <block type="math_number" id="b0581">
+                                <field name="NUM">0</field>
+                              </block>
+                            </value>
+                            <next>
+                              <block type="variables_set" id="b0584">
+                                <field name="VAR" id="var_c4">c4</field>
+                                <value name="VALUE">
+                                  <block type="math_number" id="b0583">
+                                    <field name="NUM">0</field>
+                                  </block>
+                                </value>
+                                <next>
+                                  <block type="variables_set" id="b0586">
+                                    <field name="VAR" id="var_c5">c5</field>
+                                    <value name="VALUE">
+                                      <block type="math_number" id="b0585">
+                                        <field name="NUM">0</field>
+                                      </block>
+                                    </value>
+                                    <next>
+                                      <block type="variables_set" id="b0588">
+                                        <field name="VAR" id="var_c6">c6</field>
+                                        <value name="VALUE">
+                                          <block type="math_number" id="b0587">
+                                            <field name="NUM">0</field>
+                                          </block>
+                                        </value>
+                                        <next>
+                                          <block type="variables_set" id="b0590">
+                                            <field name="VAR" id="var_c7">c7</field>
+                                            <value name="VALUE">
+                                              <block type="math_number" id="b0589">
+                                                <field name="NUM">0</field>
+                                              </block>
+                                            </value>
+                                            <next>
+                                              <block type="variables_set" id="b0592">
+                                                <field name="VAR" id="var_c8">c8</field>
+                                                <value name="VALUE">
+                                                  <block type="math_number" id="b0591">
+                                                    <field name="NUM">0</field>
+                                                  </block>
+                                                </value>
+                                                <next>
+                                                  <block type="variables_set" id="b0594">
+                                                    <field name="VAR" id="var_c9">c9</field>
+                                                    <value name="VALUE">
+                                                      <block type="math_number" id="b0593">
+                                                        <field name="NUM">0</field>
+                                                      </block>
+                                                    </value>
+                                                    <next>
+                                                      <block type="controls_forEach" id="b0676">
+                                                        <field name="VAR" id="var_dg">dg</field>
+                                                        <value name="LIST">
+                                                          <block type="variables_get" id="b0595">
+                                                            <field name="VAR" id="var_Digits">Digits</field>
+                                                          </block>
+                                                        </value>
+                                                        <statement name="DO">
+                                                          <block type="controls_if" id="b0603">
+                                                            <value name="IF0">
+                                                              <block type="logic_compare" id="b0598">
+                                                                <field name="OP">EQ</field>
+                                                                <value name="A">
+                                                                  <block type="variables_get" id="b0596">
+                                                                    <field name="VAR" id="var_dg">dg</field>
+                                                                  </block>
+                                                                </value>
+                                                                <value name="B">
+                                                                  <block type="math_number" id="b0597">
+                                                                    <field name="NUM">0</field>
+                                                                  </block>
+                                                                </value>
+                                                              </block>
+                                                            </value>
+                                                            <statement name="DO0">
+                                                              <block type="variables_set" id="b0602">
+                                                                <field name="VAR" id="var_c0">c0</field>
+                                                                <value name="VALUE">
+                                                                  <block type="math_arithmetic" id="b0601">
+                                                                    <field name="OP">ADD</field>
+                                                                    <value name="A">
+                                                                      <block type="variables_get" id="b0599">
+                                                                        <field name="VAR" id="var_c0">c0</field>
+                                                                      </block>
+                                                                    </value>
+                                                                    <value name="B">
+                                                                      <block type="math_number" id="b0600">
+                                                                        <field name="NUM">1</field>
+                                                                      </block>
+                                                                    </value>
+                                                                  </block>
+                                                                </value>
+                                                              </block>
+                                                            </statement>
+                                                            <next>
+                                                              <block type="controls_if" id="b0611">
+                                                                <value name="IF0">
+                                                                  <block type="logic_compare" id="b0606">
+                                                                    <field name="OP">EQ</field>
+                                                                    <value name="A">
+                                                                      <block type="variables_get" id="b0604">
+                                                                        <field name="VAR" id="var_dg">dg</field>
+                                                                      </block>
+                                                                    </value>
+                                                                    <value name="B">
+                                                                      <block type="math_number" id="b0605">
+                                                                        <field name="NUM">1</field>
+                                                                      </block>
+                                                                    </value>
+                                                                  </block>
+                                                                </value>
+                                                                <statement name="DO0">
+                                                                  <block type="variables_set" id="b0610">
+                                                                    <field name="VAR" id="var_c1">c1</field>
+                                                                    <value name="VALUE">
+                                                                      <block type="math_arithmetic" id="b0609">
+                                                                        <field name="OP">ADD</field>
+                                                                        <value name="A">
+                                                                          <block type="variables_get" id="b0607">
+                                                                            <field name="VAR" id="var_c1">c1</field>
+                                                                          </block>
+                                                                        </value>
+                                                                        <value name="B">
+                                                                          <block type="math_number" id="b0608">
+                                                                            <field name="NUM">1</field>
+                                                                          </block>
+                                                                        </value>
+                                                                      </block>
+                                                                    </value>
+                                                                  </block>
+                                                                </statement>
+                                                                <next>
+                                                                  <block type="controls_if" id="b0619">
+                                                                    <value name="IF0">
+                                                                      <block type="logic_compare" id="b0614">
+                                                                        <field name="OP">EQ</field>
+                                                                        <value name="A">
+                                                                          <block type="variables_get" id="b0612">
+                                                                            <field name="VAR" id="var_dg">dg</field>
+                                                                          </block>
+                                                                        </value>
+                                                                        <value name="B">
+                                                                          <block type="math_number" id="b0613">
+                                                                            <field name="NUM">2</field>
+                                                                          </block>
+                                                                        </value>
+                                                                      </block>
+                                                                    </value>
+                                                                    <statement name="DO0">
+                                                                      <block type="variables_set" id="b0618">
+                                                                        <field name="VAR" id="var_c2">c2</field>
+                                                                        <value name="VALUE">
+                                                                          <block type="math_arithmetic" id="b0617">
+                                                                            <field name="OP">ADD</field>
+                                                                            <value name="A">
+                                                                              <block type="variables_get" id="b0615">
+                                                                                <field name="VAR" id="var_c2">c2</field>
+                                                                              </block>
+                                                                            </value>
+                                                                            <value name="B">
+                                                                              <block type="math_number" id="b0616">
+                                                                                <field name="NUM">1</field>
+                                                                              </block>
+                                                                            </value>
+                                                                          </block>
+                                                                        </value>
+                                                                      </block>
+                                                                    </statement>
+                                                                    <next>
+                                                                      <block type="controls_if" id="b0627">
+                                                                        <value name="IF0">
+                                                                          <block type="logic_compare" id="b0622">
+                                                                            <field name="OP">EQ</field>
+                                                                            <value name="A">
+                                                                              <block type="variables_get" id="b0620">
+                                                                                <field name="VAR" id="var_dg">dg</field>
+                                                                              </block>
+                                                                            </value>
+                                                                            <value name="B">
+                                                                              <block type="math_number" id="b0621">
+                                                                                <field name="NUM">3</field>
+                                                                              </block>
+                                                                            </value>
+                                                                          </block>
+                                                                        </value>
+                                                                        <statement name="DO0">
+                                                                          <block type="variables_set" id="b0626">
+                                                                            <field name="VAR" id="var_c3">c3</field>
+                                                                            <value name="VALUE">
+                                                                              <block type="math_arithmetic" id="b0625">
+                                                                                <field name="OP">ADD</field>
+                                                                                <value name="A">
+                                                                                  <block type="variables_get" id="b0623">
+                                                                                    <field name="VAR" id="var_c3">c3</field>
+                                                                                  </block>
+                                                                                </value>
+                                                                                <value name="B">
+                                                                                  <block type="math_number" id="b0624">
+                                                                                    <field name="NUM">1</field>
+                                                                                  </block>
+                                                                                </value>
+                                                                              </block>
+                                                                            </value>
+                                                                          </block>
+                                                                        </statement>
+                                                                        <next>
+                                                                          <block type="controls_if" id="b0635">
+                                                                            <value name="IF0">
+                                                                              <block type="logic_compare" id="b0630">
+                                                                                <field name="OP">EQ</field>
+                                                                                <value name="A">
+                                                                                  <block type="variables_get" id="b0628">
+                                                                                    <field name="VAR" id="var_dg">dg</field>
+                                                                                  </block>
+                                                                                </value>
+                                                                                <value name="B">
+                                                                                  <block type="math_number" id="b0629">
+                                                                                    <field name="NUM">4</field>
+                                                                                  </block>
+                                                                                </value>
+                                                                              </block>
+                                                                            </value>
+                                                                            <statement name="DO0">
+                                                                              <block type="variables_set" id="b0634">
+                                                                                <field name="VAR" id="var_c4">c4</field>
+                                                                                <value name="VALUE">
+                                                                                  <block type="math_arithmetic" id="b0633">
+                                                                                    <field name="OP">ADD</field>
+                                                                                    <value name="A">
+                                                                                      <block type="variables_get" id="b0631">
+                                                                                        <field name="VAR" id="var_c4">c4</field>
+                                                                                      </block>
+                                                                                    </value>
+                                                                                    <value name="B">
+                                                                                      <block type="math_number" id="b0632">
+                                                                                        <field name="NUM">1</field>
+                                                                                      </block>
+                                                                                    </value>
+                                                                                  </block>
+                                                                                </value>
+                                                                              </block>
+                                                                            </statement>
+                                                                            <next>
+                                                                              <block type="controls_if" id="b0643">
+                                                                                <value name="IF0">
+                                                                                  <block type="logic_compare" id="b0638">
+                                                                                    <field name="OP">EQ</field>
+                                                                                    <value name="A">
+                                                                                      <block type="variables_get" id="b0636">
+                                                                                        <field name="VAR" id="var_dg">dg</field>
+                                                                                      </block>
+                                                                                    </value>
+                                                                                    <value name="B">
+                                                                                      <block type="math_number" id="b0637">
+                                                                                        <field name="NUM">5</field>
+                                                                                      </block>
+                                                                                    </value>
+                                                                                  </block>
+                                                                                </value>
+                                                                                <statement name="DO0">
+                                                                                  <block type="variables_set" id="b0642">
+                                                                                    <field name="VAR" id="var_c5">c5</field>
+                                                                                    <value name="VALUE">
+                                                                                      <block type="math_arithmetic" id="b0641">
+                                                                                        <field name="OP">ADD</field>
+                                                                                        <value name="A">
+                                                                                          <block type="variables_get" id="b0639">
+                                                                                            <field name="VAR" id="var_c5">c5</field>
+                                                                                          </block>
+                                                                                        </value>
+                                                                                        <value name="B">
+                                                                                          <block type="math_number" id="b0640">
+                                                                                            <field name="NUM">1</field>
+                                                                                          </block>
+                                                                                        </value>
+                                                                                      </block>
+                                                                                    </value>
+                                                                                  </block>
+                                                                                </statement>
+                                                                                <next>
+                                                                                  <block type="controls_if" id="b0651">
+                                                                                    <value name="IF0">
+                                                                                      <block type="logic_compare" id="b0646">
+                                                                                        <field name="OP">EQ</field>
+                                                                                        <value name="A">
+                                                                                          <block type="variables_get" id="b0644">
+                                                                                            <field name="VAR" id="var_dg">dg</field>
+                                                                                          </block>
+                                                                                        </value>
+                                                                                        <value name="B">
+                                                                                          <block type="math_number" id="b0645">
+                                                                                            <field name="NUM">6</field>
+                                                                                          </block>
+                                                                                        </value>
+                                                                                      </block>
+                                                                                    </value>
+                                                                                    <statement name="DO0">
+                                                                                      <block type="variables_set" id="b0650">
+                                                                                        <field name="VAR" id="var_c6">c6</field>
+                                                                                        <value name="VALUE">
+                                                                                          <block type="math_arithmetic" id="b0649">
+                                                                                            <field name="OP">ADD</field>
+                                                                                            <value name="A">
+                                                                                              <block type="variables_get" id="b0647">
+                                                                                                <field name="VAR" id="var_c6">c6</field>
+                                                                                              </block>
+                                                                                            </value>
+                                                                                            <value name="B">
+                                                                                              <block type="math_number" id="b0648">
+                                                                                                <field name="NUM">1</field>
+                                                                                              </block>
+                                                                                            </value>
+                                                                                          </block>
+                                                                                        </value>
+                                                                                      </block>
+                                                                                    </statement>
+                                                                                    <next>
+                                                                                      <block type="controls_if" id="b0659">
+                                                                                        <value name="IF0">
+                                                                                          <block type="logic_compare" id="b0654">
+                                                                                            <field name="OP">EQ</field>
+                                                                                            <value name="A">
+                                                                                              <block type="variables_get" id="b0652">
+                                                                                                <field name="VAR" id="var_dg">dg</field>
+                                                                                              </block>
+                                                                                            </value>
+                                                                                            <value name="B">
+                                                                                              <block type="math_number" id="b0653">
+                                                                                                <field name="NUM">7</field>
+                                                                                              </block>
+                                                                                            </value>
+                                                                                          </block>
+                                                                                        </value>
+                                                                                        <statement name="DO0">
+                                                                                          <block type="variables_set" id="b0658">
+                                                                                            <field name="VAR" id="var_c7">c7</field>
+                                                                                            <value name="VALUE">
+                                                                                              <block type="math_arithmetic" id="b0657">
+                                                                                                <field name="OP">ADD</field>
+                                                                                                <value name="A">
+                                                                                                  <block type="variables_get" id="b0655">
+                                                                                                    <field name="VAR" id="var_c7">c7</field>
+                                                                                                  </block>
+                                                                                                </value>
+                                                                                                <value name="B">
+                                                                                                  <block type="math_number" id="b0656">
+                                                                                                    <field name="NUM">1</field>
+                                                                                                  </block>
+                                                                                                </value>
+                                                                                              </block>
+                                                                                            </value>
+                                                                                          </block>
+                                                                                        </statement>
+                                                                                        <next>
+                                                                                          <block type="controls_if" id="b0667">
+                                                                                            <value name="IF0">
+                                                                                              <block type="logic_compare" id="b0662">
+                                                                                                <field name="OP">EQ</field>
+                                                                                                <value name="A">
+                                                                                                  <block type="variables_get" id="b0660">
+                                                                                                    <field name="VAR" id="var_dg">dg</field>
+                                                                                                  </block>
+                                                                                                </value>
+                                                                                                <value name="B">
+                                                                                                  <block type="math_number" id="b0661">
+                                                                                                    <field name="NUM">8</field>
+                                                                                                  </block>
+                                                                                                </value>
+                                                                                              </block>
+                                                                                            </value>
+                                                                                            <statement name="DO0">
+                                                                                              <block type="variables_set" id="b0666">
+                                                                                                <field name="VAR" id="var_c8">c8</field>
+                                                                                                <value name="VALUE">
+                                                                                                  <block type="math_arithmetic" id="b0665">
+                                                                                                    <field name="OP">ADD</field>
+                                                                                                    <value name="A">
+                                                                                                      <block type="variables_get" id="b0663">
+                                                                                                        <field name="VAR" id="var_c8">c8</field>
+                                                                                                      </block>
+                                                                                                    </value>
+                                                                                                    <value name="B">
+                                                                                                      <block type="math_number" id="b0664">
+                                                                                                        <field name="NUM">1</field>
+                                                                                                      </block>
+                                                                                                    </value>
+                                                                                                  </block>
+                                                                                                </value>
+                                                                                              </block>
+                                                                                            </statement>
+                                                                                            <next>
+                                                                                              <block type="controls_if" id="b0675">
+                                                                                                <value name="IF0">
+                                                                                                  <block type="logic_compare" id="b0670">
+                                                                                                    <field name="OP">EQ</field>
+                                                                                                    <value name="A">
+                                                                                                      <block type="variables_get" id="b0668">
+                                                                                                        <field name="VAR" id="var_dg">dg</field>
+                                                                                                      </block>
+                                                                                                    </value>
+                                                                                                    <value name="B">
+                                                                                                      <block type="math_number" id="b0669">
+                                                                                                        <field name="NUM">9</field>
+                                                                                                      </block>
+                                                                                                    </value>
+                                                                                                  </block>
+                                                                                                </value>
+                                                                                                <statement name="DO0">
+                                                                                                  <block type="variables_set" id="b0674">
+                                                                                                    <field name="VAR" id="var_c9">c9</field>
+                                                                                                    <value name="VALUE">
+                                                                                                      <block type="math_arithmetic" id="b0673">
+                                                                                                        <field name="OP">ADD</field>
+                                                                                                        <value name="A">
+                                                                                                          <block type="variables_get" id="b0671">
+                                                                                                            <field name="VAR" id="var_c9">c9</field>
+                                                                                                          </block>
+                                                                                                        </value>
+                                                                                                        <value name="B">
+                                                                                                          <block type="math_number" id="b0672">
+                                                                                                            <field name="NUM">1</field>
+                                                                                                          </block>
+                                                                                                        </value>
+                                                                                                      </block>
+                                                                                                    </value>
+                                                                                                  </block>
+                                                                                                </statement>
+                                                                                              </block>
+                                                                                            </next>
+                                                                                          </block>
+                                                                                        </next>
+                                                                                      </block>
+                                                                                    </next>
+                                                                                  </block>
+                                                                                </next>
+                                                                              </block>
+                                                                            </next>
+                                                                          </block>
+                                                                        </next>
+                                                                      </block>
+                                                                    </next>
+                                                                  </block>
+                                                                </next>
+                                                              </block>
+                                                            </next>
+                                                          </block>
+                                                        </statement>
+                                                        <next>
+                                                          <block type="controls_if" id="b0740">
+                                                            <value name="IF0">
+                                                              <block type="logic_compare" id="b0679">
+                                                                <field name="OP">GT</field>
+                                                                <value name="A">
+                                                                  <block type="variables_get" id="b0677">
+                                                                    <field name="VAR" id="var_n">n</field>
+                                                                  </block>
+                                                                </value>
+                                                                <value name="B">
+                                                                  <block type="math_number" id="b0678">
+                                                                    <field name="NUM">0</field>
+                                                                  </block>
+                                                                </value>
+                                                              </block>
+                                                            </value>
+                                                            <statement name="DO0">
+                                                              <block type="variables_set" id="b0685">
+                                                                <field name="VAR" id="var_p0">p0</field>
+                                                                <value name="VALUE">
+                                                                  <block type="math_arithmetic" id="b0684">
+                                                                    <field name="OP">DIVIDE</field>
+                                                                    <value name="A">
+                                                                      <block type="math_arithmetic" id="b0682">
+                                                                        <field name="OP">MULTIPLY</field>
+                                                                        <value name="A">
+                                                                          <block type="variables_get" id="b0680">
+                                                                            <field name="VAR" id="var_c0">c0</field>
+                                                                          </block>
+                                                                        </value>
+                                                                        <value name="B">
+                                                                          <block type="math_number" id="b0681">
+                                                                            <field name="NUM">100</field>
+                                                                          </block>
+                                                                        </value>
+                                                                      </block>
+                                                                    </value>
+                                                                    <value name="B">
+                                                                      <block type="variables_get" id="b0683">
+                                                                        <field name="VAR" id="var_n">n</field>
+                                                                      </block>
+                                                                    </value>
+                                                                  </block>
+                                                                </value>
+                                                                <next>
+                                                                  <block type="variables_set" id="b0691">
+                                                                    <field name="VAR" id="var_p1">p1</field>
+                                                                    <value name="VALUE">
+                                                                      <block type="math_arithmetic" id="b0690">
+                                                                        <field name="OP">DIVIDE</field>
+                                                                        <value name="A">
+                                                                          <block type="math_arithmetic" id="b0688">
+                                                                            <field name="OP">MULTIPLY</field>
+                                                                            <value name="A">
+                                                                              <block type="variables_get" id="b0686">
+                                                                                <field name="VAR" id="var_c1">c1</field>
+                                                                              </block>
+                                                                            </value>
+                                                                            <value name="B">
+                                                                              <block type="math_number" id="b0687">
+                                                                                <field name="NUM">100</field>
+                                                                              </block>
+                                                                            </value>
+                                                                          </block>
+                                                                        </value>
+                                                                        <value name="B">
+                                                                          <block type="variables_get" id="b0689">
+                                                                            <field name="VAR" id="var_n">n</field>
+                                                                          </block>
+                                                                        </value>
+                                                                      </block>
+                                                                    </value>
+                                                                    <next>
+                                                                      <block type="variables_set" id="b0697">
+                                                                        <field name="VAR" id="var_p2">p2</field>
+                                                                        <value name="VALUE">
+                                                                          <block type="math_arithmetic" id="b0696">
+                                                                            <field name="OP">DIVIDE</field>
+                                                                            <value name="A">
+                                                                              <block type="math_arithmetic" id="b0694">
+                                                                                <field name="OP">MULTIPLY</field>
+                                                                                <value name="A">
+                                                                                  <block type="variables_get" id="b0692">
+                                                                                    <field name="VAR" id="var_c2">c2</field>
+                                                                                  </block>
+                                                                                </value>
+                                                                                <value name="B">
+                                                                                  <block type="math_number" id="b0693">
+                                                                                    <field name="NUM">100</field>
+                                                                                  </block>
+                                                                                </value>
+                                                                              </block>
+                                                                            </value>
+                                                                            <value name="B">
+                                                                              <block type="variables_get" id="b0695">
+                                                                                <field name="VAR" id="var_n">n</field>
+                                                                              </block>
+                                                                            </value>
+                                                                          </block>
+                                                                        </value>
+                                                                        <next>
+                                                                          <block type="variables_set" id="b0703">
+                                                                            <field name="VAR" id="var_p3">p3</field>
+                                                                            <value name="VALUE">
+                                                                              <block type="math_arithmetic" id="b0702">
+                                                                                <field name="OP">DIVIDE</field>
+                                                                                <value name="A">
+                                                                                  <block type="math_arithmetic" id="b0700">
+                                                                                    <field name="OP">MULTIPLY</field>
+                                                                                    <value name="A">
+                                                                                      <block type="variables_get" id="b0698">
+                                                                                        <field name="VAR" id="var_c3">c3</field>
+                                                                                      </block>
+                                                                                    </value>
+                                                                                    <value name="B">
+                                                                                      <block type="math_number" id="b0699">
+                                                                                        <field name="NUM">100</field>
+                                                                                      </block>
+                                                                                    </value>
+                                                                                  </block>
+                                                                                </value>
+                                                                                <value name="B">
+                                                                                  <block type="variables_get" id="b0701">
+                                                                                    <field name="VAR" id="var_n">n</field>
+                                                                                  </block>
+                                                                                </value>
+                                                                              </block>
+                                                                            </value>
+                                                                            <next>
+                                                                              <block type="variables_set" id="b0709">
+                                                                                <field name="VAR" id="var_p4">p4</field>
+                                                                                <value name="VALUE">
+                                                                                  <block type="math_arithmetic" id="b0708">
+                                                                                    <field name="OP">DIVIDE</field>
+                                                                                    <value name="A">
+                                                                                      <block type="math_arithmetic" id="b0706">
+                                                                                        <field name="OP">MULTIPLY</field>
+                                                                                        <value name="A">
+                                                                                          <block type="variables_get" id="b0704">
+                                                                                            <field name="VAR" id="var_c4">c4</field>
+                                                                                          </block>
+                                                                                        </value>
+                                                                                        <value name="B">
+                                                                                          <block type="math_number" id="b0705">
+                                                                                            <field name="NUM">100</field>
+                                                                                          </block>
+                                                                                        </value>
+                                                                                      </block>
+                                                                                    </value>
+                                                                                    <value name="B">
+                                                                                      <block type="variables_get" id="b0707">
+                                                                                        <field name="VAR" id="var_n">n</field>
+                                                                                      </block>
+                                                                                    </value>
+                                                                                  </block>
+                                                                                </value>
+                                                                                <next>
+                                                                                  <block type="variables_set" id="b0715">
+                                                                                    <field name="VAR" id="var_p5">p5</field>
+                                                                                    <value name="VALUE">
+                                                                                      <block type="math_arithmetic" id="b0714">
+                                                                                        <field name="OP">DIVIDE</field>
+                                                                                        <value name="A">
+                                                                                          <block type="math_arithmetic" id="b0712">
+                                                                                            <field name="OP">MULTIPLY</field>
+                                                                                            <value name="A">
+                                                                                              <block type="variables_get" id="b0710">
+                                                                                                <field name="VAR" id="var_c5">c5</field>
+                                                                                              </block>
+                                                                                            </value>
+                                                                                            <value name="B">
+                                                                                              <block type="math_number" id="b0711">
+                                                                                                <field name="NUM">100</field>
+                                                                                              </block>
+                                                                                            </value>
+                                                                                          </block>
+                                                                                        </value>
+                                                                                        <value name="B">
+                                                                                          <block type="variables_get" id="b0713">
+                                                                                            <field name="VAR" id="var_n">n</field>
+                                                                                          </block>
+                                                                                        </value>
+                                                                                      </block>
+                                                                                    </value>
+                                                                                    <next>
+                                                                                      <block type="variables_set" id="b0721">
+                                                                                        <field name="VAR" id="var_p6">p6</field>
+                                                                                        <value name="VALUE">
+                                                                                          <block type="math_arithmetic" id="b0720">
+                                                                                            <field name="OP">DIVIDE</field>
+                                                                                            <value name="A">
+                                                                                              <block type="math_arithmetic" id="b0718">
+                                                                                                <field name="OP">MULTIPLY</field>
+                                                                                                <value name="A">
+                                                                                                  <block type="variables_get" id="b0716">
+                                                                                                    <field name="VAR" id="var_c6">c6</field>
+                                                                                                  </block>
+                                                                                                </value>
+                                                                                                <value name="B">
+                                                                                                  <block type="math_number" id="b0717">
+                                                                                                    <field name="NUM">100</field>
+                                                                                                  </block>
+                                                                                                </value>
+                                                                                              </block>
+                                                                                            </value>
+                                                                                            <value name="B">
+                                                                                              <block type="variables_get" id="b0719">
+                                                                                                <field name="VAR" id="var_n">n</field>
+                                                                                              </block>
+                                                                                            </value>
+                                                                                          </block>
+                                                                                        </value>
+                                                                                        <next>
+                                                                                          <block type="variables_set" id="b0727">
+                                                                                            <field name="VAR" id="var_p7">p7</field>
+                                                                                            <value name="VALUE">
+                                                                                              <block type="math_arithmetic" id="b0726">
+                                                                                                <field name="OP">DIVIDE</field>
+                                                                                                <value name="A">
+                                                                                                  <block type="math_arithmetic" id="b0724">
+                                                                                                    <field name="OP">MULTIPLY</field>
+                                                                                                    <value name="A">
+                                                                                                      <block type="variables_get" id="b0722">
+                                                                                                        <field name="VAR" id="var_c7">c7</field>
+                                                                                                      </block>
+                                                                                                    </value>
+                                                                                                    <value name="B">
+                                                                                                      <block type="math_number" id="b0723">
+                                                                                                        <field name="NUM">100</field>
+                                                                                                      </block>
+                                                                                                    </value>
+                                                                                                  </block>
+                                                                                                </value>
+                                                                                                <value name="B">
+                                                                                                  <block type="variables_get" id="b0725">
+                                                                                                    <field name="VAR" id="var_n">n</field>
+                                                                                                  </block>
+                                                                                                </value>
+                                                                                              </block>
+                                                                                            </value>
+                                                                                            <next>
+                                                                                              <block type="variables_set" id="b0733">
+                                                                                                <field name="VAR" id="var_p8">p8</field>
+                                                                                                <value name="VALUE">
+                                                                                                  <block type="math_arithmetic" id="b0732">
+                                                                                                    <field name="OP">DIVIDE</field>
+                                                                                                    <value name="A">
+                                                                                                      <block type="math_arithmetic" id="b0730">
+                                                                                                        <field name="OP">MULTIPLY</field>
+                                                                                                        <value name="A">
+                                                                                                          <block type="variables_get" id="b0728">
+                                                                                                            <field name="VAR" id="var_c8">c8</field>
+                                                                                                          </block>
+                                                                                                        </value>
+                                                                                                        <value name="B">
+                                                                                                          <block type="math_number" id="b0729">
+                                                                                                            <field name="NUM">100</field>
+                                                                                                          </block>
+                                                                                                        </value>
+                                                                                                      </block>
+                                                                                                    </value>
+                                                                                                    <value name="B">
+                                                                                                      <block type="variables_get" id="b0731">
+                                                                                                        <field name="VAR" id="var_n">n</field>
+                                                                                                      </block>
+                                                                                                    </value>
+                                                                                                  </block>
+                                                                                                </value>
+                                                                                                <next>
+                                                                                                  <block type="variables_set" id="b0739">
+                                                                                                    <field name="VAR" id="var_p9">p9</field>
+                                                                                                    <value name="VALUE">
+                                                                                                      <block type="math_arithmetic" id="b0738">
+                                                                                                        <field name="OP">DIVIDE</field>
+                                                                                                        <value name="A">
+                                                                                                          <block type="math_arithmetic" id="b0736">
+                                                                                                            <field name="OP">MULTIPLY</field>
+                                                                                                            <value name="A">
+                                                                                                              <block type="variables_get" id="b0734">
+                                                                                                                <field name="VAR" id="var_c9">c9</field>
+                                                                                                              </block>
+                                                                                                            </value>
+                                                                                                            <value name="B">
+                                                                                                              <block type="math_number" id="b0735">
+                                                                                                                <field name="NUM">100</field>
+                                                                                                              </block>
+                                                                                                            </value>
+                                                                                                          </block>
+                                                                                                        </value>
+                                                                                                        <value name="B">
+                                                                                                          <block type="variables_get" id="b0737">
+                                                                                                            <field name="VAR" id="var_n">n</field>
+                                                                                                          </block>
+                                                                                                        </value>
+                                                                                                      </block>
+                                                                                                    </value>
+                                                                                                  </block>
+                                                                                                </next>
+                                                                                              </block>
+                                                                                            </next>
+                                                                                          </block>
+                                                                                        </next>
+                                                                                      </block>
+                                                                                    </next>
+                                                                                  </block>
+                                                                                </next>
+                                                                              </block>
+                                                                            </next>
+                                                                          </block>
+                                                                        </next>
+                                                                      </block>
+                                                                    </next>
+                                                                  </block>
+                                                                </next>
+                                                              </block>
+                                                            </statement>
+                                                          </block>
+                                                        </next>
+                                                      </block>
+                                                    </next>
+                                                  </block>
+                                                </next>
+                                              </block>
+                                            </next>
+                                          </block>
+                                        </next>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+  </block>
+  <block type="procedures_defnoreturn" id="b0764" x="900" y="1300">
+    <field name="NAME">SetRecovery</field>
+    <statement name="STACK">
+      <block type="procedures_callnoreturn" id="b0742">
+        <mutation xmlns="http://www.w3.org/1999/xhtml" name="CalcStats"/>
+        <next>
+          <block type="controls_if" id="b0754">
+            <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"/>
+            <value name="IF0">
+              <block type="logic_compare" id="b0745">
+                <field name="OP">LT</field>
+                <value name="A">
+                  <block type="variables_get" id="b0743">
+                    <field name="VAR" id="var_p6">p6</field>
+                  </block>
+                </value>
+                <value name="B">
+                  <block type="math_number" id="b0744">
+                    <field name="NUM">10</field>
+                  </block>
+                </value>
+              </block>
+            </value>
+            <statement name="DO0">
+              <block type="variables_set" id="b0747">
+                <field name="VAR" id="var_Prediction">Prediction</field>
+                <value name="VALUE">
+                  <block type="math_number" id="b0746">
+                    <field name="NUM">6</field>
+                  </block>
+                </value>
+                <next>
+                  <block type="variables_set" id="b0749">
+                    <field name="VAR" id="var_Pay">Pay</field>
+                    <value name="VALUE">
+                      <block type="math_number" id="b0748">
+                        <field name="NUM">0.58</field>
+                      </block>
+                    </value>
+                  </block>
+                </next>
+              </block>
+            </statement>
+            <statement name="ELSE">
+              <block type="variables_set" id="b0751">
+                <field name="VAR" id="var_Prediction">Prediction</field>
+                <value name="VALUE">
+                  <block type="math_number" id="b0750">
+                    <field name="NUM">7</field>
+                  </block>
+                </value>
+                <next>
+                  <block type="variables_set" id="b0753">
+                    <field name="VAR" id="var_Pay">Pay</field>
+                    <value name="VALUE">
+                      <block type="math_number" id="b0752">
+                        <field name="NUM">0.36</field>
+                      </block>
+                    </value>
+                  </block>
+                </next>
+              </block>
+            </statement>
+            <next>
+              <block type="variables_set" id="b0763">
+                <field name="VAR" id="var_Stake">Stake</field>
+                <value name="VALUE">
+                  <block type="math_arithmetic" id="b0762">
+                    <field name="OP">DIVIDE</field>
+                    <value name="A">
+                      <block type="math_round" id="b0760">
+                        <field name="OP">ROUND</field>
+                        <value name="NUM">
+                          <block type="math_arithmetic" id="b0759">
+                            <field name="OP">MULTIPLY</field>
+                            <value name="A">
+                              <block type="math_arithmetic" id="b0757">
+                                <field name="OP">DIVIDE</field>
+                                <value name="A">
+                                  <block type="variables_get" id="b0755">
+                                    <field name="VAR" id="var_Loss">Loss</field>
+                                  </block>
+                                </value>
+                                <value name="B">
+                                  <block type="variables_get" id="b0756">
+                                    <field name="VAR" id="var_Pay">Pay</field>
+                                  </block>
+                                </value>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <block type="math_number" id="b0758">
+                                <field name="NUM">100</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                    <value name="B">
+                      <block type="math_number" id="b0761">
+                        <field name="NUM">100</field>
+                      </block>
+                    </value>
+                  </block>
+                </value>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+  </block>
+</xml>

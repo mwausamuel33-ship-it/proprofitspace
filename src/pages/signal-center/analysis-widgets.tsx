@@ -1,8 +1,10 @@
-/** Analysis Tool widgets: visible digit circles with tick-window tabs, and per-strategy market suggestions. */
+/** Analysis Tool widgets: digit circles with tick-window tabs, and per-strategy market suggestions. */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import '@/styles/pps-theme.scss';
 import { AccuAnalyzer } from './accumulator';
 import { AppClient, digitOf } from './api-client';
 import { Candidate, DEFAULT_ENGINE, SignalEngine } from './signal-engine';
+import './analysis-widgets.scss';
 
 export const ANALYSIS_MARKETS = [
   'R_10', 'R_25', 'R_50', 'R_75', 'R_100',
@@ -22,49 +24,41 @@ export const marketName = (s: string) => {
   return v ? `Volatility ${v[1]}` : h ? `Volatility ${h[1]} (1s)` : j ? `Jump ${j[1]}` : s;
 };
 
-const C = { bg: '#0b1220', card: '#111827', line: '#1f2937', text: '#e5e7eb', dim: '#9ca3af', green: '#22c55e', red: '#ef4444', blue: '#38bdf8', amber: '#f59e0b' };
+const cx = (...c: (string | false | undefined)[]) => c.filter(Boolean).join(' ');
 
 type DigitStat = { digit: number; percentage: number; is_hot: boolean; is_cold: boolean; streak: number };
+const RADIUS = 21;
+const CIRC = 2 * Math.PI * RADIUS;
 
-/** Digits 0-9 as clear circles: ring fill = share of ticks, green = hottest, red = coldest, glow = latest digit. */
+/** Digits 0-9 as circles: digit and percentage inside, ring = share relative to the most frequent digit
+ *  (as in Deriv's digit stats), green = most frequent, red = least frequent, pointer = latest digit. */
 export const DigitCircles = ({ stats, current, window: win, onWindow }: {
   stats: DigitStat[]; current: number | null; window: number; onWindow: (n: number) => void;
-}) => (
-  <div>
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-      {WINDOW_TABS.map((w) => (
-        <button key={w} onClick={() => onWindow(w)}
-          style={{ padding: '6px 12px', borderRadius: 999, border: 0, fontWeight: 700, fontSize: 13, cursor: 'pointer', background: w === win ? C.blue : '#1f2937', color: w === win ? '#04111d' : C.text }}>
-          {w} ticks
-        </button>
-      ))}
-    </div>
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center' }}>
-      {stats.map((s) => {
-        const ring = s.is_hot ? C.green : s.is_cold ? C.red : C.blue;
-        const fill = Math.min(100, s.percentage * 5);
-        return (
-          <div key={s.digit} style={{ textAlign: 'center', width: 74 }}>
-            <div style={{
-              width: 70, height: 70, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto',
-              background: `conic-gradient(${ring} ${fill}%, #243044 0)`,
-              boxShadow: s.digit === current ? `0 0 0 3px ${C.amber}, 0 0 14px ${C.amber}` : 'none',
-            }}>
-              <div style={{ width: 54, height: 54, borderRadius: '50%', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 800, color: '#fff' }}>
-                {s.digit}
-              </div>
-            </div>
-            <div style={{ marginTop: 6, fontWeight: 700, color: ring }}>{s.percentage.toFixed(1)}%</div>
-            <div style={{ fontSize: 11, color: C.dim }}>{s.is_hot ? 'hottest' : s.is_cold ? 'coldest' : s.digit === current ? 'latest' : '\u00a0'}</div>
+}) => {
+  const max = Math.max(...stats.map((s) => s.percentage), 0.0001);
+  return (
+    <div className='pps-dg'>
+      <div className='pps-dg__tabs' role='tablist' aria-label='Ticks window'>
+        {WINDOW_TABS.map((w) => (
+          <button key={w} role='tab' aria-selected={w === win} className={cx('pps-dg__tab', w === win && 'is-active')} onClick={() => onWindow(w)}>{w}</button>
+        ))}
+      </div>
+      <div className='pps-dg__grid'>
+        {stats.map((s) => (
+          <div key={s.digit} className={cx('pps-dg__item', s.is_hot && 'is-hot', s.is_cold && 'is-cold', s.digit === current && 'is-current')}>
+            <svg className='pps-dg__ring' viewBox='0 0 48 48' aria-hidden='true'>
+              <circle className='pps-dg__track' cx='24' cy='24' r={RADIUS} />
+              <circle className='pps-dg__bar' cx='24' cy='24' r={RADIUS} strokeDasharray={`${(s.percentage / max) * CIRC} ${CIRC}`} />
+            </svg>
+            <span className='pps-dg__digit'>{s.digit}</span>
+            <span className='pps-dg__pct'>{s.percentage.toFixed(1)}%</span>
           </div>
-        );
-      })}
+        ))}
+      </div>
+      <p className='pps-dg__legend'>Last {win} ticks. Green is the most frequent digit, red the least; the pointer marks the latest digit.</p>
     </div>
-    <div style={{ marginTop: 8, fontSize: 12, color: C.dim, textAlign: 'center' }}>
-      Ring fill = share of the last {win} ticks (a full ring is 20%, a fair digit is 10%). Amber glow = latest digit.
-    </div>
-  </div>
-);
+  );
+};
 
 export type Item = { market: string; title: string; detail: string; good: boolean };
 export type Suggest = { overunder: Item[]; evenodd: Item[]; matchesdiffers: Item[]; over1: Item[]; accu: Item[] };
@@ -163,39 +157,37 @@ export function useSuggestions() {
 }
 
 const Group = ({ title, note, items }: { title: string; note: string; items: Item[] }) => (
-  <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: 14 }}>
-    <div style={{ fontWeight: 800, color: C.text }}>{title}</div>
-    <div style={{ fontSize: 12, color: C.dim, margin: '2px 0 8px' }}>{note}</div>
-    {items.length === 0 && <div style={{ color: C.dim }}>No market qualifies yet.</div>}
+  <div className='pps-sugg__card'>
+    <h4 className='pps-sugg__title'>{title}</h4>
+    <p className='pps-sugg__sub'>{note}</p>
+    {items.length === 0 && <p className='pps-sugg__empty'>No market qualifies yet.</p>}
     {items.map((it, i) => (
-      <div key={i} style={{ borderTop: `1px solid ${C.line}`, padding: '6px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-          <b style={{ color: C.text }}>{it.market}</b>
-          <span style={{ color: it.good ? C.green : C.dim, fontWeight: 700, fontSize: 12 }}>{it.good ? 'STRONG' : 'weak'}</span>
+      <div key={i} className='pps-sugg__item'>
+        <div className='pps-sugg__head'>
+          <b>{it.market}</b>
+          <span className={cx('pps-sugg__badge', it.good && 'is-strong')}>{it.good ? 'Strong' : 'Weak'}</span>
         </div>
-        <div style={{ fontSize: 13, color: C.blue }}>{it.title}</div>
-        <div style={{ fontSize: 12, color: C.dim }}>{it.detail}</div>
+        <div className='pps-sugg__what'>{it.title}</div>
+        <div className='pps-sugg__why'>{it.detail}</div>
       </div>
     ))}
   </div>
 );
 
-/** Best markets for every strategy we use. Statistical skew only - not a prediction. */
+/** Best markets for every strategy we use. Statistical skew only, not a prediction. */
 export const MarketSuggestions = () => {
   const { data, status } = useSuggestions();
   return (
-    <div>
-      <div style={{ fontSize: 12, color: C.dim, marginBottom: 8 }}>
-        {status}. A market is STRONG only when all {DEFAULT_ENGINE.windows.length} windows (50 to 1000 ticks) favour it. These describe past ticks, not future ones.
-      </div>
-      {!data && <div style={{ color: C.dim }}>Analysing Volatility, 1s Volatility and Jump markets...</div>}
+    <div className='pps-sugg'>
+      <p className='pps-sugg__note'>{status}. Strong means all {DEFAULT_ENGINE.windows.length} windows (50 to 1000 ticks) favour it.</p>
+      {!data && <p className='pps-sugg__empty'>Analysing Volatility, 1s Volatility and Jump markets...</p>}
       {data && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
-          <Group title="Over / Under" note="Safer Over 1-2 / Under 8-7 picks" items={data.overunder} />
-          <Group title="Even / Odd" note="Run count follows your AI Trade rule" items={data.evenodd} />
-          <Group title="Matches / Differs" note="Digit that all windows favour or avoid" items={data.matchesdiffers} />
-          <Group title="Over 1 entry bot" note="Entry on last digit 4, 7 or 9" items={data.over1} />
-          <Group title="Accumulators" note="Calm markets, no recent spike" items={data.accu} />
+        <div className='pps-sugg__grid'>
+          <Group title='Over / Under' note='Safer Over 1-2 / Under 8-7 picks' items={data.overunder} />
+          <Group title='Even / Odd' note='Run count follows your AI Trade rule' items={data.evenodd} />
+          <Group title='Matches / Differs' note='Digit all windows favour or avoid' items={data.matchesdiffers} />
+          <Group title='Over 1 entry bot' note='Entry on last digit 4, 7 or 9' items={data.over1} />
+          <Group title='Accumulators' note='Calm markets, no recent spike' items={data.accu} />
         </div>
       )}
     </div>

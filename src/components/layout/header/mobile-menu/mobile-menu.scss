@@ -172,3 +172,33 @@
         }
     }
 }
+
+/* pps-menu-scroll: the page list scrolls, with a visible scroll bar */
+.mobile-menu__content {
+    max-height: calc(100vh - 12rem);
+    max-height: calc(100dvh - 12rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--brand-primary) transparent;
+
+    &::-webkit-scrollbar {
+        width: 0.6rem;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: var(--brand-primary);
+        border-radius: 0.3rem;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+}
+
+.mobile-menu__content__items {
+    height: auto;
+    min-height: 100%;
+    padding-bottom: 2rem;
+}

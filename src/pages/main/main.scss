@@ -754,3 +754,29 @@
     align-items: center;
     justify-content: center;
 }
+
+/* pps-scroll: every page scrolls up and down */
+.main__container {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--brand-primary) transparent;
+
+    &::-webkit-scrollbar {
+        width: 0.8rem;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: var(--brand-primary);
+        border-radius: 0.4rem;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &:has(.bot-builder--active) {
+        overflow-y: hidden;
+    }
+}

@@ -3,6 +3,7 @@ import { LabelPairedCheckCaptionFillIcon, LabelPairedSearchCaptionRegularIcon } 
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { localize } from '@deriv-com/translations';
 import { load } from '@/external/bot-skeleton';
+import { getAnalysedMarket, withMarket } from '@/utils/analysed-market';
 import '@/styles/pps-theme.scss';
 import { PREMIUM_BOTS } from './data';
 import { NEW_BOTS, TStoreBot } from './new-bots';
@@ -73,7 +74,8 @@ const TradingBots = ({ handleTabChange }: TTradingBotsProps) => {
                 workspace = window.Blockly?.derivWorkspace;
             }
             if (!workspace) throw new Error(localize('The Bot Builder workspace did not open.'));
-            const xml = await bot.xml();
+            const raw_xml = await bot.xml();
+            const xml = bot.follow_market ? withMarket(raw_xml, getAnalysedMarket()) : raw_xml;
             await load({
                 block_string: xml,
                 file_name: bot.name,

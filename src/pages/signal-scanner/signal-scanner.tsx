@@ -6,6 +6,7 @@ import { useStore } from '@/hooks/useStore';
 import { DEFAULT_THRESHOLD, DestroyerStrength, FAIR_SHARE } from '@/utils/destroyer-rules';
 import { assessStake } from '@/utils/stake-guard';
 import { generateDestroyerBotXml } from '@/utils/signal-bot-xml';
+import { buildStrategyBotXml } from '@/utils/strategy-bot-xml';
 import { load } from '@/external/bot-skeleton';
 import { Localize } from '@deriv-com/translations';
 import '@/styles/pps-theme.scss';
@@ -106,12 +107,11 @@ const SignalScanner = observer(() => {
             return;
         }
 
-        const xmlString = generateDestroyerBotXml(row.signal, {
-            symbol: row.symbol,
-            stake,
-            maxRuns,
-            martingale,
-        });
+        const bot_options = { symbol: row.symbol, stake, maxRuns, martingale };
+        const xmlString =
+            row.signal.trigger !== undefined
+                ? buildStrategyBotXml(row.signal, bot_options)
+                : generateDestroyerBotXml(row.signal, bot_options);
 
         const workspace = window.Blockly?.derivWorkspace;
         if (!workspace) {
@@ -322,11 +322,23 @@ const SignalScanner = observer(() => {
                                     ))}
                                 </div>
                                 <div className='pps-sc__entry pps-sc__chips'>
-                                    {row.signal.entryDigits.map(d => (
-                                        <span key={d} className='pps-sc__chip pps-sc__chip--entry'>
-                                            {d}
-                                        </span>
-                                    ))}
+                                    {row.signal.trigger !== undefined ? (
+                                        <>
+                                            <span className='pps-sc__chip pps-sc__chip--entry' title='Wait for this digit'>
+                                                {row.signal.trigger}
+                                            </span>
+                                            <span className='pps-sc__chip' title='Then run when one of these shows within 2 ticks'>
+                                                {'→ '}
+                                                {Math.min(...(row.signal.confirmDigits ?? []))}-{Math.max(...(row.signal.confirmDigits ?? []))}
+                                            </span>
+                                        </>
+                                    ) : (
+                                        row.signal.entryDigits.map(d => (
+                                            <span key={d} className='pps-sc__chip pps-sc__chip--entry'>
+                                                {d}
+                                            </span>
+                                        ))
+                                    )}
                                 </div>
                                 <div className='pps-sc__action'>
                                     <button className='pps-sc__btn' onClick={() => handleLoadAndTrade(row)}>

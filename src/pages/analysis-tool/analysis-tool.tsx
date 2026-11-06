@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { setAnalysedMarket } from '@/utils/analysed-market';
 import { observer } from 'mobx-react-lite';
 import classNames from 'classnames';
 import { SignalCard } from '@/components/market-analysis';
@@ -27,6 +28,9 @@ const AnalysisTool = observer(() => {
     const { client } = useStore() ?? {};
     const [markets, setMarkets] = useState<{ symbol: string; display_name: string }[]>([]);
     const [symbol, setSymbol] = useState('');
+    useEffect(() => {
+        if (symbol) setAnalysedMarket(symbol);
+    }, [symbol]);
     const [ticks_window_input, setTicksWindowInput] = useState('1000');
     const [ticks_window, setTicksWindow] = useState(1000);
     const [barrier, setBarrier] = useState(5);

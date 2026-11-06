@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api_base } from '@/external/bot-skeleton';
 import { compareSignals, DEFAULT_THRESHOLD, DestroyerSignal, evaluateDestroyer } from '@/utils/destroyer-rules';
+import { evaluateBothDirections } from '@/utils/digit-strategy';
+import { strategyToSignal } from '@/utils/strategy-signal';
 import { getDecimalPlaces, getLastDigit } from '@/utils/digit-stats';
 
 export type TDestroyerRow = {
@@ -9,6 +11,7 @@ export type TDestroyerRow = {
     digit_pct: number[]; // % of ticks for digits 0..9
     sample: number;
     scanned_at: number;
+    digits?: number[]; // last digits, oldest first
 };
 
 export type TDestroyerSignalRow = TDestroyerRow & { signal: DestroyerSignal };
@@ -29,9 +32,13 @@ const scanSymbol = async (symbol: string, display_name: string, ticks: number): 
         if (prices.length < MIN_TICKS) return null;
         const decimals = getDecimalPlaces(symbol);
         const counts = new Array(10).fill(0);
+        const digits: number[] = [];
         prices.forEach(p => {
             const d = getLastDigit(p, decimals);
-            if (d >= 0 && d <= 9) counts[d]++;
+            if (d >= 0 && d <= 9) {
+                counts[d]++;
+                digits.push(d);
+            }
         });
         const total = prices.length;
         return {
@@ -40,6 +47,7 @@ const scanSymbol = async (symbol: string, display_name: string, ticks: number): 
             digit_pct: counts.map(c => (c / total) * 100),
             sample: total,
             scanned_at: Date.now(),
+            digits,
         };
     } catch {
         return null;
@@ -77,7 +85,8 @@ export const scanMarkets = async (ticks = 1000, isCancelled: () => boolean = () 
     return result;
 };
 
-type TOptions = { interval_ms?: number; ticks?: number; threshold?: number; enabled?: boolean };
+// 'video' = the Over 1-2-3 / Under 8-7-6 strategy, 'legacy' = the old threshold rule
+type TOptions = { interval_ms?: number; ticks?: number; threshold?: number; enabled?: boolean; strategy?: 'video' | 'legacy' };
 
 /**
  * Keeps scanning in the background while `enabled`, and re-evaluates the Destroyer rules when
@@ -88,6 +97,7 @@ export const useDestroyerScanner = ({
     ticks = 1000,
     threshold = DEFAULT_THRESHOLD,
     enabled = true,
+    strategy = 'video',
 }: TOptions = {}) => {
     const [rows, setRows] = useState<TDestroyerRow[]>([]);
     const [is_scanning, setIsScanning] = useState(false);
@@ -131,11 +141,14 @@ export const useDestroyerScanner = ({
     const signals = useMemo<TDestroyerSignalRow[]>(() => {
         const out: TDestroyerSignalRow[] = [];
         rows.forEach(r => {
-            const signal = evaluateDestroyer(r.digit_pct, threshold);
+            const signal =
+                strategy === 'legacy'
+                    ? evaluateDestroyer(r.digit_pct, threshold)
+                    : strategyToSignal(evaluateBothDirections(r.digits ?? []));
             if (signal) out.push({ ...r, signal });
         });
         return out.sort((a, b) => compareSignals(a.signal, b.signal));
-    }, [rows, threshold]);
+    }, [rows, threshold, strategy]);
 
     return { rows, signals, is_scanning, last_scan, next_scan_at, scanNow };
 };

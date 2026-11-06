@@ -17,6 +17,9 @@ export interface DestroyerSignal {
     strength: DestroyerStrength; // strong: all losing digits < 10%; good: average < 10%; weak: otherwise
     label: string; // 'Over 2', 'Under 8', ...
     reason: string;
+    trigger?: number; // smart scan: digit the tick pointer must land on first
+    confirmDigits?: number[]; // smart scan: a digit from here must follow within 2 ticks
+    ready?: boolean; // smart scan: the entry pattern is on the latest tick
 }
 
 export const DEFAULT_THRESHOLD = 10.5; // percent

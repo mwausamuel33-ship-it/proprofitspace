@@ -1,0 +1,168 @@
+/*
+ * ProProfitSpace brand layer. Loaded once at the app root; the doubled :root raises specificity so it
+ * wins over the generated theme files whatever the load order.
+ * Palette: ink surfaces, hairline borders, one amber accent. Green and red are reserved for profit and loss.
+ */
+:root:root {
+    --brand-primary: #e9b44c;
+    --brand-secondary: #e9b44c;
+    --brand-tertiary: #c98f2b;
+    --brand-success: #34c38f;
+    --brand-danger: #ef5b6b;
+    --brand-warning: #e9b44c;
+    --brand-info: #7aa7e8;
+    --brand-neutral: #8a92a3;
+    --brand-dark-grey: #0b0d12;
+    --brand-red-coral: #e9b44c;
+    --brand-orange: #c98f2b;
+
+    --brand-font-primary: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --brand-font-secondary: 'IBM Plex Sans', system-ui, sans-serif;
+    --brand-font-monospace: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    // flat, not neon
+    --gradient-primary: #e9b44c;
+    --gradient-secondary: #c98f2b;
+    --gradient-accent: #e9b44c;
+    --glow-primary: none;
+    --glow-secondary: none;
+    --glow-success: none;
+    --glow-danger: none;
+    --glow-warning: none;
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-bg-hover: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-border-hover: rgba(255, 255, 255, 0.14);
+    --glass-blur: 0px;
+    --glass-shadow: none;
+    --glass-shadow-hover: none;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-card-hover: 0 2px 6px rgba(0, 0, 0, 0.35);
+    --shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+:root:root .theme--dark {
+    --general-main-1: #0b0d12;
+    --general-main-2: #11141b;
+    --general-main-3: #171b24;
+    --general-main-4: rgba(11, 13, 18, 0.8);
+    --general-section-1: #11141b;
+    --general-section-2: #0b0d12;
+    --general-section-3: #171b24;
+    --general-section-4: #171b24;
+    --general-section-5: #171b24;
+    --general-section-6: #1e2330;
+    --general-disabled: #171b24;
+    --general-hover: #1e2330;
+    --general-active: #262c3b;
+
+    --text-prominent: #f4f5f8;
+    --text-general: #c9ceda;
+    --text-less-prominent: #8a92a3;
+    --text-primary: #8a92a3;
+    --text-disabled: #5a6272;
+    --text-profit-success: #34c38f;
+    --text-loss-danger: #ef5b6b;
+
+    --status-success: #34c38f;
+    --status-danger: #ef5b6b;
+    --status-warning: #e9b44c;
+    --status-info: #7aa7e8;
+
+    --border-normal: #232834;
+    --border-normal-1: #2e3544;
+    --border-normal-2: #2e3544;
+    --border-hover: #3a4254;
+    --border-divider: #1c212c;
+    --border-active: #e9b44c;
+
+    --state-normal: #0b0d12;
+    --state-hover: #1e2330;
+    --state-active: #262c3b;
+    --fill-normal: #0b0d12;
+    --fill-active: #e9b44c;
+
+    --button-primary-default: #e9b44c;
+    --button-primary-hover: #f2c566;
+    --button-secondary-default: #171b24;
+    --button-secondary-hover: #1e2330;
+    --button-tertiary-hover: rgba(233, 180, 76, 0.12);
+}
+
+:root:root .theme--light {
+    --brand-primary: #b7791f;
+    --general-main-1: #ffffff;
+    --general-main-2: #ffffff;
+    --general-main-3: #f1efea;
+    --general-section-1: #f6f5f2;
+    --general-section-2: #f6f5f2;
+    --general-section-3: #ece9e2;
+    --general-section-4: #ece9e2;
+    --general-section-5: #f6f5f2;
+    --general-section-6: #ece9e2;
+    --general-disabled: #ece9e2;
+    --general-hover: #e6e2d9;
+    --general-active: #ddd8cc;
+
+    --text-prominent: #14171f;
+    --text-general: #2b303c;
+    --text-less-prominent: #5c6475;
+    --text-primary: #5c6475;
+    --text-disabled: #9aa0ae;
+    --text-profit-success: #1e9e6b;
+    --text-loss-danger: #d9434f;
+
+    --status-success: #1e9e6b;
+    --status-danger: #d9434f;
+    --status-warning: #b7791f;
+
+    --border-normal: #ddd8cc;
+    --border-normal-1: #cfc9bb;
+    --border-normal-2: #cfc9bb;
+    --border-hover: #b9b2a0;
+    --border-divider: #e8e4da;
+    --border-active: #b7791f;
+
+    --state-hover: #e6e2d9;
+    --state-active: #ddd8cc;
+    --fill-active: #b7791f;
+
+    --button-primary-default: #e9b44c;
+    --button-primary-hover: #f2c566;
+    --button-secondary-default: #ece9e2;
+    --button-secondary-hover: #e6e2d9;
+    --button-tertiary-hover: rgba(183, 121, 31, 0.12);
+}
+
+:root:root body {
+    font-family: var(--brand-font-primary);
+    -webkit-font-smoothing: antialiased;
+}
+
+:root:root button,
+:root:root input,
+:root:root select,
+:root:root textarea {
+    font-family: inherit;
+}
+
+// numbers line up in every table and stat
+:root:root [class*='pps-'],
+:root:root [class*='trading-bots'] {
+    font-variant-numeric: tabular-nums;
+}
+
+// text on the amber primary button
+:root:root .dc-btn--primary {
+    color: #17120a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+    }
+}

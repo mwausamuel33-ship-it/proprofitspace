@@ -240,7 +240,11 @@
             height: 100%;
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
             transform: skewX(-20deg);
-            animation: trading-bots-shine 3.4s infinite;
+            animation: none;
+        }
+
+        &:hover:not(:disabled)::after {
+            animation: trading-bots-shine 0.8s ease-out 1;
         }
 
         &:hover:not(:disabled) {

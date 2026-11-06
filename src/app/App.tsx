@@ -1,6 +1,7 @@
 import { lazy, Suspense, useRef, useCallback } from 'react';
 import React from 'react';
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from 'react-router-dom';
+import '@/styles/pps-brand.scss';
 import { cleanupUrl, handleOAuthCallback, clearAllAuthData } from '@/external/deriv-core';
 import ChunkLoader from '@/components/loader/chunk-loader';
 import LocalStorageSyncWrapper from '@/components/localStorage-sync-wrapper';

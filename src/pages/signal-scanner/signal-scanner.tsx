@@ -37,7 +37,7 @@ const Countdown = ({
 }) => {
     const [now, setNow] = useState(Date.now());
     useEffect(() => {
-        const t = setInterval(() => setNow(Date.now()), 250);
+        const t = setInterval(() => setNow(Date.now()), 1000);
         return () => clearInterval(t);
     }, []);
 

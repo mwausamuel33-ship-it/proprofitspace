@@ -149,7 +149,9 @@ export function useSuggestions() {
       setStatus(ok ? `Updated ${new Date().toLocaleTimeString()} from ${ok} markets` : 'No market data yet');
     };
     loadAll();
-    const iv = setInterval(loadAll, 30000);
+    const iv = setInterval(() => {
+      if (!document.hidden) loadAll();
+    }, 60000);
     return () => { alive = false; clearInterval(iv); };
   }, [client, engine, acc]);
 

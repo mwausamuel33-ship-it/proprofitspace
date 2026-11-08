@@ -9,6 +9,12 @@ import { LegacyClose1pxIcon } from '@deriv/quill-icons/Legacy';
 import { useDevice } from '@deriv-com/ui';
 import { SIDEBAR_INTRO } from './constants';
 
+const QUICK_START = [
+    { n: '01', title: 'Scan', text: 'Open the Signal Scanner and let it finish a scan.', tab: DBOT_TABS.SIGNAL_SCANNER },
+    { n: '02', title: 'Load', text: 'Pick a bot in Trading Bots, or use Load & Trade in the scanner.', tab: DBOT_TABS.TRADING_BOTS },
+    { n: '03', title: 'Test', text: 'Run it on your demo account and watch several sessions first.', tab: null as number | null },
+];
+
 const InfoPanel = observer(() => {
     const { isDesktop } = useDevice();
     const { dashboard } = useStore();
@@ -53,7 +59,35 @@ const InfoPanel = observer(() => {
                 <LegacyClose1pxIcon height='18px' width='18px' fill='var(--text-prominent)' />
             </div>
 
-            {SIDEBAR_INTRO().map(sidebar_item => {
+            <div className='pps-info'>
+                <Text color='prominent' lineHeight='xxl' size={isDesktop ? 'm' : 's'} weight='bold' as='h1'>
+                    Welcome to ProProfitSpace
+                </Text>
+                <p className='pps-info__lead'>
+                    Scan every Volatility index, load a bot with its entry and recovery already set, and keep take profit
+                    and stop loss on every run.
+                </p>
+                <ol className='pps-info__steps'>
+                    {QUICK_START.map(step => (
+                        <li key={step.n}>
+                            <button
+                                type='button'
+                                className='pps-info__step'
+                                disabled={step.tab === null}
+                                onClick={() => step.tab !== null && setActiveTab(step.tab)}
+                            >
+                                <span className='pps-info__step-n'>{step.n}</span>
+                                <span>
+                                    <b>{step.title}</b>
+                                    <small>{step.text}</small>
+                                </span>
+                            </button>
+                        </li>
+                    ))}
+                </ol>
+            </div>
+
+            {SIDEBAR_INTRO().slice(1).map(sidebar_item => {
                 const { label, content, link } = sidebar_item;
                 return (
                     <div key={`${label}-${content}`}>

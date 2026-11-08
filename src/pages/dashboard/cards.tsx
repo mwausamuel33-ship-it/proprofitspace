@@ -10,18 +10,46 @@ import MobileFullPageModal from '@/components/shared_ui/mobile-full-page-modal';
 import Text from '@/components/shared_ui/text';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
-import {
-    DerivLightBotBuilderIcon,
-    DerivLightGoogleDriveIcon,
-    DerivLightLocalDeviceIcon,
-    DerivLightMyComputerIcon,
-    DerivLightQuickStrategyIcon,
-} from '@deriv/quill-icons/Illustration';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
 /* [/AI] */
 import DashboardBotList from './bot-list/dashboard-bot-list';
+
+const TILE_ICONS = {
+    computer: (
+        <>
+            <rect x='3' y='4' width='18' height='12' rx='2' />
+            <path d='M8 20h8M12 16v4' />
+        </>
+    ),
+    drive: <path d='M8 3h8l6 10-4 7H6l-4-7z' />,
+    builder: (
+        <>
+            <rect x='3' y='3' width='7' height='7' rx='1' />
+            <rect x='14' y='3' width='7' height='7' rx='1' />
+            <rect x='3' y='14' width='7' height='7' rx='1' />
+            <path d='M14 17.5h7M17.5 14v7' />
+        </>
+    ),
+    quick: <path d='M13 2L4 14h7l-1 8 9-12h-7l1-8z' />,
+};
+
+const TileIcon = ({ name }: { name: keyof typeof TILE_ICONS }) => (
+    <svg
+        viewBox='0 0 24 24'
+        width='32'
+        height='32'
+        fill='none'
+        stroke='currentColor'
+        strokeWidth='1.5'
+        strokeLinecap='round'
+        strokeLinejoin='round'
+        aria-hidden='true'
+    >
+        {TILE_ICONS[name]}
+    </svg>
+);
 
 type TCardProps = {
     has_dashboard_strategies: boolean;
@@ -60,9 +88,9 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
         {
             id: 'my-computer',
             icon: is_mobile ? (
-                <DerivLightLocalDeviceIcon height='48px' width='48px' />
+                <TileIcon name='computer' />
             ) : (
-                <DerivLightMyComputerIcon height='48px' width='48px' />
+                <TileIcon name='computer' />
             ),
             content: is_mobile ? <Localize i18n_default_text='Local' /> : <Localize i18n_default_text='My computer' />,
             callback: () => {
@@ -73,7 +101,7 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
         },
         {
             id: 'google-drive',
-            icon: <DerivLightGoogleDriveIcon height='48px' width='48px' />,
+            icon: <TileIcon name='drive' />,
             content: <Localize i18n_default_text='Google Drive' />,
             callback: () => {
                 openGoogleDriveDialog();
@@ -83,7 +111,7 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
         },
         {
             id: 'bot-builder',
-            icon: <DerivLightBotBuilderIcon height='48px' width='48px' />,
+            icon: <TileIcon name='builder' />,
             content: <Localize i18n_default_text='Bot Builder' />,
             callback: () => {
                 setActiveTab(DBOT_TABS.BOT_BUILDER);
@@ -93,7 +121,7 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
         },
         {
             id: 'quick-strategy',
-            icon: <DerivLightQuickStrategyIcon height='48px' width='48px' />,
+            icon: <TileIcon name='quick' />,
             content: <Localize i18n_default_text='Quick strategy' />,
             callback: () => {
                 setActiveTab(DBOT_TABS.BOT_BUILDER);

@@ -115,6 +115,10 @@ export const useDestroyerScanner = ({
 
         const run = async () => {
             if (cancelled) return;
+            if (document.hidden) {
+                timer = setTimeout(run, interval_ms); // tab in the background: check again later
+                return;
+            }
             setIsScanning(true);
             setNextScanAt(null);
             const result = await scanMarkets(ticks, () => cancelled);

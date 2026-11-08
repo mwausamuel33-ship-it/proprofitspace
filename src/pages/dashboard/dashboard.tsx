@@ -30,10 +30,10 @@ const readLandingSeen = () => {
 };
 
 const RULE_CARDS = [
-    { label: 'Over rule', value: '0,1,2 < 10.5%', note: 'Over 1 or Over 2 · entry on 2, 5, 6' },
-    { label: 'Under rule', value: '9,8,7 < 10.5%', note: 'Under 8 or Under 7 · entry on 4, 7, 9' },
+    { label: 'Over rule', value: '0,1 < 10%', note: 'Over 1, 2 or 3 · trigger 1-3, confirm 4-8' },
+    { label: 'Under rule', value: '9,8 < 10%', note: 'Under 8, 7 or 6 · trigger 6-8, confirm 1-5' },
     { label: 'Markets', value: 'Volatility', note: 'All Volatility indices, last 1000 ticks' },
-    { label: 'Recovery', value: 'Martingale', note: 'Safer barrier after a loss, capped steps' },
+    { label: 'Recovery', value: 'Martingale', note: 'Over 3 or Under 6 after a loss, capped steps' },
 ];
 
 const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {

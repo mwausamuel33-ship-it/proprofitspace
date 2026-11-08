@@ -80,7 +80,7 @@ const TradingBots = ({ handleTabChange }: TTradingBotsProps) => {
             await load({
                 block_string: xml,
                 file_name: bot.name,
-                strategy_id: null,
+                strategy_id: `pps-store-${bot.id}`,
                 workspace,
                 from: 'trading_bots',
                 drop_event: {},

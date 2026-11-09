@@ -1,59 +1,65 @@
-import { useMemo, useState } from 'react';
-import { LabelPairedCheckCaptionFillIcon, LabelPairedSearchCaptionRegularIcon } from '@deriv/quill-icons/LabelPaired';
+import { useEffect, useMemo, useState } from 'react';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { localize } from '@deriv-com/translations';
 import { load } from '@/external/bot-skeleton';
 import { getAnalysedMarket, withMarket } from '@/utils/analysed-market';
 import { cleanBotXml } from '@/utils/clean-bot-xml';
-import '@/styles/pps-theme.scss';
 import { PREMIUM_BOTS } from './data';
 import { NEW_BOTS, TStoreBot } from './new-bots';
+import { CATEGORY_LABELS, categoryOf, collapseVersions, isScratchBot, TCategory } from './store-utils';
 import './trading-bots.scss';
 
 type TTradingBotsProps = {
     handleTabChange: (tab: number) => void;
 };
 
-type TCategory = 'all' | 'digit' | 'recovery' | 'hedge' | 'other';
-
-const ICONS: Record<Exclude<TCategory, 'all'>, string> = {
-    digit: '🎯',
-    recovery: '🔁',
-    hedge: '🛡️',
-    other: '🤖',
-};
-
-const categoryOf = (bot: TStoreBot): Exclude<TCategory, 'all'> => {
-    const n = bot.name.toLowerCase();
-    if (n.includes('hedge')) return 'hedge';
-    if (n.includes('recovery') || n.includes('alternate') || n.includes('cycle')) return 'recovery';
-    if (n.includes('over') || n.includes('under') || n.includes('digit') || n.includes('destroyer')) return 'digit';
-    return 'other';
-};
+const PAGE_SIZE = 24;
+// Cards that have no bot file behind them are placeholders. Set to true to list them anyway.
+const SHOW_PLACEHOLDERS = false;
 
 const TradingBots = ({ handleTabChange }: TTradingBotsProps) => {
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState<TCategory>('all');
+    const [show_versions, setShowVersions] = useState(false);
+    const [limit, setLimit] = useState(PAGE_SIZE);
     const [note, setNote] = useState('');
     const [loading_id, setLoadingId] = useState<string | null>(null);
 
-    const all_bots = useMemo<TStoreBot[]>(() => [...NEW_BOTS, ...PREMIUM_BOTS], []);
+    // new bots first, scratch files and placeholders out, then one card per bot (newest version)
+    const { listed, versions, hidden_versions } = useMemo(() => {
+        const all: TStoreBot[] = [...NEW_BOTS, ...PREMIUM_BOTS].filter(
+            bot => (SHOW_PLACEHOLDERS || bot.xml) && !isScratchBot(bot)
+        );
+        if (show_versions) return { listed: all, versions: {} as Record<string, number>, hidden_versions: 0 };
+        const { shown, versions: counts } = collapseVersions(all);
+        return { listed: shown, versions: counts, hidden_versions: all.length - shown.length };
+    }, [show_versions]);
 
-    const filtered_bots = useMemo(() => {
+    const category_counts = useMemo(() => {
+        const counts: Partial<Record<TCategory, number>> = {};
+        listed.forEach(bot => {
+            const c = categoryOf(bot);
+            counts[c] = (counts[c] ?? 0) + 1;
+        });
+        return counts;
+    }, [listed]);
+
+    const filtered = useMemo(() => {
         const query = search.trim().toLowerCase();
-        return all_bots.filter(
+        return listed.filter(
             bot =>
                 (category === 'all' || categoryOf(bot) === category) &&
                 (!query || bot.name.toLowerCase().includes(query) || bot.description.toLowerCase().includes(query))
         );
-    }, [all_bots, search, category]);
+    }, [listed, search, category]);
 
-    const categories: { id: TCategory; label: string }[] = [
+    useEffect(() => setLimit(PAGE_SIZE), [search, category, show_versions]);
+
+    const tabs: { id: TCategory; label: string }[] = [
         { id: 'all', label: localize('All') },
-        { id: 'digit', label: localize('Digit bots') },
-        { id: 'recovery', label: localize('Recovery') },
-        { id: 'hedge', label: localize('Hedge') },
-        { id: 'other', label: localize('Other') },
+        ...(Object.keys(CATEGORY_LABELS) as Exclude<TCategory, 'all'>[])
+            .filter(id => category_counts[id])
+            .map(id => ({ id, label: CATEGORY_LABELS[id] })),
     ];
 
     const handleLoad = async (bot: TStoreBot) => {
@@ -96,87 +102,91 @@ const TradingBots = ({ handleTabChange }: TTradingBotsProps) => {
         }
     };
 
+    const visible = filtered.slice(0, limit);
+
     return (
         <div className='trading-bots'>
             <div className='trading-bots__hero'>
                 <h2 className='trading-bots__title'>{localize('Trading Bots')}</h2>
                 <p className='trading-bots__subtitle'>
-                    {localize('Ready-to-run bots with built-in recovery, take profit and stop loss. Test on demo first.')}
+                    {localize('Every bot has take profit and stop loss. Test on a demo account first.')}
                 </p>
-                <span className='trading-bots__count'>
-                    {all_bots.length} {localize('bots available')}
-                </span>
             </div>
 
             <div className='trading-bots__toolbar'>
-                <div className='trading-bots__search'>
-                    <LabelPairedSearchCaptionRegularIcon height='16px' width='16px' fill='var(--text-less-prominent)' />
-                    <input
-                        className='trading-bots__search-input'
-                        type='text'
-                        placeholder={localize('Search bots...')}
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                    />
-                </div>
+                <input
+                    className='trading-bots__search'
+                    type='search'
+                    placeholder={localize('Search bots...')}
+                    aria-label={localize('Search bots')}
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                />
                 <div className='trading-bots__tabs' role='tablist'>
-                    {categories.map(c => (
+                    {tabs.map(tab => (
                         <button
-                            key={c.id}
+                            key={tab.id}
                             role='tab'
-                            aria-selected={category === c.id}
-                            className={`trading-bots__tab${category === c.id ? ' is-active' : ''}`}
-                            onClick={() => setCategory(c.id)}
+                            aria-selected={category === tab.id}
+                            className={`trading-bots__tab${category === tab.id ? ' is-active' : ''}`}
+                            onClick={() => setCategory(tab.id)}
                         >
-                            {c.label}
+                            {tab.label}
                         </button>
                     ))}
                 </div>
             </div>
 
-            {note && <div className='trading-bots__note'>{note}</div>}
+            <div className='trading-bots__status'>
+                <span>
+                    {filtered.length} {filtered.length === 1 ? localize('bot') : localize('bots')}
+                </span>
+                {(hidden_versions > 0 || show_versions) && (
+                    <button type='button' className='trading-bots__text-button' onClick={() => setShowVersions(v => !v)}>
+                        {show_versions
+                            ? localize('Show newest versions only')
+                            : `${localize('Show all versions')} (${hidden_versions} ${localize('hidden')})`}
+                    </button>
+                )}
+            </div>
+
+            {note && (
+                <div className='trading-bots__note' role='status'>
+                    {note}
+                </div>
+            )}
 
             <div className='trading-bots__grid'>
-                {filtered_bots.map((bot, index) => (
-                    <div
-                        className={`trading-bots__card${bot.is_new ? ' is-new' : ''}`}
-                        key={bot.id}
-                        style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}
-                    >
-                        <div className='trading-bots__badges'>
-                            {bot.is_new && <span className='trading-bots__badge trading-bots__badge--new'>{localize('NEW')}</span>}
-                            <span className='trading-bots__badge'>{localize('PREMIUM')}</span>
+                {visible.map(bot => (
+                    <article className={`trading-bots__card${bot.is_new ? ' is-new' : ''}`} key={bot.id}>
+                        <div className='trading-bots__meta'>
+                            <span className='trading-bots__category'>{CATEGORY_LABELS[categoryOf(bot)]}</span>
+                            {bot.is_new && <span className='trading-bots__badge'>{localize('NEW')}</span>}
                         </div>
-                        <div className='trading-bots__card-header'>
-                            <span className='trading-bots__icon' aria-hidden='true'>
-                                {ICONS[categoryOf(bot)]}
+                        <h3 className='trading-bots__name'>{bot.name}</h3>
+                        {versions[bot.id] > 1 && (
+                            <span className='trading-bots__versions'>
+                                {localize('Newest of')} {versions[bot.id]} {localize('versions')}
                             </span>
-                            <h3 className='trading-bots__name'>{bot.name}</h3>
-                        </div>
-                        <div className='trading-bots__rating'>
-                            {Array.from({ length: bot.rating }).map((_, i) => (
-                                <LabelPairedCheckCaptionFillIcon
-                                    key={i}
-                                    height='12px'
-                                    width='12px'
-                                    fill='var(--status-warning)'
-                                />
-                            ))}
-                        </div>
+                        )}
                         <p className='trading-bots__description'>{bot.description}</p>
                         <button
                             className='trading-bots__load-button'
                             onClick={() => handleLoad(bot)}
                             disabled={loading_id === bot.id}
                         >
-                            {loading_id === bot.id ? localize('LOADING...') : localize('LOAD PREMIUM BOT')}
+                            {loading_id === bot.id ? localize('Loading...') : localize('Load bot')}
                         </button>
-                    </div>
+                    </article>
                 ))}
-                {!filtered_bots.length && (
-                    <div className='trading-bots__empty'>{localize('No bots match your search.')}</div>
-                )}
+                {!filtered.length && <div className='trading-bots__empty'>{localize('No bots match your search.')}</div>}
             </div>
+
+            {filtered.length > limit && (
+                <button type='button' className='trading-bots__more' onClick={() => setLimit(l => l + PAGE_SIZE)}>
+                    {localize('Show more')} ({filtered.length - limit})
+                </button>
+            )}
         </div>
     );
 };

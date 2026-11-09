@@ -1,298 +1,245 @@
-// Trading Bots store. Uses the shared --pps-* tokens, with the old Deriv tokens as fallbacks.
+// Trading Bots store. Flat cards, hairline borders, one amber accent; colours come from the theme tokens.
 .trading-bots {
-    --tb-surface: var(--pps-surface, var(--general-main-1));
-    --tb-surface-2: var(--pps-surface-2, var(--general-section-1));
-    --tb-border: var(--pps-border, var(--border-normal));
-    --tb-text: var(--pps-text, var(--text-general));
-    --tb-muted: var(--pps-muted, var(--text-less-prominent));
-    --tb-accent: var(--pps-accent, var(--brand-primary));
-    --tb-gradient: var(--pps-gradient, linear-gradient(90deg, #00d4ff, #7c5cff));
-    --tb-good: var(--pps-good, #22e6a0);
+    --tb-surface: var(--general-section-1, #11141b);
+    --tb-border: var(--border-normal, #232834);
+    --tb-text: var(--text-prominent, #f4f5f8);
+    --tb-body: var(--text-general, #c9ceda);
+    --tb-muted: var(--text-less-prominent, #8a92a3);
+    --tb-accent: var(--brand-primary, #e9b44c);
 
     display: flex;
     flex-direction: column;
-    gap: 2rem;
-    padding: 2rem;
+    gap: 20px;
+    padding: 24px;
     height: 100%;
     overflow-y: auto;
 
     &__hero {
         display: flex;
         flex-direction: column;
-        gap: 0.6rem;
+        gap: 4px;
     }
 
     &__title {
         margin: 0;
-        font-size: 3rem;
-        font-weight: 800;
+        font-size: 28px;
+        font-weight: 700;
         letter-spacing: -0.02em;
-        background: var(--tb-gradient);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
+        color: var(--tb-text);
     }
 
     &__subtitle {
         margin: 0;
-        max-width: 56rem;
-        font-size: var(--text-size-xs);
+        font-size: 14px;
         color: var(--tb-muted);
-    }
-
-    &__count {
-        align-self: flex-start;
-        padding: 0.4rem 1.2rem;
-        font-size: var(--text-size-xxxxs);
-        font-weight: 700;
-        color: var(--tb-muted);
-        border: 1px solid var(--tb-border);
-        border-radius: 999px;
     }
 
     &__toolbar {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 1.2rem;
+        gap: 12px 20px;
     }
 
     &__search {
-        display: flex;
-        align-items: center;
-        flex: 1 1 24rem;
-        max-width: 42rem;
-        gap: 0.8rem;
-        padding: 1rem 1.6rem;
-        border: 1px solid var(--tb-border);
-        border-radius: 999px;
-        background: var(--tb-surface);
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
-
-        &:focus-within {
-            border-color: var(--tb-accent);
-            box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.12);
-        }
-    }
-
-    &__search-input {
-        border: none;
-        outline: none;
-        background: transparent;
+        flex: 1 1 240px;
+        max-width: 360px;
+        padding: 10px 14px;
+        font-size: 14px;
         color: var(--tb-text);
-        font-size: var(--text-size-xs);
-        width: 100%;
+        background: var(--tb-surface);
+        border: 1px solid var(--tb-border);
+        border-radius: 6px;
+        outline: none;
+        transition: border-color 0.15s ease;
+
+        &:focus {
+            border-color: var(--tb-accent);
+        }
     }
 
     &__tabs {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.8rem;
+        gap: 6px;
     }
 
     &__tab {
-        padding: 0.9rem 1.6rem;
+        padding: 8px 14px;
         font: inherit;
-        font-size: var(--text-size-xxs);
-        font-weight: 700;
+        font-size: 13px;
+        font-weight: 600;
         color: var(--tb-muted);
         background: transparent;
         border: 1px solid var(--tb-border);
-        border-radius: 999px;
+        border-radius: 6px;
         cursor: pointer;
-        transition: color 0.2s ease, border-color 0.2s ease;
+        transition:
+            color 0.15s ease,
+            border-color 0.15s ease;
 
         &:hover {
             color: var(--tb-text);
-            border-color: var(--tb-accent);
+            border-color: var(--border-hover, #3a4254);
         }
 
         &.is-active {
-            color: #04101f;
-            background: var(--tb-gradient);
-            border-color: transparent;
+            color: #17120a;
+            background: var(--tb-accent);
+            border-color: var(--tb-accent);
+        }
+    }
+
+    &__status {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 20px;
+        font-size: 13px;
+        color: var(--tb-muted);
+    }
+
+    &__text-button {
+        padding: 0;
+        font: inherit;
+        font-size: 13px;
+        color: var(--tb-body);
+        text-decoration: underline;
+        text-decoration-color: var(--tb-border);
+        text-underline-offset: 4px;
+        background: none;
+        border: 0;
+        cursor: pointer;
+
+        &:hover {
+            text-decoration-color: var(--tb-accent);
         }
     }
 
     &__note {
-        font-size: var(--text-size-xxxxs);
-        color: var(--tb-text);
-        background: var(--tb-surface-2);
-        border-left: 3px solid var(--tb-accent);
-        padding: 1rem 1.4rem;
-        border-radius: 0.6rem;
+        padding: 10px 14px;
+        font-size: 13px;
+        color: var(--tb-body);
+        background: var(--tb-surface);
+        border-left: 2px solid var(--tb-accent);
+        border-radius: 4px;
     }
 
     &__grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(28rem, 1fr));
-        gap: 2rem;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
     }
 
     &__card {
-        --card-accent: var(--tb-accent);
-
-        position: relative;
         display: flex;
         flex-direction: column;
-        gap: 1.2rem;
-        padding: 2rem;
-        overflow: hidden;
+        gap: 10px;
+        padding: 20px;
         background: var(--tb-surface);
         border: 1px solid var(--tb-border);
-        border-radius: 1.6rem;
-        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-        animation: trading-bots-rise 0.45s ease both;
-
-        &.is-new {
-            --card-accent: var(--tb-good);
-        }
+        border-radius: 8px;
+        transition: border-color 0.15s ease;
 
         &:hover {
-            transform: translateY(-4px);
-            border-color: var(--card-accent);
-            box-shadow: 0 1.4rem 3.6rem -1.8rem var(--card-accent);
+            border-color: var(--border-hover, #3a4254);
+        }
+
+        &.is-new {
+            border-color: var(--tb-accent);
         }
     }
 
-    &__badges {
-        position: absolute;
-        top: 1.2rem;
-        right: 1.2rem;
+    &__meta {
         display: flex;
-        gap: 0.6rem;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    &__category {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--tb-muted);
     }
 
     &__badge {
-        padding: 0.3rem 0.9rem;
-        font-size: var(--text-size-xxxxs);
-        font-weight: 800;
-        letter-spacing: 0.06em;
-        color: #2b1c00;
-        background: var(--status-warning, #ffb62e);
-        border-radius: 999px;
-
-        &--new {
-            color: #022b1c;
-            background: var(--tb-good);
-        }
-    }
-
-    &__card-header {
-        display: flex;
-        align-items: center;
-        gap: 1.2rem;
-        padding-right: 9rem;
-    }
-
-    &__icon {
-        display: grid;
-        place-items: center;
-        flex: none;
-        width: 4.4rem;
-        height: 4.4rem;
-        font-size: 2.2rem;
-        background: linear-gradient(135deg, var(--card-accent), #7c5cff);
-        border-radius: 1.2rem;
-        box-shadow: 0 0.8rem 2rem -0.8rem var(--card-accent);
+        padding: 2px 8px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: #17120a;
+        background: var(--tb-accent);
+        border-radius: 3px;
     }
 
     &__name {
         margin: 0;
-        font-size: var(--text-size-s);
-        font-weight: var(--text-weight-bold);
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.3;
         color: var(--tb-text);
     }
 
-    &__rating {
-        display: flex;
-        gap: 0.2rem;
+    &__versions {
+        font-size: 12px;
+        color: var(--tb-muted);
     }
 
     &__description {
         flex-grow: 1;
         margin: 0;
-        font-size: var(--text-size-xxs);
+        font-size: 13px;
         line-height: 1.6;
         color: var(--tb-muted);
     }
 
     &__load-button {
-        position: relative;
-        overflow: hidden;
-        padding: 1.2rem;
-        font-size: var(--text-size-xs);
-        font-weight: 800;
-        letter-spacing: 0.05em;
-        color: #03111f;
-        background: var(--tb-gradient);
-        border: none;
-        border-radius: 1rem;
+        padding: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #17120a;
+        background: var(--tb-accent);
+        border: 0;
+        border-radius: 6px;
         cursor: pointer;
-        transition: filter 0.2s ease, transform 0.2s ease;
-
-        &::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -60%;
-            width: 40%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
-            transform: skewX(-20deg);
-            animation: none;
-        }
-
-        &:hover:not(:disabled)::after {
-            animation: trading-bots-shine 0.8s ease-out 1;
-        }
+        transition: background 0.15s ease;
 
         &:hover:not(:disabled) {
-            filter: brightness(1.1);
-            transform: scale(1.01);
+            background: var(--button-primary-hover, #f2c566);
         }
 
         &:disabled {
-            opacity: 0.7;
+            opacity: 0.6;
             cursor: progress;
+        }
+    }
+
+    &__more {
+        align-self: center;
+        padding: 10px 24px;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--tb-body);
+        background: transparent;
+        border: 1px solid var(--tb-border);
+        border-radius: 6px;
+        cursor: pointer;
+
+        &:hover {
+            color: var(--tb-text);
+            border-color: var(--tb-accent);
         }
     }
 
     &__empty {
         grid-column: 1 / -1;
-        padding: 4rem 0;
+        padding: 48px 0;
         text-align: center;
-        font-size: var(--text-size-xs);
+        font-size: 14px;
         color: var(--tb-muted);
-    }
-}
-
-@keyframes trading-bots-shine {
-    0% {
-        left: -60%;
-    }
-    60%,
-    100% {
-        left: 140%;
-    }
-}
-
-@keyframes trading-bots-rise {
-    from {
-        opacity: 0;
-        transform: translateY(1.2rem);
-    }
-    to {
-        opacity: 1;
-        transform: none;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .trading-bots__card,
-    .trading-bots__load-button,
-    .trading-bots__load-button::after {
-        animation: none;
-        transition: none;
     }
 }

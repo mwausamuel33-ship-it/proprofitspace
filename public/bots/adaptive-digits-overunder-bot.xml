@@ -1,0 +1,2361 @@
+<?xml version="1.0" ?>
+<xml xmlns="http://www.w3.org/1999/xhtml" is_dbot="true" collection="false">
+  <variables>
+    <variable type="" id="NbrnTP3fAbnFbmOHnKYa" islocal="false" iscloud="false">digitHistory</variable>
+    <variable type="" id="XRvj7uff0LYTH8xIZM1J" islocal="false" iscloud="false">freqCounts</variable>
+    <variable type="" id="RcoreogrNwwmq6OLkTkx" islocal="false" iscloud="false">lastDigit</variable>
+    <variable type="" id="9NIQ0Wobtqn62tOy4Cqp" islocal="false" iscloud="false">rollingSampleSize</variable>
+    <variable type="" id="IqK3yn9FfcgMXAdx9G81" islocal="false" iscloud="false">confidenceThreshold</variable>
+    <variable type="" id="aSQHqNgAC72qFl41sNLj" islocal="false" iscloud="false">lowCount</variable>
+    <variable type="" id="VHWGaub52Ztd26fEeVVh" islocal="false" iscloud="false">highCount</variable>
+    <variable type="" id="DIq2AnHTmt9OBGhnuKon" islocal="false" iscloud="false">fullImbalance</variable>
+    <variable type="" id="eNo41eoPni6JDWYlgAAC" islocal="false" iscloud="false">consecutiveHighStreak</variable>
+    <variable type="" id="TP9gyv1plBArp5B1Id9Z" islocal="false" iscloud="false">consecutiveLowStreak</variable>
+    <variable type="" id="850kEnydx9qWCA79ISjs" islocal="false" iscloud="false">confidenceOver</variable>
+    <variable type="" id="8JHUdKF0j7elKPoh3pKM" islocal="false" iscloud="false">confidenceUnder</variable>
+    <variable type="" id="zKG5mSoyPstUeC99enq5" islocal="false" iscloud="false">currentDirection</variable>
+    <variable type="" id="22wjZRL9OaYsP6ihgIqL" islocal="false" iscloud="false">activeBarrier</variable>
+    <variable type="" id="SmNqE40fAraVNqTIAae2" islocal="false" iscloud="false">barrierOver</variable>
+    <variable type="" id="4HZKjht3X13npgW2zMj5" islocal="false" iscloud="false">barrierUnder</variable>
+    <variable type="" id="18Y2bTu5X1YqWg21nYCs" islocal="false" iscloud="false">baseStake</variable>
+    <variable type="" id="Xoblu17rNy8H6h8l7qgA" islocal="false" iscloud="false">currentStake</variable>
+    <variable type="" id="TtLFxJpRa5HSUPwePut0" islocal="false" iscloud="false">maxStake</variable>
+    <variable type="" id="SstzyshA6P3MsHarAJOC" islocal="false" iscloud="false">recoveryMultiplier</variable>
+    <variable type="" id="BnD3XkfFNuYUPnmbpD0e" islocal="false" iscloud="false">maxRecoverySteps</variable>
+    <variable type="" id="zNmREpOaUVgAk7Gdp0CX" islocal="false" iscloud="false">recoveryLevel</variable>
+    <variable type="" id="P9K63LSFZH3UDqpNVGMr" islocal="false" iscloud="false">consecutiveWins</variable>
+    <variable type="" id="erqtHioRRdzHzmA4KR1V" islocal="false" iscloud="false">consecutiveLosses</variable>
+    <variable type="" id="xavU07zUHLnnBbuQzkCh" islocal="false" iscloud="false">maxConsecutiveLosses</variable>
+    <variable type="" id="MbyIbNiCdxnuVxUZpfbH" islocal="false" iscloud="false">pauseAfterWinStreak</variable>
+    <variable type="" id="9vOWOU6mbjhPInRVkLUh" islocal="false" iscloud="false">cooldownLength</variable>
+    <variable type="" id="Y7gbtP7ySeQMgV0Lh8Wv" islocal="false" iscloud="false">cooldownCounter</variable>
+    <variable type="" id="AwFv0Yg7NZRBT7qYHDBT" islocal="false" iscloud="false">totalWins</variable>
+    <variable type="" id="q0Zf2pCLxb0lnXv2Rra6" islocal="false" iscloud="false">totalLosses</variable>
+    <variable type="" id="fSEVQOEXfnQsKDGAUuRq" islocal="false" iscloud="false">totalProfitSession</variable>
+    <variable type="" id="phlhHVlnES8GrgmolaHr" islocal="false" iscloud="false">dailyProfitTarget</variable>
+    <variable type="" id="8IRh1E2JDBld6DYyeNdj" islocal="false" iscloud="false">dailyLossLimit</variable>
+    <variable type="" id="Is9hVLXnGBB19sMLT6mn" islocal="false" iscloud="false">maxTrades</variable>
+    <variable type="" id="OjkeaBKsoRRCQ5WMO5AH" islocal="false" iscloud="false">sessionTrades</variable>
+    <variable type="" id="O4ZektUJrhQR6FEecAtp" islocal="false" iscloud="false">tradingActive</variable>
+    <variable type="" id="f7ZJ69PqcUDO4lKNEfvu" islocal="false" iscloud="false">readyToTrade</variable>
+    <variable type="" id="P1uRr6YICtu8zF9OHzlw" islocal="false" iscloud="false">statsText</variable>
+    <variable type="" id="UMVmI5BRh8LojIIf94Ch" islocal="false" iscloud="false">durationTicks</variable>
+  </variables>
+  <block type="trade_definition" id="MSGpC65S0iGZazje8tlR" x="0" y="0">
+    <statement name="TRADE_OPTIONS">
+      <block type="trade_definition_market" id="EjsoVpqhWOiTqfeSVzaZ" deletable="false" movable="false">
+        <field name="MARKET_LIST">synthetic_index</field>
+        <field name="SUBMARKET_LIST">random_index</field>
+        <field name="SYMBOL_LIST">1HZ100V</field>
+        <next>
+          <block type="trade_definition_tradetype" id="LjTXmLtuFbqmqODsf7ID" deletable="false" movable="false">
+            <field name="TRADETYPECAT_LIST">digits</field>
+            <field name="TRADETYPE_LIST">overunder</field>
+            <next>
+              <block type="trade_definition_contracttype" id="4HpbEyxHgn8yowINuY8f" deletable="false" movable="false">
+                <field name="TYPE_LIST">both</field>
+                <next>
+                  <block type="trade_definition_candleinterval" id="k1EpiMDSJoVptujtJzaQ" deletable="false" movable="false">
+                    <field name="CANDLEINTERVAL_LIST">60</field>
+                    <next>
+                      <block type="trade_definition_restartbuysell" id="UXHtOtRF19fgRxUkUkB8" deletable="false" movable="false">
+                        <field name="TIME_MACHINE_ENABLED">FALSE</field>
+                        <next>
+                          <block type="trade_definition_restartonerror" id="cAkXEUHysAs5PGMxOiGm" deletable="false" movable="false">
+                            <field name="RESTARTONERROR">TRUE</field>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+    <statement name="INITIALIZATION">
+      <block type="notify" id="rsK9EjHvIHCtlRJoWcUR">
+        <field name="NOTIFICATION_TYPE">info</field>
+        <field name="NOTIFICATION_SOUND">silent</field>
+        <value name="MESSAGE">
+          <shadow type="text" id="YxPY8EcFK12BGCSzOjD8">
+            <field name="TEXT">abc</field>
+          </shadow>
+          <block type="text" id="ZESFqZ8pIx5F21rWz5FY">
+            <field name="TEXT">Adaptive Digits Over/Under Bot starting...</field>
+          </block>
+        </value>
+        <next>
+          <block type="variables_set" id="2BR4cXsxjGJXke1Mo4iC">
+            <field name="VAR" id="9NIQ0Wobtqn62tOy4Cqp" variabletype="">rollingSampleSize</field>
+            <value name="VALUE">
+              <block type="math_number" id="uQO001xtSV2ceN59UAgN">
+                <field name="NUM">300</field>
+              </block>
+            </value>
+            <next>
+              <block type="variables_set" id="9s8OrJQUdLE4rXLvNMQS">
+                <field name="VAR" id="IqK3yn9FfcgMXAdx9G81" variabletype="">confidenceThreshold</field>
+                <value name="VALUE">
+                  <block type="math_number" id="ppaX3QjBvKNAp0mxDoJJ">
+                    <field name="NUM">12</field>
+                  </block>
+                </value>
+                <next>
+                  <block type="variables_set" id="ZDYUvh7i71S87XwXaHCP">
+                    <field name="VAR" id="SmNqE40fAraVNqTIAae2" variabletype="">barrierOver</field>
+                    <value name="VALUE">
+                      <block type="math_number" id="OZM4OtBJTfsUkiH8G4Zp">
+                        <field name="NUM">2</field>
+                      </block>
+                    </value>
+                    <next>
+                      <block type="variables_set" id="g3iCPU6zUjzgEz6cwB61">
+                        <field name="VAR" id="4HZKjht3X13npgW2zMj5" variabletype="">barrierUnder</field>
+                        <value name="VALUE">
+                          <block type="math_number" id="PKY6gob2I4ndZ4szi6sE">
+                            <field name="NUM">7</field>
+                          </block>
+                        </value>
+                        <next>
+                          <block type="variables_set" id="mn1uj3a1iipkObaWoukd">
+                            <field name="VAR" id="UMVmI5BRh8LojIIf94Ch" variabletype="">durationTicks</field>
+                            <value name="VALUE">
+                              <block type="math_number" id="gQH8wylh0CPNLbWphJeV">
+                                <field name="NUM">1</field>
+                              </block>
+                            </value>
+                            <next>
+                              <block type="variables_set" id="4efLerNHu9GCLgR0OVSn">
+                                <field name="VAR" id="18Y2bTu5X1YqWg21nYCs" variabletype="">baseStake</field>
+                                <value name="VALUE">
+                                  <block type="math_number" id="TGUDWFgF6cW1GC7dDyQE">
+                                    <field name="NUM">1</field>
+                                  </block>
+                                </value>
+                                <next>
+                                  <block type="variables_set" id="uhvPU1S8LvJnOng0wVJY">
+                                    <field name="VAR" id="Xoblu17rNy8H6h8l7qgA" variabletype="">currentStake</field>
+                                    <value name="VALUE">
+                                      <block type="variables_get" id="BovCzfAPxj5eZffTYIKI">
+                                        <field name="VAR" id="18Y2bTu5X1YqWg21nYCs" variabletype="">baseStake</field>
+                                      </block>
+                                    </value>
+                                    <next>
+                                      <block type="variables_set" id="UnAvwSWJfdjMPqPEBqUh">
+                                        <field name="VAR" id="TtLFxJpRa5HSUPwePut0" variabletype="">maxStake</field>
+                                        <value name="VALUE">
+                                          <block type="math_number" id="08YMNb5ZqlRtva1JyiNb">
+                                            <field name="NUM">50</field>
+                                          </block>
+                                        </value>
+                                        <next>
+                                          <block type="variables_set" id="ZXe1cb51JJRzhbuXMZ5f">
+                                            <field name="VAR" id="SstzyshA6P3MsHarAJOC" variabletype="">recoveryMultiplier</field>
+                                            <value name="VALUE">
+                                              <block type="math_number" id="ArQEPcyLasnipuaUkxRF">
+                                                <field name="NUM">1.45</field>
+                                              </block>
+                                            </value>
+                                            <next>
+                                              <block type="variables_set" id="LVOkVEUVB5INM1MjeBsr">
+                                                <field name="VAR" id="BnD3XkfFNuYUPnmbpD0e" variabletype="">maxRecoverySteps</field>
+                                                <value name="VALUE">
+                                                  <block type="math_number" id="0pKGytvukFhF4vTYYojm">
+                                                    <field name="NUM">6</field>
+                                                  </block>
+                                                </value>
+                                                <next>
+                                                  <block type="variables_set" id="jdg3vSFkpBBGjxrzuLWO">
+                                                    <field name="VAR" id="xavU07zUHLnnBbuQzkCh" variabletype="">maxConsecutiveLosses</field>
+                                                    <value name="VALUE">
+                                                      <block type="math_number" id="dFtCdZe11MFCIX3BYOtD">
+                                                        <field name="NUM">8</field>
+                                                      </block>
+                                                    </value>
+                                                    <next>
+                                                      <block type="variables_set" id="YPZTQGOAwwln6Eoie0gV">
+                                                        <field name="VAR" id="MbyIbNiCdxnuVxUZpfbH" variabletype="">pauseAfterWinStreak</field>
+                                                        <value name="VALUE">
+                                                          <block type="math_number" id="efQrSO42uKiv7RyK6txX">
+                                                            <field name="NUM">6</field>
+                                                          </block>
+                                                        </value>
+                                                        <next>
+                                                          <block type="variables_set" id="HtYDZw69CrxG7YXipN2I">
+                                                            <field name="VAR" id="9vOWOU6mbjhPInRVkLUh" variabletype="">cooldownLength</field>
+                                                            <value name="VALUE">
+                                                              <block type="math_number" id="Z2cuVixkZVYkBzPoBrUB">
+                                                                <field name="NUM">5</field>
+                                                              </block>
+                                                            </value>
+                                                            <next>
+                                                              <block type="variables_set" id="50OXirZRiRBaepZITGgr">
+                                                                <field name="VAR" id="phlhHVlnES8GrgmolaHr" variabletype="">dailyProfitTarget</field>
+                                                                <value name="VALUE">
+                                                                  <block type="math_number" id="g00rVq4jB6nBvbdFo9xb">
+                                                                    <field name="NUM">20</field>
+                                                                  </block>
+                                                                </value>
+                                                                <next>
+                                                                  <block type="variables_set" id="GF9IyDN8pbWvTMVTucHY">
+                                                                    <field name="VAR" id="8IRh1E2JDBld6DYyeNdj" variabletype="">dailyLossLimit</field>
+                                                                    <value name="VALUE">
+                                                                      <block type="math_number" id="scAXCg4KbFpiAMozPf8e">
+                                                                        <field name="NUM">30</field>
+                                                                      </block>
+                                                                    </value>
+                                                                    <next>
+                                                                      <block type="variables_set" id="wW1uhw3U3x8EE5GXTeLY">
+                                                                        <field name="VAR" id="Is9hVLXnGBB19sMLT6mn" variabletype="">maxTrades</field>
+                                                                        <value name="VALUE">
+                                                                          <block type="math_number" id="kWCRNYdWCscmc5F9HpUl">
+                                                                            <field name="NUM">100</field>
+                                                                          </block>
+                                                                        </value>
+                                                                        <next>
+                                                                          <block type="variables_set" id="Q7iLWceWwxJLQ6xVJGyO">
+                                                                            <field name="VAR" id="OjkeaBKsoRRCQ5WMO5AH" variabletype="">sessionTrades</field>
+                                                                            <value name="VALUE">
+                                                                              <block type="math_number" id="HteOtLAQvc1v9r86eNwX">
+                                                                                <field name="NUM">0</field>
+                                                                              </block>
+                                                                            </value>
+                                                                            <next>
+                                                                              <block type="variables_set" id="0tveH30S5NXFhmiXbIwX">
+                                                                                <field name="VAR" id="AwFv0Yg7NZRBT7qYHDBT" variabletype="">totalWins</field>
+                                                                                <value name="VALUE">
+                                                                                  <block type="math_number" id="phTExIqqB9r4Eh0C3BfQ">
+                                                                                    <field name="NUM">0</field>
+                                                                                  </block>
+                                                                                </value>
+                                                                                <next>
+                                                                                  <block type="variables_set" id="A4dhjkuRv630pNIhsHFk">
+                                                                                    <field name="VAR" id="q0Zf2pCLxb0lnXv2Rra6" variabletype="">totalLosses</field>
+                                                                                    <value name="VALUE">
+                                                                                      <block type="math_number" id="ILft9SGVZe8NBQv2WNl7">
+                                                                                        <field name="NUM">0</field>
+                                                                                      </block>
+                                                                                    </value>
+                                                                                    <next>
+                                                                                      <block type="variables_set" id="DXQsedBEmLtST18iwItC">
+                                                                                        <field name="VAR" id="fSEVQOEXfnQsKDGAUuRq" variabletype="">totalProfitSession</field>
+                                                                                        <value name="VALUE">
+                                                                                          <block type="math_number" id="6jOSL0IZbcNJOVzNEMr7">
+                                                                                            <field name="NUM">0</field>
+                                                                                          </block>
+                                                                                        </value>
+                                                                                        <next>
+                                                                                          <block type="variables_set" id="7nvdE2ODH0A2TVwyJmIe">
+                                                                                            <field name="VAR" id="zNmREpOaUVgAk7Gdp0CX" variabletype="">recoveryLevel</field>
+                                                                                            <value name="VALUE">
+                                                                                              <block type="math_number" id="qpgrxMp1juJtVEFEtb6F">
+                                                                                                <field name="NUM">0</field>
+                                                                                              </block>
+                                                                                            </value>
+                                                                                            <next>
+                                                                                              <block type="variables_set" id="LFuMk9TsuZHRsYwP8KXS">
+                                                                                                <field name="VAR" id="P9K63LSFZH3UDqpNVGMr" variabletype="">consecutiveWins</field>
+                                                                                                <value name="VALUE">
+                                                                                                  <block type="math_number" id="FVr9Qh8yXv6UmFFciuDC">
+                                                                                                    <field name="NUM">0</field>
+                                                                                                  </block>
+                                                                                                </value>
+                                                                                                <next>
+                                                                                                  <block type="variables_set" id="jQzW52TdimuPGtk4vvVS">
+                                                                                                    <field name="VAR" id="erqtHioRRdzHzmA4KR1V" variabletype="">consecutiveLosses</field>
+                                                                                                    <value name="VALUE">
+                                                                                                      <block type="math_number" id="QbD7WWJSKkMM0jQb6gbt">
+                                                                                                        <field name="NUM">0</field>
+                                                                                                      </block>
+                                                                                                    </value>
+                                                                                                    <next>
+                                                                                                      <block type="variables_set" id="8Y7XsrSvBpDmH5RiMKpP">
+                                                                                                        <field name="VAR" id="Y7gbtP7ySeQMgV0Lh8Wv" variabletype="">cooldownCounter</field>
+                                                                                                        <value name="VALUE">
+                                                                                                          <block type="math_number" id="NQLlpIn8srmRtv5XqhPx">
+                                                                                                            <field name="NUM">0</field>
+                                                                                                          </block>
+                                                                                                        </value>
+                                                                                                        <next>
+                                                                                                          <block type="variables_set" id="JHS64k2k59yE6752aJg8">
+                                                                                                            <field name="VAR" id="eNo41eoPni6JDWYlgAAC" variabletype="">consecutiveHighStreak</field>
+                                                                                                            <value name="VALUE">
+                                                                                                              <block type="math_number" id="GNdzSgVaI5z52Dm7tO4f">
+                                                                                                                <field name="NUM">0</field>
+                                                                                                              </block>
+                                                                                                            </value>
+                                                                                                            <next>
+                                                                                                              <block type="variables_set" id="ZFfPliupqoU7sSaOQdht">
+                                                                                                                <field name="VAR" id="TP9gyv1plBArp5B1Id9Z" variabletype="">consecutiveLowStreak</field>
+                                                                                                                <value name="VALUE">
+                                                                                                                  <block type="math_number" id="r9HE60DlgkCplTXJUk13">
+                                                                                                                    <field name="NUM">0</field>
+                                                                                                                  </block>
+                                                                                                                </value>
+                                                                                                                <next>
+                                                                                                                  <block type="variables_set" id="pU2fBReIdHFJjuGhmKfF">
+                                                                                                                    <field name="VAR" id="aSQHqNgAC72qFl41sNLj" variabletype="">lowCount</field>
+                                                                                                                    <value name="VALUE">
+                                                                                                                      <block type="math_number" id="zF3Rth4sMnijULzIDHPn">
+                                                                                                                        <field name="NUM">0</field>
+                                                                                                                      </block>
+                                                                                                                    </value>
+                                                                                                                    <next>
+                                                                                                                      <block type="variables_set" id="zVV8OA9x14xQPHOvlHGT">
+                                                                                                                        <field name="VAR" id="VHWGaub52Ztd26fEeVVh" variabletype="">highCount</field>
+                                                                                                                        <value name="VALUE">
+                                                                                                                          <block type="math_number" id="YCFCdCYSyYUJcvd95e5b">
+                                                                                                                            <field name="NUM">0</field>
+                                                                                                                          </block>
+                                                                                                                        </value>
+                                                                                                                        <next>
+                                                                                                                          <block type="variables_set" id="gcLRdTyon1dFrYTtLPts">
+                                                                                                                            <field name="VAR" id="DIq2AnHTmt9OBGhnuKon" variabletype="">fullImbalance</field>
+                                                                                                                            <value name="VALUE">
+                                                                                                                              <block type="math_number" id="nabsPHGZpvr6SgYzV2am">
+                                                                                                                                <field name="NUM">0</field>
+                                                                                                                              </block>
+                                                                                                                            </value>
+                                                                                                                            <next>
+                                                                                                                              <block type="variables_set" id="D0sRX4I8IipmO50fSlqP">
+                                                                                                                                <field name="VAR" id="850kEnydx9qWCA79ISjs" variabletype="">confidenceOver</field>
+                                                                                                                                <value name="VALUE">
+                                                                                                                                  <block type="math_number" id="iOnsd624MAE86PWtzjxU">
+                                                                                                                                    <field name="NUM">0</field>
+                                                                                                                                  </block>
+                                                                                                                                </value>
+                                                                                                                                <next>
+                                                                                                                                  <block type="variables_set" id="IWxHwqFEg8D04wzInjq5">
+                                                                                                                                    <field name="VAR" id="8JHUdKF0j7elKPoh3pKM" variabletype="">confidenceUnder</field>
+                                                                                                                                    <value name="VALUE">
+                                                                                                                                      <block type="math_number" id="L2lVSID1u7a67h9DpLm4">
+                                                                                                                                        <field name="NUM">0</field>
+                                                                                                                                      </block>
+                                                                                                                                    </value>
+                                                                                                                                    <next>
+                                                                                                                                      <block type="variables_set" id="HNdc06PVz0oRaFxMPMDE">
+                                                                                                                                        <field name="VAR" id="zKG5mSoyPstUeC99enq5" variabletype="">currentDirection</field>
+                                                                                                                                        <value name="VALUE">
+                                                                                                                                          <block type="text" id="JzjuxZEOQpY7NEkXkSE4">
+                                                                                                                                            <field name="TEXT">NONE</field>
+                                                                                                                                          </block>
+                                                                                                                                        </value>
+                                                                                                                                        <next>
+                                                                                                                                          <block type="variables_set" id="zJ9oQ0O1VfxIdakEAWJ1">
+                                                                                                                                            <field name="VAR" id="22wjZRL9OaYsP6ihgIqL" variabletype="">activeBarrier</field>
+                                                                                                                                            <value name="VALUE">
+                                                                                                                                              <block type="variables_get" id="aIaGr8bYPX4gfjlGYqyx">
+                                                                                                                                                <field name="VAR" id="SmNqE40fAraVNqTIAae2" variabletype="">barrierOver</field>
+                                                                                                                                              </block>
+                                                                                                                                            </value>
+                                                                                                                                            <next>
+                                                                                                                                              <block type="variables_set" id="ekoZy3uUi9SF8dBZvV7y">
+                                                                                                                                                <field name="VAR" id="O4ZektUJrhQR6FEecAtp" variabletype="">tradingActive</field>
+                                                                                                                                                <value name="VALUE">
+                                                                                                                                                  <block type="logic_boolean" id="fGcn13Dce53Ic5t7KUSy">
+                                                                                                                                                    <field name="BOOL">TRUE</field>
+                                                                                                                                                  </block>
+                                                                                                                                                </value>
+                                                                                                                                                <next>
+                                                                                                                                                  <block type="variables_set" id="gatwqilBIzbvfLuxsyf3">
+                                                                                                                                                    <field name="VAR" id="f7ZJ69PqcUDO4lKNEfvu" variabletype="">readyToTrade</field>
+                                                                                                                                                    <value name="VALUE">
+                                                                                                                                                      <block type="logic_boolean" id="Vbq9Ew6AQOfMXSfjSNTt">
+                                                                                                                                                        <field name="BOOL">FALSE</field>
+                                                                                                                                                      </block>
+                                                                                                                                                    </value>
+                                                                                                                                                    <next>
+                                                                                                                                                      <block type="variables_set" id="6uMXuuY18it6mt78sREJ">
+                                                                                                                                                        <field name="VAR" id="RcoreogrNwwmq6OLkTkx" variabletype="">lastDigit</field>
+                                                                                                                                                        <value name="VALUE">
+                                                                                                                                                          <block type="math_number" id="48JkxisEdAAEeppMKmgs">
+                                                                                                                                                            <field name="NUM">0</field>
+                                                                                                                                                          </block>
+                                                                                                                                                        </value>
+                                                                                                                                                        <next>
+                                                                                                                                                          <block type="variables_set" id="NpOSWe9DyF5QHXw3HNfV">
+                                                                                                                                                            <field name="VAR" id="NbrnTP3fAbnFbmOHnKYa" variabletype="">digitHistory</field>
+                                                                                                                                                            <value name="VALUE">
+                                                                                                                                                              <block type="lists_create_with" id="pxYyhIKHQI7CRBsQYXzE">
+                                                                                                                                                                <mutation items="0"/>
+                                                                                                                                                              </block>
+                                                                                                                                                            </value>
+                                                                                                                                                            <next>
+                                                                                                                                                              <block type="variables_set" id="h1Ba7mQiOj5qOpx4kysR">
+                                                                                                                                                                <field name="VAR" id="XRvj7uff0LYTH8xIZM1J" variabletype="">freqCounts</field>
+                                                                                                                                                                <value name="VALUE">
+                                                                                                                                                                  <block type="lists_create_with" id="CPwdHnAnqZuJJEvQdgWC">
+                                                                                                                                                                    <mutation items="10"/>
+                                                                                                                                                                    <value name="ADD0">
+                                                                                                                                                                      <block type="math_number" id="OwOc8QyU7AaqFGJJByVK">
+                                                                                                                                                                        <field name="NUM">0</field>
+                                                                                                                                                                      </block>
+                                                                                                                                                                    </value>
+                                                                                                                                                                    <value name="ADD1">
+                                                                                                                                                                      <block type="math_number" id="Fvbgz7h6itCmDDBRtsYh">
+                                                                                                                                                                        <field name="NUM">0</field>
+                                                                                                                                                                      </block>
+                                                                                                                                                                    </value>
+                                                                                                                                                                    <value name="ADD2">
+                                                                                                                                                                      <block type="math_number" id="0OPk9pkjI7ozlNAbMmKy">
+                                                                                                                                                                        <field name="NUM">0</field>
+                                                                                                                                                                      </block>
+                                                                                                                                                                    </value>
+                                                                                                                                                                    <value name="ADD3">
+                                                                                                                                                                      <block type="math_number" id="RmUYdg2luCq1GNLLKv0M">
+                                                                                                                                                                        <field name="NUM">0</field>
+                                                                                                                                                                      </block>
+                                                                                                                                                                    </value>
+                                                                                                                                                                    <value name="ADD4">
+                                                                                                                                                                      <block type="math_number" id="YRsMfihslQFzixlNQO9I">
+                                                                                                                                                                        <field name="NUM">0</field>
+                                                                                                                                                                      </block>
+                                                                                                                                                                    </value>
+                                                                                                                                                                    <value name="ADD5">
+                                                                                                                                                                      <block type="math_number" id="EitBdwaiY7FEQz0EfbVs">
+                                                                                                                                                                        <field name="NUM">0</field>
+                                                                                                                                                                      </block>
+                                                                                                                                                                    </value>
+                                                                                                                                                                    <value name="ADD6">
+                                                                                                                                                                      <block type="math_number" id="rHkCUVIhhWZwZcSH9gZU">
+                                                                                                                                                                        <field name="NUM">0</field>
+                                                                                                                                                                      </block>
+                                                                                                                                                                    </value>
+                                                                                                                                                                    <value name="ADD7">
+                                                                                                                                                                      <block type="math_number" id="s9BvYB9WoYKvSNkimmdv">
+                                                                                                                                                                        <field name="NUM">0</field>
+                                                                                                                                                                      </block>
+                                                                                                                                                                    </value>
+                                                                                                                                                                    <value name="ADD8">
+                                                                                                                                                                      <block type="math_number" id="rHuRrq19Qf7W491h1pSZ">
+                                                                                                                                                                        <field name="NUM">0</field>
+                                                                                                                                                                      </block>
+                                                                                                                                                                    </value>
+                                                                                                                                                                    <value name="ADD9">
+                                                                                                                                                                      <block type="math_number" id="VPEJqzCN2fFr6w6uaVTT">
+                                                                                                                                                                        <field name="NUM">0</field>
+                                                                                                                                                                      </block>
+                                                                                                                                                                    </value>
+                                                                                                                                                                  </block>
+                                                                                                                                                                </value>
+                                                                                                                                                              </block>
+                                                                                                                                                            </next>
+                                                                                                                                                          </block>
+                                                                                                                                                        </next>
+                                                                                                                                                      </block>
+                                                                                                                                                    </next>
+                                                                                                                                                  </block>
+                                                                                                                                                </next>
+                                                                                                                                              </block>
+                                                                                                                                            </next>
+                                                                                                                                          </block>
+                                                                                                                                        </next>
+                                                                                                                                      </block>
+                                                                                                                                    </next>
+                                                                                                                                  </block>
+                                                                                                                                </next>
+                                                                                                                              </block>
+                                                                                                                            </next>
+                                                                                                                          </block>
+                                                                                                                        </next>
+                                                                                                                      </block>
+                                                                                                                    </next>
+                                                                                                                  </block>
+                                                                                                                </next>
+                                                                                                              </block>
+                                                                                                            </next>
+                                                                                                          </block>
+                                                                                                        </next>
+                                                                                                      </block>
+                                                                                                    </next>
+                                                                                                  </block>
+                                                                                                </next>
+                                                                                              </block>
+                                                                                            </next>
+                                                                                          </block>
+                                                                                        </next>
+                                                                                      </block>
+                                                                                    </next>
+                                                                                  </block>
+                                                                                </next>
+                                                                              </block>
+                                                                            </next>
+                                                                          </block>
+                                                                        </next>
+                                                                      </block>
+                                                                    </next>
+                                                                  </block>
+                                                                </next>
+                                                              </block>
+                                                            </next>
+                                                          </block>
+                                                        </next>
+                                                      </block>
+                                                    </next>
+                                                  </block>
+                                                </next>
+                                              </block>
+                                            </next>
+                                          </block>
+                                        </next>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+    <statement name="SUBMARKET">
+      <block type="trade_definition_tradeoptions" id="HudDjvIoM5rY1KsMzpHO">
+        <mutation has_first_barrier="false" has_second_barrier="false" has_prediction="true"/>
+        <field name="DURATIONTYPE_LIST">t</field>
+        <value name="DURATION">
+          <shadow type="math_number" id="ejTrqgXKVuVKrY2PDkW9">
+            <field name="NUM">1</field>
+          </shadow>
+          <block type="variables_get" id="fXjk2u3dFBPuFhIxxDtG">
+            <field name="VAR" id="UMVmI5BRh8LojIIf94Ch" variabletype="">durationTicks</field>
+          </block>
+        </value>
+        <value name="AMOUNT">
+          <shadow type="math_number" id="G2076ZS0IEWQIAvbwCPT">
+            <field name="NUM">1</field>
+          </shadow>
+          <block type="variables_get" id="nI96xlUaBGatfwp5LcrD">
+            <field name="VAR" id="Xoblu17rNy8H6h8l7qgA" variabletype="">currentStake</field>
+          </block>
+        </value>
+        <value name="PREDICTION">
+          <shadow type="math_number_positive" id="cRpM8Z159NED2UYcb3jT">
+            <field name="NUM">2</field>
+          </shadow>
+          <block type="variables_get" id="1iA0dNdgH8mMbZ0tR4K6">
+            <field name="VAR" id="22wjZRL9OaYsP6ihgIqL" variabletype="">activeBarrier</field>
+          </block>
+        </value>
+      </block>
+    </statement>
+  </block>
+  <block type="after_purchase" id="IOGwmjH1oX4unT6cb6gy" x="1338" y="0">
+    <statement name="AFTERPURCHASE_STACK">
+      <block type="controls_if" id="8gGTYLxbZVNcpfiMa77g">
+        <mutation else="1"/>
+        <value name="IF0">
+          <block type="contract_check_result" id="Tw3fll1lETObklyLeep4">
+            <field name="CHECK_RESULT">win</field>
+          </block>
+        </value>
+        <statement name="DO0">
+          <block type="math_change" id="phgkipftzkMubdytzuxZ">
+            <field name="VAR" id="AwFv0Yg7NZRBT7qYHDBT" variabletype="">totalWins</field>
+            <value name="DELTA">
+              <shadow type="math_number" id="hmUKEUxhdCzEzo2q7PpI">
+                <field name="NUM">1</field>
+              </shadow>
+              <block type="math_number" id="3h6lbWpR3BYLyc1bBz1t">
+                <field name="NUM">1</field>
+              </block>
+            </value>
+            <next>
+              <block type="math_change" id="5DL0xvNKFcTIsyhiIrAL">
+                <field name="VAR" id="P9K63LSFZH3UDqpNVGMr" variabletype="">consecutiveWins</field>
+                <value name="DELTA">
+                  <shadow type="math_number" id="7tQvqUCp8vCLaQOaD3Pz">
+                    <field name="NUM">1</field>
+                  </shadow>
+                  <block type="math_number" id="WszfNm8x9WHA4CaCZr8a">
+                    <field name="NUM">1</field>
+                  </block>
+                </value>
+                <next>
+                  <block type="variables_set" id="6Bnbr5wfMsSoEwr4RmmY">
+                    <field name="VAR" id="erqtHioRRdzHzmA4KR1V" variabletype="">consecutiveLosses</field>
+                    <value name="VALUE">
+                      <block type="math_number" id="3RVHWOebZPPvYZwkVRaC">
+                        <field name="NUM">0</field>
+                      </block>
+                    </value>
+                    <next>
+                      <block type="math_change" id="QHpIC6N6d6A9qQCwV2nr">
+                        <field name="VAR" id="fSEVQOEXfnQsKDGAUuRq" variabletype="">totalProfitSession</field>
+                        <value name="DELTA">
+                          <shadow type="math_number" id="ABamfJbT8AepktMfDYKM">
+                            <field name="NUM">1</field>
+                          </shadow>
+                          <block type="read_details" id="y1JEIOJQJeheqJoGWlQ9">
+                            <field name="DETAIL_INDEX">4</field>
+                          </block>
+                        </value>
+                        <next>
+                          <block type="variables_set" id="h4BsMeQIsxfUoLOaxX2M">
+                            <field name="VAR" id="Xoblu17rNy8H6h8l7qgA" variabletype="">currentStake</field>
+                            <value name="VALUE">
+                              <block type="variables_get" id="upgovduX6WMVMJfdct0e">
+                                <field name="VAR" id="18Y2bTu5X1YqWg21nYCs" variabletype="">baseStake</field>
+                              </block>
+                            </value>
+                            <next>
+                              <block type="variables_set" id="tB7Ut2WjtvwaKQdFZ1Am">
+                                <field name="VAR" id="zNmREpOaUVgAk7Gdp0CX" variabletype="">recoveryLevel</field>
+                                <value name="VALUE">
+                                  <block type="math_number" id="v6WCulgKeWmJNpASBpXd">
+                                    <field name="NUM">0</field>
+                                  </block>
+                                </value>
+                                <next>
+                                  <block type="variables_set" id="oMoT7uTml9webhsmKVcb">
+                                    <field name="VAR" id="f7ZJ69PqcUDO4lKNEfvu" variabletype="">readyToTrade</field>
+                                    <value name="VALUE">
+                                      <block type="logic_boolean" id="m4WvPR8LuJ7MzkCWcnan">
+                                        <field name="BOOL">FALSE</field>
+                                      </block>
+                                    </value>
+                                    <next>
+                                      <block type="controls_if" id="lVRmBIxJh6aYZvzQzWHu">
+                                        <value name="IF0">
+                                          <block type="logic_compare" id="udX2082mfDPeFUNFECtx">
+                                            <field name="OP">GTE</field>
+                                            <value name="A">
+                                              <block type="variables_get" id="mk2SvIlb04bQxWg6soYO">
+                                                <field name="VAR" id="P9K63LSFZH3UDqpNVGMr" variabletype="">consecutiveWins</field>
+                                              </block>
+                                            </value>
+                                            <value name="B">
+                                              <block type="variables_get" id="68922ei5XlxxL8pcMlHW">
+                                                <field name="VAR" id="MbyIbNiCdxnuVxUZpfbH" variabletype="">pauseAfterWinStreak</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                        <statement name="DO0">
+                                          <block type="variables_set" id="BvKCMACzXtxloOwf0FNW">
+                                            <field name="VAR" id="Y7gbtP7ySeQMgV0Lh8Wv" variabletype="">cooldownCounter</field>
+                                            <value name="VALUE">
+                                              <block type="variables_get" id="RSEqy5Kcnm1ys3J6xIif">
+                                                <field name="VAR" id="9vOWOU6mbjhPInRVkLUh" variabletype="">cooldownLength</field>
+                                              </block>
+                                            </value>
+                                            <next>
+                                              <block type="variables_set" id="WzzJODFVjyoUDFWUSCXt">
+                                                <field name="VAR" id="P9K63LSFZH3UDqpNVGMr" variabletype="">consecutiveWins</field>
+                                                <value name="VALUE">
+                                                  <block type="math_number" id="5gecmmusYQrR99UT4asY">
+                                                    <field name="NUM">0</field>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </next>
+                                          </block>
+                                        </statement>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </statement>
+        <statement name="ELSE">
+          <block type="math_change" id="s16ztfeT6kdUIE27AFTD">
+            <field name="VAR" id="q0Zf2pCLxb0lnXv2Rra6" variabletype="">totalLosses</field>
+            <value name="DELTA">
+              <shadow type="math_number" id="F93RzM4USRUpT6Z2GLL7">
+                <field name="NUM">1</field>
+              </shadow>
+              <block type="math_number" id="jhxTdS8RpLRl9XFrA62Y">
+                <field name="NUM">1</field>
+              </block>
+            </value>
+            <next>
+              <block type="math_change" id="TJns5NZcCMEwMuva3lvg">
+                <field name="VAR" id="erqtHioRRdzHzmA4KR1V" variabletype="">consecutiveLosses</field>
+                <value name="DELTA">
+                  <shadow type="math_number" id="EfFjhEjOoysAlYgB0kvA">
+                    <field name="NUM">1</field>
+                  </shadow>
+                  <block type="math_number" id="P2Gne0F7Axxh4pHVhssn">
+                    <field name="NUM">1</field>
+                  </block>
+                </value>
+                <next>
+                  <block type="variables_set" id="F50yggbjFVoQv8TArEVp">
+                    <field name="VAR" id="P9K63LSFZH3UDqpNVGMr" variabletype="">consecutiveWins</field>
+                    <value name="VALUE">
+                      <block type="math_number" id="w1mlcyU3jmDPqAIXSuV2">
+                        <field name="NUM">0</field>
+                      </block>
+                    </value>
+                    <next>
+                      <block type="math_change" id="95AMfdzsNouDFNsqrvzt">
+                        <field name="VAR" id="fSEVQOEXfnQsKDGAUuRq" variabletype="">totalProfitSession</field>
+                        <value name="DELTA">
+                          <shadow type="math_number" id="ccdUnD4gl6wsgaI1uTwW">
+                            <field name="NUM">1</field>
+                          </shadow>
+                          <block type="read_details" id="jFpV19pYmRYRFl9KNoic">
+                            <field name="DETAIL_INDEX">4</field>
+                          </block>
+                        </value>
+                        <next>
+                          <block type="variables_set" id="mSclIp20483BS4ez5FbL">
+                            <field name="VAR" id="f7ZJ69PqcUDO4lKNEfvu" variabletype="">readyToTrade</field>
+                            <value name="VALUE">
+                              <block type="logic_boolean" id="GxOnx3iUhK4OlR5eHvS9">
+                                <field name="BOOL">FALSE</field>
+                              </block>
+                            </value>
+                            <next>
+                              <block type="controls_if" id="8H8WWgUxO1NIYnqKYUjo">
+                                <mutation else="1"/>
+                                <value name="IF0">
+                                  <block type="logic_compare" id="pZHavLwfRISzLudYZn7k">
+                                    <field name="OP">LT</field>
+                                    <value name="A">
+                                      <block type="variables_get" id="RhcJXRTyQ18kUxWyqljn">
+                                        <field name="VAR" id="zNmREpOaUVgAk7Gdp0CX" variabletype="">recoveryLevel</field>
+                                      </block>
+                                    </value>
+                                    <value name="B">
+                                      <block type="variables_get" id="R2XCRGsnRIkcocj25qXN">
+                                        <field name="VAR" id="BnD3XkfFNuYUPnmbpD0e" variabletype="">maxRecoverySteps</field>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </value>
+                                <statement name="DO0">
+                                  <block type="math_change" id="LjPXRLt9h9RDZERx8uZn">
+                                    <field name="VAR" id="zNmREpOaUVgAk7Gdp0CX" variabletype="">recoveryLevel</field>
+                                    <value name="DELTA">
+                                      <shadow type="math_number" id="TYRd1lEy9O09HuQ9UyGr">
+                                        <field name="NUM">1</field>
+                                      </shadow>
+                                      <block type="math_number" id="adH08twQXGLnyHCi6ZEC">
+                                        <field name="NUM">1</field>
+                                      </block>
+                                    </value>
+                                    <next>
+                                      <block type="controls_if" id="3tTUMdxsjmc5L6TurNVG">
+                                        <mutation else="1"/>
+                                        <value name="IF0">
+                                          <block type="logic_compare" id="De71imARDL6KFQraidyY">
+                                            <field name="OP">GTE</field>
+                                            <value name="A">
+                                              <block type="variables_get" id="bW5j7uNLL18myHlgJB3f">
+                                                <field name="VAR" id="850kEnydx9qWCA79ISjs" variabletype="">confidenceOver</field>
+                                              </block>
+                                            </value>
+                                            <value name="B">
+                                              <block type="variables_get" id="gIbQEle7roOedGk1zjgH">
+                                                <field name="VAR" id="8JHUdKF0j7elKPoh3pKM" variabletype="">confidenceUnder</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                        <statement name="DO0">
+                                          <block type="variables_set" id="lJy6o1qMs4RSnE9I9egV">
+                                            <field name="VAR" id="zKG5mSoyPstUeC99enq5" variabletype="">currentDirection</field>
+                                            <value name="VALUE">
+                                              <block type="text" id="G42CJTr2CRSsMYkp3TC4">
+                                                <field name="TEXT">OVER</field>
+                                              </block>
+                                            </value>
+                                            <next>
+                                              <block type="variables_set" id="p6iY0kbgsHyeVPjwncPn">
+                                                <field name="VAR" id="22wjZRL9OaYsP6ihgIqL" variabletype="">activeBarrier</field>
+                                                <value name="VALUE">
+                                                  <block type="variables_get" id="uBpFCeRUxU1yah4uUEeI">
+                                                    <field name="VAR" id="SmNqE40fAraVNqTIAae2" variabletype="">barrierOver</field>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </next>
+                                          </block>
+                                        </statement>
+                                        <statement name="ELSE">
+                                          <block type="variables_set" id="Pn2XZkkzguIlmH6hnwky">
+                                            <field name="VAR" id="zKG5mSoyPstUeC99enq5" variabletype="">currentDirection</field>
+                                            <value name="VALUE">
+                                              <block type="text" id="RZYNS3ytdaVV5xofA9ul">
+                                                <field name="TEXT">UNDER</field>
+                                              </block>
+                                            </value>
+                                            <next>
+                                              <block type="variables_set" id="RQ8RuN2t0DuLKxNoK9oM">
+                                                <field name="VAR" id="22wjZRL9OaYsP6ihgIqL" variabletype="">activeBarrier</field>
+                                                <value name="VALUE">
+                                                  <block type="variables_get" id="tyCeYOwensL8gH90k7L8">
+                                                    <field name="VAR" id="4HZKjht3X13npgW2zMj5" variabletype="">barrierUnder</field>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </next>
+                                          </block>
+                                        </statement>
+                                        <next>
+                                          <block type="variables_set" id="Rm1yiUJX0RCkiRsinUTa">
+                                            <field name="VAR" id="Xoblu17rNy8H6h8l7qgA" variabletype="">currentStake</field>
+                                            <value name="VALUE">
+                                              <block type="math_constrain" id="bwcYuBLyLfA55914Tsmi">
+                                                <value name="VALUE">
+                                                  <shadow type="math_number" id="GJ1FhXsPI2kBhPonUOfA">
+                                                    <field name="NUM">0</field>
+                                                  </shadow>
+                                                  <block type="math_arithmetic" id="AZps7Oxtz2TfNWviU5yt">
+                                                    <field name="OP">MULTIPLY</field>
+                                                    <value name="A">
+                                                      <shadow type="math_number" id="9YaeRGOTkxRml6BYldlV">
+                                                        <field name="NUM">1</field>
+                                                      </shadow>
+                                                      <block type="variables_get" id="8Orb0upH4PpQSLxtBa1e">
+                                                        <field name="VAR" id="18Y2bTu5X1YqWg21nYCs" variabletype="">baseStake</field>
+                                                      </block>
+                                                    </value>
+                                                    <value name="B">
+                                                      <shadow type="math_number" id="q3zMM1ksxrvKDPgdUaK9">
+                                                        <field name="NUM">1</field>
+                                                      </shadow>
+                                                      <block type="math_arithmetic" id="CCxLeiDjlaFSE568xENK">
+                                                        <field name="OP">POWER</field>
+                                                        <value name="A">
+                                                          <shadow type="math_number" id="zc5xJmBp4SFEQRO5TpcY">
+                                                            <field name="NUM">1</field>
+                                                          </shadow>
+                                                          <block type="variables_get" id="lNimfKZ5oeStSpkprBNq">
+                                                            <field name="VAR" id="SstzyshA6P3MsHarAJOC" variabletype="">recoveryMultiplier</field>
+                                                          </block>
+                                                        </value>
+                                                        <value name="B">
+                                                          <shadow type="math_number" id="NPROqCQpL70aVN4yK3Gl">
+                                                            <field name="NUM">1</field>
+                                                          </shadow>
+                                                          <block type="variables_get" id="We8ykBFTVYXbx0V5KjTp">
+                                                            <field name="VAR" id="zNmREpOaUVgAk7Gdp0CX" variabletype="">recoveryLevel</field>
+                                                          </block>
+                                                        </value>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </value>
+                                                <value name="LOW">
+                                                  <shadow type="math_number" id="Sj53VnpD3hiHSfQ25VLN">
+                                                    <field name="NUM">0</field>
+                                                  </shadow>
+                                                  <block type="variables_get" id="gGaL9V5DuAw39Y6Pxdwu">
+                                                    <field name="VAR" id="18Y2bTu5X1YqWg21nYCs" variabletype="">baseStake</field>
+                                                  </block>
+                                                </value>
+                                                <value name="HIGH">
+                                                  <shadow type="math_number" id="xSTxNI1YnhffT6Uhw07J">
+                                                    <field name="NUM">100</field>
+                                                  </shadow>
+                                                  <block type="variables_get" id="gCRS3iL1rRYwMODzl97Y">
+                                                    <field name="VAR" id="TtLFxJpRa5HSUPwePut0" variabletype="">maxStake</field>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </next>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </statement>
+                                <statement name="ELSE">
+                                  <block type="variables_set" id="oEQ7OxQXOW1OrOwhfEPF">
+                                    <field name="VAR" id="Xoblu17rNy8H6h8l7qgA" variabletype="">currentStake</field>
+                                    <value name="VALUE">
+                                      <block type="variables_get" id="TJQ9j6A05f8ld8OK8Mzc">
+                                        <field name="VAR" id="18Y2bTu5X1YqWg21nYCs" variabletype="">baseStake</field>
+                                      </block>
+                                    </value>
+                                    <next>
+                                      <block type="variables_set" id="YEGKSWhU73lLlIXhhmjI">
+                                        <field name="VAR" id="zNmREpOaUVgAk7Gdp0CX" variabletype="">recoveryLevel</field>
+                                        <value name="VALUE">
+                                          <block type="math_number" id="bJJqUXlENAJgd4XlYbIH">
+                                            <field name="NUM">0</field>
+                                          </block>
+                                        </value>
+                                        <next>
+                                          <block type="variables_set" id="HngYolsZ7LnwhMepx4yf">
+                                            <field name="VAR" id="O4ZektUJrhQR6FEecAtp" variabletype="">tradingActive</field>
+                                            <value name="VALUE">
+                                              <block type="logic_boolean" id="0c8FwHA6as6GWOBJRG9v">
+                                                <field name="BOOL">FALSE</field>
+                                              </block>
+                                            </value>
+                                            <next>
+                                              <block type="notify" id="hgHeNwuq1nax8xg5kTtY">
+                                                <field name="NOTIFICATION_TYPE">warn</field>
+                                                <field name="NOTIFICATION_SOUND">silent</field>
+                                                <value name="MESSAGE">
+                                                  <shadow type="text" id="EGR1IL3k6yvT8GK0DhaF">
+                                                    <field name="TEXT">abc</field>
+                                                  </shadow>
+                                                  <block type="text" id="pARHeT9RlxOYLAj9AbLe">
+                                                    <field name="TEXT">Maximum recovery steps reached. Bot stopped - restart manually after review.</field>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </next>
+                                          </block>
+                                        </next>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </statement>
+                              </block>
+                            </next>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </statement>
+        <next>
+          <block type="math_change" id="4bAjOo2x2Zgkgg7wMh55">
+            <field name="VAR" id="OjkeaBKsoRRCQ5WMO5AH" variabletype="">sessionTrades</field>
+            <value name="DELTA">
+              <shadow type="math_number" id="3LlGLQjPsYvg4P5YSea5">
+                <field name="NUM">1</field>
+              </shadow>
+              <block type="math_number" id="TuRmDIBkujdQMhZgsFZi">
+                <field name="NUM">1</field>
+              </block>
+            </value>
+            <next>
+              <block type="controls_if" id="K0rjC2fS2YOVj7GTO5vW">
+                <value name="IF0">
+                  <block type="logic_compare" id="I75dv01Ysi084pZdi7Rx">
+                    <field name="OP">GTE</field>
+                    <value name="A">
+                      <block type="variables_get" id="jOtySWDeJ7rf9lxtAQzX">
+                        <field name="VAR" id="fSEVQOEXfnQsKDGAUuRq" variabletype="">totalProfitSession</field>
+                      </block>
+                    </value>
+                    <value name="B">
+                      <block type="variables_get" id="uXOpzEHHYxKAJQURoa9b">
+                        <field name="VAR" id="phlhHVlnES8GrgmolaHr" variabletype="">dailyProfitTarget</field>
+                      </block>
+                    </value>
+                  </block>
+                </value>
+                <statement name="DO0">
+                  <block type="variables_set" id="zuWRrj2bUFaZQ2IZ4FRA">
+                    <field name="VAR" id="O4ZektUJrhQR6FEecAtp" variabletype="">tradingActive</field>
+                    <value name="VALUE">
+                      <block type="logic_boolean" id="b7xRPeZ1bweeJYjlUURs">
+                        <field name="BOOL">FALSE</field>
+                      </block>
+                    </value>
+                    <next>
+                      <block type="notify" id="mgeL0brHeLUtINcq8JIW">
+                        <field name="NOTIFICATION_TYPE">success</field>
+                        <field name="NOTIFICATION_SOUND">silent</field>
+                        <value name="MESSAGE">
+                          <shadow type="text" id="ct6awrymUS8RgzTgYjKx">
+                            <field name="TEXT">abc</field>
+                          </shadow>
+                          <block type="text" id="j8G8hnMnlUI0YDtNZkXO">
+                            <field name="TEXT">Daily profit target reached. Bot stopped.</field>
+                          </block>
+                        </value>
+                      </block>
+                    </next>
+                  </block>
+                </statement>
+                <next>
+                  <block type="controls_if" id="lNZXJhN8k4GBgXFNW0Mq">
+                    <value name="IF0">
+                      <block type="logic_compare" id="jRvQyaWLePMu96UTtjCj">
+                        <field name="OP">LTE</field>
+                        <value name="A">
+                          <block type="variables_get" id="vw1A3VymLejMEXi1H8Wf">
+                            <field name="VAR" id="fSEVQOEXfnQsKDGAUuRq" variabletype="">totalProfitSession</field>
+                          </block>
+                        </value>
+                        <value name="B">
+                          <block type="math_arithmetic" id="jyeyCfCN3CfT45Vmut9E">
+                            <field name="OP">MULTIPLY</field>
+                            <value name="A">
+                              <shadow type="math_number" id="RDrcjDNtbLx6wADd17Qq">
+                                <field name="NUM">1</field>
+                              </shadow>
+                              <block type="variables_get" id="ft5krwflVpDp2OihJc1y">
+                                <field name="VAR" id="8IRh1E2JDBld6DYyeNdj" variabletype="">dailyLossLimit</field>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <shadow type="math_number" id="NfezsS2GPqZf3vUkvzDQ">
+                                <field name="NUM">1</field>
+                              </shadow>
+                              <block type="math_number" id="14hw07xQFq2QMNTpYa0s">
+                                <field name="NUM">-1</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                    <statement name="DO0">
+                      <block type="variables_set" id="8JaYb3F1ROCzvHGVhkAk">
+                        <field name="VAR" id="O4ZektUJrhQR6FEecAtp" variabletype="">tradingActive</field>
+                        <value name="VALUE">
+                          <block type="logic_boolean" id="1h8zGaBZhB8gn8AHkxv7">
+                            <field name="BOOL">FALSE</field>
+                          </block>
+                        </value>
+                        <next>
+                          <block type="notify" id="BKcrAnCxmDh74zYRTaxn">
+                            <field name="NOTIFICATION_TYPE">warn</field>
+                            <field name="NOTIFICATION_SOUND">silent</field>
+                            <value name="MESSAGE">
+                              <shadow type="text" id="r2qZXzo3zajxYYLu79o8">
+                                <field name="TEXT">abc</field>
+                              </shadow>
+                              <block type="text" id="KHx0QBrM519XgOMzEU5g">
+                                <field name="TEXT">Daily loss limit reached. Bot stopped.</field>
+                              </block>
+                            </value>
+                          </block>
+                        </next>
+                      </block>
+                    </statement>
+                    <next>
+                      <block type="controls_if" id="3w3951qWg6euLYqkiCh1">
+                        <value name="IF0">
+                          <block type="logic_compare" id="ZyEbe7eQxt4YlalJLb89">
+                            <field name="OP">GTE</field>
+                            <value name="A">
+                              <block type="variables_get" id="I6mfBMKbR5exUiCNwo3s">
+                                <field name="VAR" id="erqtHioRRdzHzmA4KR1V" variabletype="">consecutiveLosses</field>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <block type="variables_get" id="HpWWVOr5MNJgCKgr3fEw">
+                                <field name="VAR" id="xavU07zUHLnnBbuQzkCh" variabletype="">maxConsecutiveLosses</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                        <statement name="DO0">
+                          <block type="variables_set" id="7vIsUEFylkQ3ryKVtX7E">
+                            <field name="VAR" id="O4ZektUJrhQR6FEecAtp" variabletype="">tradingActive</field>
+                            <value name="VALUE">
+                              <block type="logic_boolean" id="EMHjT5lbbFj1hnunT6qD">
+                                <field name="BOOL">FALSE</field>
+                              </block>
+                            </value>
+                            <next>
+                              <block type="variables_set" id="bluXweOxWhtauCX3IxLG">
+                                <field name="VAR" id="Y7gbtP7ySeQMgV0Lh8Wv" variabletype="">cooldownCounter</field>
+                                <value name="VALUE">
+                                  <block type="variables_get" id="2AUYMLAJxNdkcFKsZN7v">
+                                    <field name="VAR" id="9vOWOU6mbjhPInRVkLUh" variabletype="">cooldownLength</field>
+                                  </block>
+                                </value>
+                                <next>
+                                  <block type="notify" id="JrN194r0y34cNefXSrUy">
+                                    <field name="NOTIFICATION_TYPE">warn</field>
+                                    <field name="NOTIFICATION_SOUND">silent</field>
+                                    <value name="MESSAGE">
+                                      <shadow type="text" id="ItLyRC07hxMbcaguQBkl">
+                                        <field name="TEXT">abc</field>
+                                      </shadow>
+                                      <block type="text" id="grL21e3AUttmXE9Ahkux">
+                                        <field name="TEXT">Maximum consecutive losses reached. Bot stopped.</field>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </statement>
+                        <next>
+                          <block type="controls_if" id="EpT8wUm7N72Q3B7GqQ3y">
+                            <value name="IF0">
+                              <block type="logic_compare" id="w81FWlrkt1Oj2Uo3lbPC">
+                                <field name="OP">GTE</field>
+                                <value name="A">
+                                  <block type="variables_get" id="U37zBhGJO8tToqsfI2OT">
+                                    <field name="VAR" id="OjkeaBKsoRRCQ5WMO5AH" variabletype="">sessionTrades</field>
+                                  </block>
+                                </value>
+                                <value name="B">
+                                  <block type="variables_get" id="me8danYlgmKG1VtCjF4n">
+                                    <field name="VAR" id="Is9hVLXnGBB19sMLT6mn" variabletype="">maxTrades</field>
+                                  </block>
+                                </value>
+                              </block>
+                            </value>
+                            <statement name="DO0">
+                              <block type="variables_set" id="O7ndcqegoMSygT2qmWvr">
+                                <field name="VAR" id="O4ZektUJrhQR6FEecAtp" variabletype="">tradingActive</field>
+                                <value name="VALUE">
+                                  <block type="logic_boolean" id="q5fAjFFdqgOTAsyKGEAQ">
+                                    <field name="BOOL">FALSE</field>
+                                  </block>
+                                </value>
+                                <next>
+                                  <block type="notify" id="Q0K8KEpgYJ9ZGkjfsTCT">
+                                    <field name="NOTIFICATION_TYPE">info</field>
+                                    <field name="NOTIFICATION_SOUND">silent</field>
+                                    <value name="MESSAGE">
+                                      <shadow type="text" id="9pEwavS3W13KgQTb81Oi">
+                                        <field name="TEXT">abc</field>
+                                      </shadow>
+                                      <block type="text" id="KTfFRDs4otel3iaDulqe">
+                                        <field name="TEXT">Maximum trades for this session reached. Bot stopped.</field>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </next>
+                              </block>
+                            </statement>
+                            <next>
+                              <block type="text_join" id="NxDOJ5WGiu7vMzc0jfg5">
+                                <field name="VARIABLE" id="P1uRr6YICtu8zF9OHzlw" variabletype="">statsText</field>
+                                <statement name="STACK">
+                                  <block type="text_statement" id="DV8YTo3k3UAdLh0eVL05">
+                                    <value name="TEXT">
+                                      <shadow type="text" id="tRx9JmpBrmkYYlKNPmY3">
+                                        <field name="TEXT"/>
+                                      </shadow>
+                                      <block type="text" id="z9tcGvLAC8Xr8EQCj7MP">
+                                        <field name="TEXT">Wins: </field>
+                                      </block>
+                                    </value>
+                                    <next>
+                                      <block type="text_statement" id="wzHelT4NEZJDvMIieAxe">
+                                        <value name="TEXT">
+                                          <shadow type="text" id="eWshoLun65pRe28eJ05F">
+                                            <field name="TEXT"/>
+                                          </shadow>
+                                          <block type="variables_get" id="srXacrKdsAOapvr1PVjf">
+                                            <field name="VAR" id="AwFv0Yg7NZRBT7qYHDBT" variabletype="">totalWins</field>
+                                          </block>
+                                        </value>
+                                        <next>
+                                          <block type="text_statement" id="ydRgD4qbuquViHT5P2oe">
+                                            <value name="TEXT">
+                                              <shadow type="text" id="64RVc86LLeI6qccFOAs0">
+                                                <field name="TEXT"/>
+                                              </shadow>
+                                              <block type="text" id="q9mKfnDvYNA7gqstIQtJ">
+                                                <field name="TEXT"> | Losses: </field>
+                                              </block>
+                                            </value>
+                                            <next>
+                                              <block type="text_statement" id="8bdVYH1QTIdVRAAiB38w">
+                                                <value name="TEXT">
+                                                  <shadow type="text" id="mBdoKoU3XJ9aSYehlcvO">
+                                                    <field name="TEXT"/>
+                                                  </shadow>
+                                                  <block type="variables_get" id="QmiIsfJMHx2BiBt5SDAA">
+                                                    <field name="VAR" id="q0Zf2pCLxb0lnXv2Rra6" variabletype="">totalLosses</field>
+                                                  </block>
+                                                </value>
+                                                <next>
+                                                  <block type="text_statement" id="psLDhepHETw4nS6WsOGq">
+                                                    <value name="TEXT">
+                                                      <shadow type="text" id="RFd3RMrmi8oTnxYi8ROC">
+                                                        <field name="TEXT"/>
+                                                      </shadow>
+                                                      <block type="text" id="zbI7AUMspFhHJsUyyaY2">
+                                                        <field name="TEXT"> | Profit: </field>
+                                                      </block>
+                                                    </value>
+                                                    <next>
+                                                      <block type="text_statement" id="hEcrxZfrLE1xcmlAdsHv">
+                                                        <value name="TEXT">
+                                                          <shadow type="text" id="bL354YKUvZAATTdgySQ1">
+                                                            <field name="TEXT"/>
+                                                          </shadow>
+                                                          <block type="variables_get" id="CddZOugsDudTPTdmiTEn">
+                                                            <field name="VAR" id="fSEVQOEXfnQsKDGAUuRq" variabletype="">totalProfitSession</field>
+                                                          </block>
+                                                        </value>
+                                                        <next>
+                                                          <block type="text_statement" id="6CJJGkxU5iaX6fpHuyMw">
+                                                            <value name="TEXT">
+                                                              <shadow type="text" id="OWYLhJtqlCBC7D0nd6rL">
+                                                                <field name="TEXT"/>
+                                                              </shadow>
+                                                              <block type="text" id="P0st9aEQhaLhgmDZBdhz">
+                                                                <field name="TEXT"> | Recovery Lvl: </field>
+                                                              </block>
+                                                            </value>
+                                                            <next>
+                                                              <block type="text_statement" id="tdlVr1hNjMdhcQ1JcSdS">
+                                                                <value name="TEXT">
+                                                                  <shadow type="text" id="qpQ1vSLveBFouxZzN2iu">
+                                                                    <field name="TEXT"/>
+                                                                  </shadow>
+                                                                  <block type="variables_get" id="8Y0HYQ1MANlYOkTHDrP7">
+                                                                    <field name="VAR" id="zNmREpOaUVgAk7Gdp0CX" variabletype="">recoveryLevel</field>
+                                                                  </block>
+                                                                </value>
+                                                                <next>
+                                                                  <block type="text_statement" id="WuzOD8Mjc54bLYFWFKvn">
+                                                                    <value name="TEXT">
+                                                                      <shadow type="text" id="ZcTx9ee6nFJHzT0GdDGB">
+                                                                        <field name="TEXT"/>
+                                                                      </shadow>
+                                                                      <block type="text" id="EPyRgzAbCIasN3Mc47DS">
+                                                                        <field name="TEXT"> | Stake: </field>
+                                                                      </block>
+                                                                    </value>
+                                                                    <next>
+                                                                      <block type="text_statement" id="qZsppVwCUhoT2wvF4OLB">
+                                                                        <value name="TEXT">
+                                                                          <shadow type="text" id="zJZhHWzKiqrtfA8JNV32">
+                                                                            <field name="TEXT"/>
+                                                                          </shadow>
+                                                                          <block type="variables_get" id="r8w1FvRydOvSvSWrVsy4">
+                                                                            <field name="VAR" id="Xoblu17rNy8H6h8l7qgA" variabletype="">currentStake</field>
+                                                                          </block>
+                                                                        </value>
+                                                                      </block>
+                                                                    </next>
+                                                                  </block>
+                                                                </next>
+                                                              </block>
+                                                            </next>
+                                                          </block>
+                                                        </next>
+                                                      </block>
+                                                    </next>
+                                                  </block>
+                                                </next>
+                                              </block>
+                                            </next>
+                                          </block>
+                                        </next>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </statement>
+                                <next>
+                                  <block type="notify" id="33KM9cTwBzBZrDilV46f">
+                                    <field name="NOTIFICATION_TYPE">info</field>
+                                    <field name="NOTIFICATION_SOUND">silent</field>
+                                    <value name="MESSAGE">
+                                      <shadow type="text" id="3KwOxBFK6gsvI3J0Autl">
+                                        <field name="TEXT">abc</field>
+                                      </shadow>
+                                      <block type="variables_get" id="ahqI5UhcAQ9i144vyISh">
+                                        <field name="VAR" id="P1uRr6YICtu8zF9OHzlw" variabletype="">statsText</field>
+                                      </block>
+                                    </value>
+                                    <next>
+                                      <block type="controls_if" id="TvYtzJkmM6MuLbSXfR4V">
+                                        <mutation else="1"/>
+                                        <value name="IF0">
+                                          <block type="logic_compare" id="R0BAq19ThveXTuFrNFWR">
+                                            <field name="OP">EQ</field>
+                                            <value name="A">
+                                              <block type="variables_get" id="iYT9nGJMgrhqB2r49U5P">
+                                                <field name="VAR" id="O4ZektUJrhQR6FEecAtp" variabletype="">tradingActive</field>
+                                              </block>
+                                            </value>
+                                            <value name="B">
+                                              <block type="logic_boolean" id="im0Ub37HXaZbm6JTGZsg">
+                                                <field name="BOOL">TRUE</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                        <statement name="DO0">
+                                          <block type="trade_again" id="t5A5Xt0O2cNaix6PqjYT"/>
+                                        </statement>
+                                        <statement name="ELSE">
+                                          <block type="notify" id="osEXywDfg2Ur8uPhCthR">
+                                            <field name="NOTIFICATION_TYPE">warn</field>
+                                            <field name="NOTIFICATION_SOUND">silent</field>
+                                            <value name="MESSAGE">
+                                              <shadow type="text" id="RVDXEzosF3WdVqtyBy4q">
+                                                <field name="TEXT">abc</field>
+                                              </shadow>
+                                              <block type="text" id="rm261UaeImlzqxKNEOls">
+                                                <field name="TEXT">Bot is stopped. Restart manually to resume trading.</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </statement>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+  </block>
+  <block type="before_purchase" id="H73TO1RJXRIhIlMJdJlD" x="0" y="648">
+    <statement name="BEFOREPURCHASE_STACK">
+      <block type="controls_whileUntil" id="S7ZPTXX0MrUPimLgz9sm">
+        <field name="MODE">WHILE</field>
+        <value name="BOOL">
+          <block type="logic_operation" id="3zDE6vRbrlvon4vL0Ois">
+            <field name="OP">AND</field>
+            <value name="A">
+              <block type="logic_negate" id="sKCPMq72llUL2gHahkDQ">
+                <value name="BOOL">
+                  <block type="variables_get" id="scecgAfOJppfFhPllyf2">
+                    <field name="VAR" id="f7ZJ69PqcUDO4lKNEfvu" variabletype="">readyToTrade</field>
+                  </block>
+                </value>
+              </block>
+            </value>
+            <value name="B">
+              <block type="logic_compare" id="NS80TKIsEEKLQYESGAtd">
+                <field name="OP">EQ</field>
+                <value name="A">
+                  <block type="variables_get" id="17LEM8wPQyshaga81mOO">
+                    <field name="VAR" id="O4ZektUJrhQR6FEecAtp" variabletype="">tradingActive</field>
+                  </block>
+                </value>
+                <value name="B">
+                  <block type="logic_boolean" id="BMWlsCDbkjR7D1KmJZda">
+                    <field name="BOOL">TRUE</field>
+                  </block>
+                </value>
+              </block>
+            </value>
+          </block>
+        </value>
+        <statement name="DO">
+          <block type="variables_set" id="iVUi9iGaOBSMjzQ1fgUK">
+            <field name="VAR" id="RcoreogrNwwmq6OLkTkx" variabletype="">lastDigit</field>
+            <value name="VALUE">
+              <block type="lastDigitList" id="oORaDioQaRY9AiexTgt2"/>
+            </value>
+            <next>
+              <block type="lists_setIndex" id="cdWFMFzRfHMrtFmYHyNZ">
+                <mutation at="false"/>
+                <field name="MODE">INSERT</field>
+                <field name="WHERE">LAST</field>
+                <value name="LIST">
+                  <block type="variables_get" id="x7tirfILLWQ0OsGFUsd3">
+                    <field name="VAR" id="NbrnTP3fAbnFbmOHnKYa" variabletype="">digitHistory</field>
+                  </block>
+                </value>
+                <value name="TO">
+                  <block type="variables_get" id="7EgEKG895i1JwQV7Vbeq">
+                    <field name="VAR" id="RcoreogrNwwmq6OLkTkx" variabletype="">lastDigit</field>
+                  </block>
+                </value>
+                <next>
+                  <block type="variables_set" id="CKEVm3Vpazov026aO0Tg">
+                    <field name="VAR" id="NbrnTP3fAbnFbmOHnKYa" variabletype="">digitHistory</field>
+                    <value name="VALUE">
+                      <block type="lists_getSublist" id="gJSoFc1pDxj51I4TAtzS">
+                        <mutation at1="true" at2="false"/>
+                        <field name="WHERE1">FROM_END</field>
+                        <field name="WHERE2">LAST</field>
+                        <value name="LIST">
+                          <block type="variables_get" id="QeRT0dfACLtTThRRk7GW">
+                            <field name="VAR" id="NbrnTP3fAbnFbmOHnKYa" variabletype="">digitHistory</field>
+                          </block>
+                        </value>
+                        <value name="AT1">
+                          <shadow type="math_number" id="qexF3lX87eCr0uIamIsM">
+                            <field name="NUM">1</field>
+                          </shadow>
+                          <block type="variables_get" id="SkhWq2VbYqdSJeCwEJwp">
+                            <field name="VAR" id="9NIQ0Wobtqn62tOy4Cqp" variabletype="">rollingSampleSize</field>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                    <next>
+                      <block type="lists_setIndex" id="IgrHvzxELcriLRc3uoU5">
+                        <mutation at="true"/>
+                        <field name="MODE">SET</field>
+                        <field name="WHERE">FROM_START</field>
+                        <value name="LIST">
+                          <block type="variables_get" id="p44eyyurC2WMGAzjKV65">
+                            <field name="VAR" id="XRvj7uff0LYTH8xIZM1J" variabletype="">freqCounts</field>
+                          </block>
+                        </value>
+                        <value name="AT">
+                          <shadow type="math_number" id="3bYsrERg1i8BZqzOlnZT">
+                            <field name="NUM">1</field>
+                          </shadow>
+                          <block type="math_arithmetic" id="Xv00kKXR4bR6IIl92EtE">
+                            <field name="OP">ADD</field>
+                            <value name="A">
+                              <shadow type="math_number" id="fonGa4miS40ubK4W017x">
+                                <field name="NUM">1</field>
+                              </shadow>
+                              <block type="variables_get" id="szIdrim2GNXX9WwHE4Fy">
+                                <field name="VAR" id="RcoreogrNwwmq6OLkTkx" variabletype="">lastDigit</field>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <shadow type="math_number" id="6ygsij6X7Ok8R5WnKktQ">
+                                <field name="NUM">1</field>
+                              </shadow>
+                              <block type="math_number" id="ltn3Wd9GV98gOqY4d9n0">
+                                <field name="NUM">1</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                        <value name="TO">
+                          <block type="math_arithmetic" id="PLmbksf0tyEOfHl2wBqC">
+                            <field name="OP">ADD</field>
+                            <value name="A">
+                              <shadow type="math_number" id="oqdUPfvH8KI0YzH1D2De">
+                                <field name="NUM">1</field>
+                              </shadow>
+                              <block type="lists_getIndex" id="fRN2BqpepgaxT82ExHgD">
+                                <mutation statement="false" at="true"/>
+                                <field name="MODE">GET</field>
+                                <field name="WHERE">FROM_START</field>
+                                <value name="VALUE">
+                                  <block type="variables_get" id="hT66y97cL57nJ6iUo8k2">
+                                    <field name="VAR" id="XRvj7uff0LYTH8xIZM1J" variabletype="">freqCounts</field>
+                                  </block>
+                                </value>
+                                <value name="AT">
+                                  <shadow type="math_number" id="1OQke0st7ekxTH3fKMDb">
+                                    <field name="NUM">1</field>
+                                  </shadow>
+                                  <block type="math_arithmetic" id="tqhjQZRcZufpwFPq9bzC">
+                                    <field name="OP">ADD</field>
+                                    <value name="A">
+                                      <shadow type="math_number" id="UpCXiaZ8iZxNNKqYbd3B">
+                                        <field name="NUM">1</field>
+                                      </shadow>
+                                      <block type="variables_get" id="GoEd9Sf53GRx8ffiYeJA">
+                                        <field name="VAR" id="RcoreogrNwwmq6OLkTkx" variabletype="">lastDigit</field>
+                                      </block>
+                                    </value>
+                                    <value name="B">
+                                      <shadow type="math_number" id="h4ZucCkJYybQknlr2cMp">
+                                        <field name="NUM">1</field>
+                                      </shadow>
+                                      <block type="math_number" id="7oqtXRTtqemWKjkCzH7m">
+                                        <field name="NUM">1</field>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </value>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <shadow type="math_number" id="3SF3XQMhUk98YhA9A9MZ">
+                                <field name="NUM">1</field>
+                              </shadow>
+                              <block type="math_number" id="6k3jgmlRSTqrodJ0jwAs">
+                                <field name="NUM">1</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                        <next>
+                          <block type="controls_if" id="CgkcsXtTfVc0PkwBM2fY">
+                            <mutation else="1"/>
+                            <value name="IF0">
+                              <block type="logic_compare" id="OQqzbWVa4OLapXs7NAxv">
+                                <field name="OP">GTE</field>
+                                <value name="A">
+                                  <block type="variables_get" id="V1YFjtFi02blZZpC4RqZ">
+                                    <field name="VAR" id="RcoreogrNwwmq6OLkTkx" variabletype="">lastDigit</field>
+                                  </block>
+                                </value>
+                                <value name="B">
+                                  <block type="math_number" id="FNhbxKl1Kvk3UQrxkJ71">
+                                    <field name="NUM">5</field>
+                                  </block>
+                                </value>
+                              </block>
+                            </value>
+                            <statement name="DO0">
+                              <block type="math_change" id="3sjV3XXLOQSO9qzycRJl">
+                                <field name="VAR" id="eNo41eoPni6JDWYlgAAC" variabletype="">consecutiveHighStreak</field>
+                                <value name="DELTA">
+                                  <shadow type="math_number" id="TnHW4PF002lghqYVlQuf">
+                                    <field name="NUM">1</field>
+                                  </shadow>
+                                  <block type="math_number" id="pCPZygFP0xOLsgd9N1qS">
+                                    <field name="NUM">1</field>
+                                  </block>
+                                </value>
+                                <next>
+                                  <block type="variables_set" id="imzJ4CtSWENkNaqVkVEV">
+                                    <field name="VAR" id="TP9gyv1plBArp5B1Id9Z" variabletype="">consecutiveLowStreak</field>
+                                    <value name="VALUE">
+                                      <block type="math_number" id="wUtWuqs0D1K6e3F1xsd0">
+                                        <field name="NUM">0</field>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </next>
+                              </block>
+                            </statement>
+                            <statement name="ELSE">
+                              <block type="variables_set" id="KkZssTKu39v3wl64zoTi">
+                                <field name="VAR" id="eNo41eoPni6JDWYlgAAC" variabletype="">consecutiveHighStreak</field>
+                                <value name="VALUE">
+                                  <block type="math_number" id="fMNz7xcmxatZlPMpQvhx">
+                                    <field name="NUM">0</field>
+                                  </block>
+                                </value>
+                                <next>
+                                  <block type="math_change" id="RNsPPqLiZgShhgmmqGmR">
+                                    <field name="VAR" id="TP9gyv1plBArp5B1Id9Z" variabletype="">consecutiveLowStreak</field>
+                                    <value name="DELTA">
+                                      <shadow type="math_number" id="scEm5uaP4ZPjfFSgpo9s">
+                                        <field name="NUM">1</field>
+                                      </shadow>
+                                      <block type="math_number" id="TKkwOc2pHd9PObQzxHDj">
+                                        <field name="NUM">1</field>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </next>
+                              </block>
+                            </statement>
+                            <next>
+                              <block type="variables_set" id="bKPckrWMdOayq0O1b1Oo">
+                                <field name="VAR" id="aSQHqNgAC72qFl41sNLj" variabletype="">lowCount</field>
+                                <value name="VALUE">
+                                  <block type="math_arithmetic" id="giDo1r2zlRWJhaOQtwjO">
+                                    <field name="OP">ADD</field>
+                                    <value name="A">
+                                      <shadow type="math_number" id="p1AwrQUzWDwIptvRT1OU">
+                                        <field name="NUM">1</field>
+                                      </shadow>
+                                      <block type="math_arithmetic" id="nVTsCFyFP0YMkFBl6O7T">
+                                        <field name="OP">ADD</field>
+                                        <value name="A">
+                                          <shadow type="math_number" id="DwnEdwcm4wDCc8uRGZZq">
+                                            <field name="NUM">1</field>
+                                          </shadow>
+                                          <block type="math_arithmetic" id="ePV1AgHR8WO6UjCufdXI">
+                                            <field name="OP">ADD</field>
+                                            <value name="A">
+                                              <shadow type="math_number" id="JoqyNAbPHNMUKRe5gWsf">
+                                                <field name="NUM">1</field>
+                                              </shadow>
+                                              <block type="math_arithmetic" id="NmMsvP8O7FRthvDJPzU0">
+                                                <field name="OP">ADD</field>
+                                                <value name="A">
+                                                  <shadow type="math_number" id="r0YGbjPmUjrp0QsUcYg1">
+                                                    <field name="NUM">1</field>
+                                                  </shadow>
+                                                  <block type="lists_getIndex" id="GRfPpvPx0I9dNj001eEo">
+                                                    <mutation statement="false" at="true"/>
+                                                    <field name="MODE">GET</field>
+                                                    <field name="WHERE">FROM_START</field>
+                                                    <value name="VALUE">
+                                                      <block type="variables_get" id="ly7qx0XOXhRd6jzKXQlx">
+                                                        <field name="VAR" id="XRvj7uff0LYTH8xIZM1J" variabletype="">freqCounts</field>
+                                                      </block>
+                                                    </value>
+                                                    <value name="AT">
+                                                      <shadow type="math_number" id="8dnNzoCXB1BhEOgzIafL">
+                                                        <field name="NUM">1</field>
+                                                      </shadow>
+                                                      <block type="math_number" id="wbQZ8i5hzcqtRQVJJ8Pu">
+                                                        <field name="NUM">1</field>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </value>
+                                                <value name="B">
+                                                  <shadow type="math_number" id="T1UIoWXrP5y78tIapMW1">
+                                                    <field name="NUM">1</field>
+                                                  </shadow>
+                                                  <block type="lists_getIndex" id="ZKVBO7iEGd50DF5kJThy">
+                                                    <mutation statement="false" at="true"/>
+                                                    <field name="MODE">GET</field>
+                                                    <field name="WHERE">FROM_START</field>
+                                                    <value name="VALUE">
+                                                      <block type="variables_get" id="MsFmP6wdnCIMDOShVnvZ">
+                                                        <field name="VAR" id="XRvj7uff0LYTH8xIZM1J" variabletype="">freqCounts</field>
+                                                      </block>
+                                                    </value>
+                                                    <value name="AT">
+                                                      <shadow type="math_number" id="L2Fx84Vq78CizRUsR1S6">
+                                                        <field name="NUM">1</field>
+                                                      </shadow>
+                                                      <block type="math_number" id="7sGRckiSSgLl5yCWSgz5">
+                                                        <field name="NUM">2</field>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </value>
+                                            <value name="B">
+                                              <shadow type="math_number" id="VByODHiyXH7iP4XTx6II">
+                                                <field name="NUM">1</field>
+                                              </shadow>
+                                              <block type="lists_getIndex" id="HfnnuwnUG9Z8aPB4MM7Q">
+                                                <mutation statement="false" at="true"/>
+                                                <field name="MODE">GET</field>
+                                                <field name="WHERE">FROM_START</field>
+                                                <value name="VALUE">
+                                                  <block type="variables_get" id="Z4ROUHLW7slQlkFxAIiK">
+                                                    <field name="VAR" id="XRvj7uff0LYTH8xIZM1J" variabletype="">freqCounts</field>
+                                                  </block>
+                                                </value>
+                                                <value name="AT">
+                                                  <shadow type="math_number" id="t46xHr4YxXBc3lF6k7Ha">
+                                                    <field name="NUM">1</field>
+                                                  </shadow>
+                                                  <block type="math_number" id="puSjjud5MPEJwWtnleFz">
+                                                    <field name="NUM">3</field>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                        <value name="B">
+                                          <shadow type="math_number" id="HkOwOZGx4Gv1EDLFikeN">
+                                            <field name="NUM">1</field>
+                                          </shadow>
+                                          <block type="lists_getIndex" id="JwtAapnTB0iT2CwsIkL0">
+                                            <mutation statement="false" at="true"/>
+                                            <field name="MODE">GET</field>
+                                            <field name="WHERE">FROM_START</field>
+                                            <value name="VALUE">
+                                              <block type="variables_get" id="haKH6sU4vzOFjnZmlX00">
+                                                <field name="VAR" id="XRvj7uff0LYTH8xIZM1J" variabletype="">freqCounts</field>
+                                              </block>
+                                            </value>
+                                            <value name="AT">
+                                              <shadow type="math_number" id="1iHq2eebFbKzK4IH9DWw">
+                                                <field name="NUM">1</field>
+                                              </shadow>
+                                              <block type="math_number" id="59CIsegSEuhOgM3tBMsK">
+                                                <field name="NUM">4</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </value>
+                                    <value name="B">
+                                      <shadow type="math_number" id="BRknyuIRRj7afj5Adnec">
+                                        <field name="NUM">1</field>
+                                      </shadow>
+                                      <block type="lists_getIndex" id="OqSvCKoxgm1FAjfDMcWF">
+                                        <mutation statement="false" at="true"/>
+                                        <field name="MODE">GET</field>
+                                        <field name="WHERE">FROM_START</field>
+                                        <value name="VALUE">
+                                          <block type="variables_get" id="nlwShoYSDDnjZbcJjNcJ">
+                                            <field name="VAR" id="XRvj7uff0LYTH8xIZM1J" variabletype="">freqCounts</field>
+                                          </block>
+                                        </value>
+                                        <value name="AT">
+                                          <shadow type="math_number" id="hDiLZ3WOGwcGoXWxKTVR">
+                                            <field name="NUM">1</field>
+                                          </shadow>
+                                          <block type="math_number" id="dql7LIbSPrfB91kZLXYl">
+                                            <field name="NUM">5</field>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </value>
+                                <next>
+                                  <block type="variables_set" id="x8gt1GlFC5bpGuyjvvMo">
+                                    <field name="VAR" id="VHWGaub52Ztd26fEeVVh" variabletype="">highCount</field>
+                                    <value name="VALUE">
+                                      <block type="math_arithmetic" id="ifJdyfFViiIEOmMTpeWu">
+                                        <field name="OP">ADD</field>
+                                        <value name="A">
+                                          <shadow type="math_number" id="5fPAvtKbs9M9BjcYmxU0">
+                                            <field name="NUM">1</field>
+                                          </shadow>
+                                          <block type="math_arithmetic" id="2mEgJZOGRpwLe5mE3eXd">
+                                            <field name="OP">ADD</field>
+                                            <value name="A">
+                                              <shadow type="math_number" id="I6zwRZqces67gSGlGpMl">
+                                                <field name="NUM">1</field>
+                                              </shadow>
+                                              <block type="math_arithmetic" id="UYz0lrNMqMlbdHlgqSTo">
+                                                <field name="OP">ADD</field>
+                                                <value name="A">
+                                                  <shadow type="math_number" id="jEvtX9CXu07dWeDl0YZh">
+                                                    <field name="NUM">1</field>
+                                                  </shadow>
+                                                  <block type="math_arithmetic" id="90GSWsIJyQdYDNBuwI5p">
+                                                    <field name="OP">ADD</field>
+                                                    <value name="A">
+                                                      <shadow type="math_number" id="bh17mJOkWwPET3xrNikY">
+                                                        <field name="NUM">1</field>
+                                                      </shadow>
+                                                      <block type="lists_getIndex" id="5Jqzges6X72YJR7IVU7C">
+                                                        <mutation statement="false" at="true"/>
+                                                        <field name="MODE">GET</field>
+                                                        <field name="WHERE">FROM_START</field>
+                                                        <value name="VALUE">
+                                                          <block type="variables_get" id="x9MGSL6YNBmOXrcLFokc">
+                                                            <field name="VAR" id="XRvj7uff0LYTH8xIZM1J" variabletype="">freqCounts</field>
+                                                          </block>
+                                                        </value>
+                                                        <value name="AT">
+                                                          <shadow type="math_number" id="CKbheN9Pot7GaZpfPYe5">
+                                                            <field name="NUM">1</field>
+                                                          </shadow>
+                                                          <block type="math_number" id="oaj9WvyKGTefrZ4v7rLm">
+                                                            <field name="NUM">6</field>
+                                                          </block>
+                                                        </value>
+                                                      </block>
+                                                    </value>
+                                                    <value name="B">
+                                                      <shadow type="math_number" id="uNJ0ekotsqNqB1wK7zlb">
+                                                        <field name="NUM">1</field>
+                                                      </shadow>
+                                                      <block type="lists_getIndex" id="FyQk8RCQanKuLqIoDMwE">
+                                                        <mutation statement="false" at="true"/>
+                                                        <field name="MODE">GET</field>
+                                                        <field name="WHERE">FROM_START</field>
+                                                        <value name="VALUE">
+                                                          <block type="variables_get" id="Dv3q6Q4EmT2mmpMjg5PP">
+                                                            <field name="VAR" id="XRvj7uff0LYTH8xIZM1J" variabletype="">freqCounts</field>
+                                                          </block>
+                                                        </value>
+                                                        <value name="AT">
+                                                          <shadow type="math_number" id="nRx0rliJogqoAxj7jXkE">
+                                                            <field name="NUM">1</field>
+                                                          </shadow>
+                                                          <block type="math_number" id="MVHcDME931E94rnJdXDH">
+                                                            <field name="NUM">7</field>
+                                                          </block>
+                                                        </value>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </value>
+                                                <value name="B">
+                                                  <shadow type="math_number" id="VpVBTcCVG8DQtuNc6GpN">
+                                                    <field name="NUM">1</field>
+                                                  </shadow>
+                                                  <block type="lists_getIndex" id="GNtvHXBwqsaY0vDa56Da">
+                                                    <mutation statement="false" at="true"/>
+                                                    <field name="MODE">GET</field>
+                                                    <field name="WHERE">FROM_START</field>
+                                                    <value name="VALUE">
+                                                      <block type="variables_get" id="TP6Rekgd2IbyVfqjO2tp">
+                                                        <field name="VAR" id="XRvj7uff0LYTH8xIZM1J" variabletype="">freqCounts</field>
+                                                      </block>
+                                                    </value>
+                                                    <value name="AT">
+                                                      <shadow type="math_number" id="AsoaxzIykTyxqAoV4YQr">
+                                                        <field name="NUM">1</field>
+                                                      </shadow>
+                                                      <block type="math_number" id="rMiZbP1uD8HqB8RkLNNI">
+                                                        <field name="NUM">8</field>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </value>
+                                            <value name="B">
+                                              <shadow type="math_number" id="UzgNwCP2klyuj9Bvt9ux">
+                                                <field name="NUM">1</field>
+                                              </shadow>
+                                              <block type="lists_getIndex" id="EBsRllvTrZ4IejsqwaNx">
+                                                <mutation statement="false" at="true"/>
+                                                <field name="MODE">GET</field>
+                                                <field name="WHERE">FROM_START</field>
+                                                <value name="VALUE">
+                                                  <block type="variables_get" id="m31nhNukrhWacWDKxfjf">
+                                                    <field name="VAR" id="XRvj7uff0LYTH8xIZM1J" variabletype="">freqCounts</field>
+                                                  </block>
+                                                </value>
+                                                <value name="AT">
+                                                  <shadow type="math_number" id="lb1WoSOHyGEIMuNgGeZi">
+                                                    <field name="NUM">1</field>
+                                                  </shadow>
+                                                  <block type="math_number" id="M59MdNRXho8WUXBlQwi3">
+                                                    <field name="NUM">9</field>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                        <value name="B">
+                                          <shadow type="math_number" id="gd651YaRgBbmHmGqDTiR">
+                                            <field name="NUM">1</field>
+                                          </shadow>
+                                          <block type="lists_getIndex" id="SXkZQJ4KsTJedVvYz11o">
+                                            <mutation statement="false" at="true"/>
+                                            <field name="MODE">GET</field>
+                                            <field name="WHERE">FROM_START</field>
+                                            <value name="VALUE">
+                                              <block type="variables_get" id="VATLInV5p7ByT8KG9ssn">
+                                                <field name="VAR" id="XRvj7uff0LYTH8xIZM1J" variabletype="">freqCounts</field>
+                                              </block>
+                                            </value>
+                                            <value name="AT">
+                                              <shadow type="math_number" id="OLaWxscHjFndTyBKFnry">
+                                                <field name="NUM">1</field>
+                                              </shadow>
+                                              <block type="math_number" id="1bYQrII5jcwiwKoYfy4T">
+                                                <field name="NUM">10</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </value>
+                                    <next>
+                                      <block type="variables_set" id="WW4BbDFl5TGWi2Y6PiSC">
+                                        <field name="VAR" id="DIq2AnHTmt9OBGhnuKon" variabletype="">fullImbalance</field>
+                                        <value name="VALUE">
+                                          <block type="math_arithmetic" id="amrWtFuaQvSMbkuuP4XO">
+                                            <field name="OP">MULTIPLY</field>
+                                            <value name="A">
+                                              <shadow type="math_number" id="DM3HuWzUZsStHmQX3v8r">
+                                                <field name="NUM">1</field>
+                                              </shadow>
+                                              <block type="math_arithmetic" id="KDzeLpHMIZdjOc0PZs5d">
+                                                <field name="OP">DIVIDE</field>
+                                                <value name="A">
+                                                  <shadow type="math_number" id="zlPLQKWkCJ5fswxeAIsi">
+                                                    <field name="NUM">1</field>
+                                                  </shadow>
+                                                  <block type="math_single" id="G2WGBZc9GyTIFNdsysZC">
+                                                    <field name="OP">ABS</field>
+                                                    <value name="NUM">
+                                                      <shadow type="math_number" id="AMdGiZCShW6RizBlKSmC">
+                                                        <field name="NUM">9</field>
+                                                      </shadow>
+                                                      <block type="math_arithmetic" id="I6ht2TV2zzB535qWglVL">
+                                                        <field name="OP">MINUS</field>
+                                                        <value name="A">
+                                                          <shadow type="math_number" id="qJooQwQDFLSx0EilbVaq">
+                                                            <field name="NUM">1</field>
+                                                          </shadow>
+                                                          <block type="variables_get" id="8FYM23YbIrj3Ofx7LMoo">
+                                                            <field name="VAR" id="VHWGaub52Ztd26fEeVVh" variabletype="">highCount</field>
+                                                          </block>
+                                                        </value>
+                                                        <value name="B">
+                                                          <shadow type="math_number" id="zU9Ue591EuCpzcTxtLUK">
+                                                            <field name="NUM">1</field>
+                                                          </shadow>
+                                                          <block type="variables_get" id="j84uHmiHX1tRGi98i54t">
+                                                            <field name="VAR" id="aSQHqNgAC72qFl41sNLj" variabletype="">lowCount</field>
+                                                          </block>
+                                                        </value>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </value>
+                                                <value name="B">
+                                                  <shadow type="math_number" id="RrGGRLgTM9DQ59rLtG9v">
+                                                    <field name="NUM">1</field>
+                                                  </shadow>
+                                                  <block type="lists_length" id="j1lSAtVBMhimMpC1Ha2o">
+                                                    <value name="VALUE">
+                                                      <block type="variables_get" id="pQ4XShhBwGxXF6xxV4JO">
+                                                        <field name="VAR" id="NbrnTP3fAbnFbmOHnKYa" variabletype="">digitHistory</field>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </value>
+                                            <value name="B">
+                                              <shadow type="math_number" id="b8M0JyK1URtbzEoC6nsg">
+                                                <field name="NUM">1</field>
+                                              </shadow>
+                                              <block type="math_number" id="iIGNElLR8abMh0X9zuIN">
+                                                <field name="NUM">100</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                        <next>
+                                          <block type="variables_set" id="0BfdNKn6rbHBPfFmtL64">
+                                            <field name="VAR" id="850kEnydx9qWCA79ISjs" variabletype="">confidenceOver</field>
+                                            <value name="VALUE">
+                                              <block type="logic_ternary" id="1E9KZrTTpuJ3KjJa8cDV">
+                                                <value name="IF">
+                                                  <block type="logic_compare" id="8JiZXVKuhizRIB5cg0LW">
+                                                    <field name="OP">GT</field>
+                                                    <value name="A">
+                                                      <block type="variables_get" id="9cdWchYPCQ2jJ5ciOD4c">
+                                                        <field name="VAR" id="VHWGaub52Ztd26fEeVVh" variabletype="">highCount</field>
+                                                      </block>
+                                                    </value>
+                                                    <value name="B">
+                                                      <block type="variables_get" id="RikdtXCkKYgEXnXAY8Qu">
+                                                        <field name="VAR" id="aSQHqNgAC72qFl41sNLj" variabletype="">lowCount</field>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </value>
+                                                <value name="THEN">
+                                                  <block type="math_arithmetic" id="6MWvaohGfwVHnVOrmXQ8">
+                                                    <field name="OP">ADD</field>
+                                                    <value name="A">
+                                                      <shadow type="math_number" id="DkPcNrAuXVcT5kWEh3SK">
+                                                        <field name="NUM">1</field>
+                                                      </shadow>
+                                                      <block type="variables_get" id="aEalfO2zYVQmNGz6LclE">
+                                                        <field name="VAR" id="DIq2AnHTmt9OBGhnuKon" variabletype="">fullImbalance</field>
+                                                      </block>
+                                                    </value>
+                                                    <value name="B">
+                                                      <shadow type="math_number" id="umPuWugT1xnDE3i5CyiS">
+                                                        <field name="NUM">1</field>
+                                                      </shadow>
+                                                      <block type="math_arithmetic" id="ytxxHPDlx50j9PieaSEB">
+                                                        <field name="OP">MULTIPLY</field>
+                                                        <value name="A">
+                                                          <shadow type="math_number" id="9fNzCWLAlFIBwlLJ0oFz">
+                                                            <field name="NUM">1</field>
+                                                          </shadow>
+                                                          <block type="math_constrain" id="DCQSCon1M4yRPW2CbDvC">
+                                                            <value name="VALUE">
+                                                              <shadow type="math_number" id="kVLhgYXuOXHyzMH8xvYK">
+                                                                <field name="NUM">0</field>
+                                                              </shadow>
+                                                              <block type="variables_get" id="SGa5QKfCcGOtJt3tlrtB">
+                                                                <field name="VAR" id="eNo41eoPni6JDWYlgAAC" variabletype="">consecutiveHighStreak</field>
+                                                              </block>
+                                                            </value>
+                                                            <value name="LOW">
+                                                              <shadow type="math_number" id="WAWHoPe5JEKCIYk7egYV">
+                                                                <field name="NUM">0</field>
+                                                              </shadow>
+                                                              <block type="math_number" id="hjqaMFmvtiRrpeMvBiDP">
+                                                                <field name="NUM">0</field>
+                                                              </block>
+                                                            </value>
+                                                            <value name="HIGH">
+                                                              <shadow type="math_number" id="xEOfY34NajjGyJmQtJ4s">
+                                                                <field name="NUM">100</field>
+                                                              </shadow>
+                                                              <block type="math_number" id="gdAlKKZRMtYSPH8UCiY5">
+                                                                <field name="NUM">10</field>
+                                                              </block>
+                                                            </value>
+                                                          </block>
+                                                        </value>
+                                                        <value name="B">
+                                                          <shadow type="math_number" id="Hw8JRhDQiT88WCe3fDT7">
+                                                            <field name="NUM">1</field>
+                                                          </shadow>
+                                                          <block type="math_number" id="6A8vfa9zhswIdRYw11oR">
+                                                            <field name="NUM">1.5</field>
+                                                          </block>
+                                                        </value>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </value>
+                                                <value name="ELSE">
+                                                  <block type="math_number" id="N8mhQdi0Ckv2LWNLk81f">
+                                                    <field name="NUM">0</field>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </value>
+                                            <next>
+                                              <block type="variables_set" id="wj0wxrv82fTB9XrX8A3i">
+                                                <field name="VAR" id="8JHUdKF0j7elKPoh3pKM" variabletype="">confidenceUnder</field>
+                                                <value name="VALUE">
+                                                  <block type="logic_ternary" id="T8uRDr68JjJ4BQT3iIty">
+                                                    <value name="IF">
+                                                      <block type="logic_compare" id="f2Td6P3gwMwkIeRm8ohD">
+                                                        <field name="OP">GT</field>
+                                                        <value name="A">
+                                                          <block type="variables_get" id="cGDXYCoIaT6isOfDsR1U">
+                                                            <field name="VAR" id="aSQHqNgAC72qFl41sNLj" variabletype="">lowCount</field>
+                                                          </block>
+                                                        </value>
+                                                        <value name="B">
+                                                          <block type="variables_get" id="bCV2zWwCN1e3ucAq6HXW">
+                                                            <field name="VAR" id="VHWGaub52Ztd26fEeVVh" variabletype="">highCount</field>
+                                                          </block>
+                                                        </value>
+                                                      </block>
+                                                    </value>
+                                                    <value name="THEN">
+                                                      <block type="math_arithmetic" id="X6Y6e3Ce3r7grRE2GMs8">
+                                                        <field name="OP">ADD</field>
+                                                        <value name="A">
+                                                          <shadow type="math_number" id="HivBNsd2o6NzvOuKR0Bs">
+                                                            <field name="NUM">1</field>
+                                                          </shadow>
+                                                          <block type="variables_get" id="6J7nUnvqQrdvEGhSQHsM">
+                                                            <field name="VAR" id="DIq2AnHTmt9OBGhnuKon" variabletype="">fullImbalance</field>
+                                                          </block>
+                                                        </value>
+                                                        <value name="B">
+                                                          <shadow type="math_number" id="iWkqE8VcvCk5Sr80QPjo">
+                                                            <field name="NUM">1</field>
+                                                          </shadow>
+                                                          <block type="math_arithmetic" id="JpB3jN5PqR4JF6EB0WWH">
+                                                            <field name="OP">MULTIPLY</field>
+                                                            <value name="A">
+                                                              <shadow type="math_number" id="a7YDJ5wQyN7fH7eCVOkc">
+                                                                <field name="NUM">1</field>
+                                                              </shadow>
+                                                              <block type="math_constrain" id="vNUhkysUUHxRDi1a5BQ7">
+                                                                <value name="VALUE">
+                                                                  <shadow type="math_number" id="Qc4N7A41uqgOyVUTKmuQ">
+                                                                    <field name="NUM">0</field>
+                                                                  </shadow>
+                                                                  <block type="variables_get" id="eNXtdvWDFDTA7Xrc5UTI">
+                                                                    <field name="VAR" id="TP9gyv1plBArp5B1Id9Z" variabletype="">consecutiveLowStreak</field>
+                                                                  </block>
+                                                                </value>
+                                                                <value name="LOW">
+                                                                  <shadow type="math_number" id="lHPZaggBnrlbf6OZ6NRh">
+                                                                    <field name="NUM">0</field>
+                                                                  </shadow>
+                                                                  <block type="math_number" id="dDkd9YMrfF0rir1agkKj">
+                                                                    <field name="NUM">0</field>
+                                                                  </block>
+                                                                </value>
+                                                                <value name="HIGH">
+                                                                  <shadow type="math_number" id="1iO3J73RpC6N5rA4Vuke">
+                                                                    <field name="NUM">100</field>
+                                                                  </shadow>
+                                                                  <block type="math_number" id="BYqREX1vfi5jE9VoBNnT">
+                                                                    <field name="NUM">10</field>
+                                                                  </block>
+                                                                </value>
+                                                              </block>
+                                                            </value>
+                                                            <value name="B">
+                                                              <shadow type="math_number" id="xlR3NwfNTilSKEdHtHZB">
+                                                                <field name="NUM">1</field>
+                                                              </shadow>
+                                                              <block type="math_number" id="Wxud7qBE5LlEiVnN4Sge">
+                                                                <field name="NUM">1.5</field>
+                                                              </block>
+                                                            </value>
+                                                          </block>
+                                                        </value>
+                                                      </block>
+                                                    </value>
+                                                    <value name="ELSE">
+                                                      <block type="math_number" id="cthqlIctvxHks5zEjCta">
+                                                        <field name="NUM">0</field>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </value>
+                                                <next>
+                                                  <block type="controls_if" id="eQWeWUcgXFdhpePUW5m3">
+                                                    <value name="IF0">
+                                                      <block type="logic_compare" id="9eUKJ1MDRhFJ0kdt2ikq">
+                                                        <field name="OP">GT</field>
+                                                        <value name="A">
+                                                          <block type="variables_get" id="KfmD19e7Ufz4zISUilxI">
+                                                            <field name="VAR" id="Y7gbtP7ySeQMgV0Lh8Wv" variabletype="">cooldownCounter</field>
+                                                          </block>
+                                                        </value>
+                                                        <value name="B">
+                                                          <block type="math_number" id="cZZsICbaq7ZDO3zEQphr">
+                                                            <field name="NUM">0</field>
+                                                          </block>
+                                                        </value>
+                                                      </block>
+                                                    </value>
+                                                    <statement name="DO0">
+                                                      <block type="math_change" id="ZaGxEv4gjnl3MZGGIUhC">
+                                                        <field name="VAR" id="Y7gbtP7ySeQMgV0Lh8Wv" variabletype="">cooldownCounter</field>
+                                                        <value name="DELTA">
+                                                          <shadow type="math_number" id="eY5DtwY3LVvSbYn1iohi">
+                                                            <field name="NUM">1</field>
+                                                          </shadow>
+                                                          <block type="math_number" id="A4wrG6FVlfUH2ZQsQQfJ">
+                                                            <field name="NUM">-1</field>
+                                                          </block>
+                                                        </value>
+                                                      </block>
+                                                    </statement>
+                                                    <next>
+                                                      <block type="controls_if" id="AAcvCnQjENGsB4Djh30G">
+                                                        <value name="IF0">
+                                                          <block type="logic_operation" id="KyUoAik8BpKEx6tAQ726">
+                                                            <field name="OP">AND</field>
+                                                            <value name="A">
+                                                              <block type="logic_operation" id="zwOf6SigT5GZ65p2ohYu">
+                                                                <field name="OP">AND</field>
+                                                                <value name="A">
+                                                                  <block type="logic_compare" id="EgBOfiyKg58e8uK9hZSr">
+                                                                    <field name="OP">GTE</field>
+                                                                    <value name="A">
+                                                                      <block type="lists_length" id="8gnFRwKB7lvxnog9hgiV">
+                                                                        <value name="VALUE">
+                                                                          <block type="variables_get" id="lvf066vjFToJgJanlr3H">
+                                                                            <field name="VAR" id="NbrnTP3fAbnFbmOHnKYa" variabletype="">digitHistory</field>
+                                                                          </block>
+                                                                        </value>
+                                                                      </block>
+                                                                    </value>
+                                                                    <value name="B">
+                                                                      <block type="variables_get" id="RIcuhrLt8BIs1le0DQl9">
+                                                                        <field name="VAR" id="9NIQ0Wobtqn62tOy4Cqp" variabletype="">rollingSampleSize</field>
+                                                                      </block>
+                                                                    </value>
+                                                                  </block>
+                                                                </value>
+                                                                <value name="B">
+                                                                  <block type="logic_compare" id="A4xtxCcI1sREiSEgPOQJ">
+                                                                    <field name="OP">LTE</field>
+                                                                    <value name="A">
+                                                                      <block type="variables_get" id="SKqWNyDLzErVgpEMigde">
+                                                                        <field name="VAR" id="Y7gbtP7ySeQMgV0Lh8Wv" variabletype="">cooldownCounter</field>
+                                                                      </block>
+                                                                    </value>
+                                                                    <value name="B">
+                                                                      <block type="math_number" id="Q8xQjMfeUVXmPEqv1H7b">
+                                                                        <field name="NUM">0</field>
+                                                                      </block>
+                                                                    </value>
+                                                                  </block>
+                                                                </value>
+                                                              </block>
+                                                            </value>
+                                                            <value name="B">
+                                                              <block type="logic_operation" id="CIBOcjiqXOk07Eb1fL13">
+                                                                <field name="OP">OR</field>
+                                                                <value name="A">
+                                                                  <block type="logic_compare" id="xyJYgPuFVvMwBE0W0Hrc">
+                                                                    <field name="OP">GTE</field>
+                                                                    <value name="A">
+                                                                      <block type="variables_get" id="D0FyE8Mv8tbcZvUb3vgv">
+                                                                        <field name="VAR" id="850kEnydx9qWCA79ISjs" variabletype="">confidenceOver</field>
+                                                                      </block>
+                                                                    </value>
+                                                                    <value name="B">
+                                                                      <block type="variables_get" id="wvOpOK4esubuC1J3qRK9">
+                                                                        <field name="VAR" id="IqK3yn9FfcgMXAdx9G81" variabletype="">confidenceThreshold</field>
+                                                                      </block>
+                                                                    </value>
+                                                                  </block>
+                                                                </value>
+                                                                <value name="B">
+                                                                  <block type="logic_compare" id="wjjQsAtZdmzZOpLzhlpZ">
+                                                                    <field name="OP">GTE</field>
+                                                                    <value name="A">
+                                                                      <block type="variables_get" id="9yoUf0fueXDnXOsXAHmy">
+                                                                        <field name="VAR" id="8JHUdKF0j7elKPoh3pKM" variabletype="">confidenceUnder</field>
+                                                                      </block>
+                                                                    </value>
+                                                                    <value name="B">
+                                                                      <block type="variables_get" id="MCVlbR1Jn7UC6HMVAJMG">
+                                                                        <field name="VAR" id="IqK3yn9FfcgMXAdx9G81" variabletype="">confidenceThreshold</field>
+                                                                      </block>
+                                                                    </value>
+                                                                  </block>
+                                                                </value>
+                                                              </block>
+                                                            </value>
+                                                          </block>
+                                                        </value>
+                                                        <statement name="DO0">
+                                                          <block type="controls_if" id="bQQyK6ZjfZOC7Ka8O6uT">
+                                                            <mutation else="1"/>
+                                                            <value name="IF0">
+                                                              <block type="logic_compare" id="z0S2YZRFvLYTCbdNNXiy">
+                                                                <field name="OP">GTE</field>
+                                                                <value name="A">
+                                                                  <block type="variables_get" id="wSYb7L0P6QWoIt7wYh11">
+                                                                    <field name="VAR" id="850kEnydx9qWCA79ISjs" variabletype="">confidenceOver</field>
+                                                                  </block>
+                                                                </value>
+                                                                <value name="B">
+                                                                  <block type="variables_get" id="y4y8pfZon34N2Vzc1Z6D">
+                                                                    <field name="VAR" id="8JHUdKF0j7elKPoh3pKM" variabletype="">confidenceUnder</field>
+                                                                  </block>
+                                                                </value>
+                                                              </block>
+                                                            </value>
+                                                            <statement name="DO0">
+                                                              <block type="variables_set" id="l262n65OM48mRkyAqfw6">
+                                                                <field name="VAR" id="zKG5mSoyPstUeC99enq5" variabletype="">currentDirection</field>
+                                                                <value name="VALUE">
+                                                                  <block type="text" id="MtfjG8ZV0QXtDTqQZXmz">
+                                                                    <field name="TEXT">OVER</field>
+                                                                  </block>
+                                                                </value>
+                                                                <next>
+                                                                  <block type="variables_set" id="zjrqM4wQCaiuQQSRTpfd">
+                                                                    <field name="VAR" id="22wjZRL9OaYsP6ihgIqL" variabletype="">activeBarrier</field>
+                                                                    <value name="VALUE">
+                                                                      <block type="variables_get" id="hSA5CPhSl1WrEi1L9rPz">
+                                                                        <field name="VAR" id="SmNqE40fAraVNqTIAae2" variabletype="">barrierOver</field>
+                                                                      </block>
+                                                                    </value>
+                                                                  </block>
+                                                                </next>
+                                                              </block>
+                                                            </statement>
+                                                            <statement name="ELSE">
+                                                              <block type="variables_set" id="2itGihch2ZU5r2MVqt3t">
+                                                                <field name="VAR" id="zKG5mSoyPstUeC99enq5" variabletype="">currentDirection</field>
+                                                                <value name="VALUE">
+                                                                  <block type="text" id="uo4967LUcpMsyw8IJqF5">
+                                                                    <field name="TEXT">UNDER</field>
+                                                                  </block>
+                                                                </value>
+                                                                <next>
+                                                                  <block type="variables_set" id="01hf1lkFq3KK8GJzeVP3">
+                                                                    <field name="VAR" id="22wjZRL9OaYsP6ihgIqL" variabletype="">activeBarrier</field>
+                                                                    <value name="VALUE">
+                                                                      <block type="variables_get" id="9Vj0OXdjocqRB95cwREE">
+                                                                        <field name="VAR" id="4HZKjht3X13npgW2zMj5" variabletype="">barrierUnder</field>
+                                                                      </block>
+                                                                    </value>
+                                                                  </block>
+                                                                </next>
+                                                              </block>
+                                                            </statement>
+                                                            <next>
+                                                              <block type="variables_set" id="UOhEAXtQiPZFE2DIAUYM">
+                                                                <field name="VAR" id="f7ZJ69PqcUDO4lKNEfvu" variabletype="">readyToTrade</field>
+                                                                <value name="VALUE">
+                                                                  <block type="logic_boolean" id="T7JndNude7xyl71f0kWr">
+                                                                    <field name="BOOL">TRUE</field>
+                                                                  </block>
+                                                                </value>
+                                                              </block>
+                                                            </next>
+                                                          </block>
+                                                        </statement>
+                                                      </block>
+                                                    </next>
+                                                  </block>
+                                                </next>
+                                              </block>
+                                            </next>
+                                          </block>
+                                        </next>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </statement>
+        <next>
+          <block type="controls_if" id="zJJ3WDSLVFCBB1uXPzoy">
+            <mutation elseif="1" else="1"/>
+            <value name="IF0">
+              <block type="logic_compare" id="sBFTgOui0BzVpYvFfxUw">
+                <field name="OP">EQ</field>
+                <value name="A">
+                  <block type="variables_get" id="cb2wjZ3bdAMhnpvwc2qj">
+                    <field name="VAR" id="zKG5mSoyPstUeC99enq5" variabletype="">currentDirection</field>
+                  </block>
+                </value>
+                <value name="B">
+                  <block type="text" id="QFPR5BC0ggLW6ZcgN14j">
+                    <field name="TEXT">OVER</field>
+                  </block>
+                </value>
+              </block>
+            </value>
+            <statement name="DO0">
+              <block type="purchase" id="PjUAoXzzC0XwbjaX6ft8">
+                <field name="PURCHASE_LIST">DIGITOVER</field>
+              </block>
+            </statement>
+            <value name="IF1">
+              <block type="logic_compare" id="rfIGUjbXKoVT9gdxMvcO">
+                <field name="OP">EQ</field>
+                <value name="A">
+                  <block type="variables_get" id="kdVON3dNSOGsyQIsU4ar">
+                    <field name="VAR" id="zKG5mSoyPstUeC99enq5" variabletype="">currentDirection</field>
+                  </block>
+                </value>
+                <value name="B">
+                  <block type="text" id="G5RBmHWOR3WzmscuSTh9">
+                    <field name="TEXT">UNDER</field>
+                  </block>
+                </value>
+              </block>
+            </value>
+            <statement name="DO1">
+              <block type="purchase" id="hsTC8X9J3MHKvrWSPSGp">
+                <field name="PURCHASE_LIST">DIGITUNDER</field>
+              </block>
+            </statement>
+            <statement name="ELSE">
+              <block type="notify" id="B5E8ZihSiR1hnDU6w7Lz">
+                <field name="NOTIFICATION_TYPE">warn</field>
+                <field name="NOTIFICATION_SOUND">silent</field>
+                <value name="MESSAGE">
+                  <shadow type="text" id="hJcjx9sEXiKd33nYEhv1">
+                    <field name="TEXT">abc</field>
+                  </shadow>
+                  <block type="text" id="uKZwgSZfd3DBwGKGyqEA">
+                    <field name="TEXT">Trading paused: a risk limit was reached. Restart the bot manually to resume.</field>
+                  </block>
+                </value>
+              </block>
+            </statement>
+          </block>
+        </next>
+      </block>
+    </statement>
+  </block>
+</xml>

@@ -1,0 +1,163 @@
+<xml xmlns="http://www.w3.org/1999/xhtml" collection="false">
+  <variables>
+    <variable id="var_trade_state">trade_state</variable>
+    <variable id="var_stake">stake_amount</variable>
+    <variable id="var_duration">trade_duration</variable>
+  </variables>
+  <block type="trade_definition" id="block_trade_def" x="0" y="0" deletable="false">
+    <statement name="TRADE_OPTIONS">
+      <block type="trade_definition_market" id="block_market" deletable="false" movable="false">
+        <field name="MARKET_LIST">synthetic_index</field>
+        <field name="SUBMARKET_LIST">random_index</field>
+        <field name="SYMBOL_LIST">R_100</field>
+        <next>
+          <block type="trade_definition_tradetype" id="block_tradetype" deletable="false" movable="false">
+            <field name="TRADETYPECAT_LIST">callput</field>
+            <field name="TRADETYPE_LIST">callput</field>
+            <next>
+              <block type="trade_definition_contracttype" id="block_contracttype" deletable="false" movable="false">
+                <field name="TYPE_LIST">both</field>
+                <next>
+                  <block type="trade_definition_candleinterval" id="block_candle" deletable="false" movable="false">
+                    <field name="CANDLEINTERVAL_LIST">60</field>
+                    <next>
+                      <block type="trade_definition_restartbuysell" id="block_restartbs" deletable="false" movable="false" collapsed="true">
+                        <field name="TIME_MACHINE_ENABLED">FALSE</field>
+                        <next>
+                          <block type="trade_definition_restartonerror" id="block_restarterr" deletable="false" movable="false">
+                            <field name="RESTARTONERROR">TRUE</field>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+    <statement name="INITIALIZATION">
+      <block type="variables_set" id="block_init_state">
+        <field name="VAR" id="var_trade_state">trade_state</field>
+        <value name="VALUE">
+          <shadow type="math_number" id="shadow_state0"><field name="NUM">0</field></shadow>
+        </value>
+        <next>
+          <block type="variables_set" id="block_init_stake">
+            <field name="VAR" id="var_stake">stake_amount</field>
+            <value name="VALUE">
+              <shadow type="math_number" id="shadow_stake"><field name="NUM">1</field></shadow>
+            </value>
+            <next>
+              <block type="variables_set" id="block_init_duration">
+                <field name="VAR" id="var_duration">trade_duration</field>
+                <value name="VALUE">
+                  <shadow type="math_number" id="shadow_duration"><field name="NUM">1</field></shadow>
+                </value>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+    <statement name="SUBMARKET"></statement>
+  </block>
+
+  <block type="before_purchase" id="block_before_purchase" x="0" y="300" deletable="false" movable="false">
+    <statement name="BEFOREPURCHASE_STACK">
+      <block type="controls_if" id="block_if_state">
+        <mutation else="1"></mutation>
+        <value name="IF0">
+          <block type="logic_compare" id="block_compare_state">
+            <field name="OP">EQ</field>
+            <value name="A">
+              <block type="variables_get" id="block_get_state1">
+                <field name="VAR" id="var_trade_state">trade_state</field>
+              </block>
+            </value>
+            <value name="B">
+              <shadow type="math_number" id="shadow_compare0"><field name="NUM">0</field></shadow>
+            </value>
+          </block>
+        </value>
+        <statement name="DO0">
+          <block type="trade_definition_tradeoptions" id="block_options_rise">
+            <field name="DURATIONTYPE_LIST">t</field>
+            <value name="DURATION">
+              <shadow type="math_number" id="shadow_dur_rise"><field name="NUM">1</field></shadow>
+              <block type="variables_get" id="block_get_dur_rise">
+                <field name="VAR" id="var_duration">trade_duration</field>
+              </block>
+            </value>
+            <value name="AMOUNT">
+              <shadow type="math_number" id="shadow_amt_rise"><field name="NUM">1</field></shadow>
+              <block type="variables_get" id="block_get_amt_rise">
+                <field name="VAR" id="var_stake">stake_amount</field>
+              </block>
+            </value>
+            <next>
+              <block type="purchase" id="block_purchase_rise">
+                <field name="PURCHASE_LIST">CALL</field>
+                <next>
+                  <block type="variables_set" id="block_set_state_to1">
+                    <field name="VAR" id="var_trade_state">trade_state</field>
+                    <value name="VALUE">
+                      <shadow type="math_number" id="shadow_state1"><field name="NUM">1</field></shadow>
+                    </value>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </statement>
+        <statement name="ELSE">
+          <block type="trade_definition_tradeoptions" id="block_options_fall">
+            <field name="DURATIONTYPE_LIST">t</field>
+            <value name="DURATION">
+              <shadow type="math_number" id="shadow_dur_fall"><field name="NUM">1</field></shadow>
+              <block type="variables_get" id="block_get_dur_fall">
+                <field name="VAR" id="var_duration">trade_duration</field>
+              </block>
+            </value>
+            <value name="AMOUNT">
+              <shadow type="math_number" id="shadow_amt_fall"><field name="NUM">1</field></shadow>
+              <block type="variables_get" id="block_get_amt_fall">
+                <field name="VAR" id="var_stake">stake_amount</field>
+              </block>
+            </value>
+            <next>
+              <block type="purchase" id="block_purchase_fall">
+                <field name="PURCHASE_LIST">PUT</field>
+                <next>
+                  <block type="variables_set" id="block_set_state_to0">
+                    <field name="VAR" id="var_trade_state">trade_state</field>
+                    <value name="VALUE">
+                      <shadow type="math_number" id="shadow_state0b"><field name="NUM">0</field></shadow>
+                    </value>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </statement>
+      </block>
+    </statement>
+  </block>
+
+  <block type="after_purchase" id="block_after_purchase" x="0" y="600" deletable="false" movable="false">
+    <statement name="AFTERPURCHASE_STACK">
+      <block type="controls_if" id="block_after_if">
+        <value name="IF0">
+          <block type="check_direction" id="block_check_dir">
+            <field name="CHECK_DIRECTION">rise</field>
+          </block>
+        </value>
+        <statement name="DO0">
+          <block type="trade_again" id="block_trade_again_1"></block>
+        </statement>
+      </block>
+    </statement>
+  </block>
+</xml>

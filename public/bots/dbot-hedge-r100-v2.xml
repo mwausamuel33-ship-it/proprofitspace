@@ -1,0 +1,129 @@
+<xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true" collection="false">
+  <variables>
+    <variable id="var_stake">stake</variable>
+    <variable id="var_dir">trade_direction</variable>
+  </variables>
+
+  <block type="trade_definition" id="td_root" deletable="false" x="0" y="0">
+    <statement name="TRADE_OPTIONS">
+      <block type="trade_definition_market" id="td_market" deletable="false" movable="false">
+        <field name="MARKET_LIST">synthetic_index</field>
+        <field name="SUBMARKET_LIST">random_index</field>
+        <field name="SYMBOL_LIST">R_100</field>
+        <next>
+          <block type="trade_definition_tradetype" id="td_type" deletable="false" movable="false">
+            <field name="TRADETYPE_CAT_LIST">callput</field>
+            <field name="TRADETYPE_LIST">risefall</field>
+            <next>
+              <block type="trade_definition_contracttype" id="td_contract" deletable="false" movable="false">
+                <field name="TYPE_LIST">both</field>
+                <next>
+                  <block type="trade_definition_candleinterval" id="td_candle" deletable="false" movable="false">
+                    <field name="CANDLEINTERVAL_LIST">60</field>
+                    <next>
+                      <block type="trade_definition_restartbuysell" id="td_restart_bs" deletable="false" movable="false">
+                        <field name="TIME_MACHINE_ENABLED">FALSE</field>
+                        <next>
+                          <block type="trade_definition_restartonerror" id="td_restart_err" deletable="false" movable="false">
+                            <field name="RESTARTONERROR">TRUE</field>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+
+    <statement name="INITIALIZATION">
+      <block type="variables_set" id="init_stake">
+        <field name="VAR" id="var_stake">stake</field>
+        <value name="VALUE">
+          <block type="math_number" id="init_stake_val">
+            <field name="NUM">1.00</field>
+          </block>
+        </value>
+        <next>
+          <block type="variables_set" id="init_dir">
+            <field name="VAR" id="var_dir">trade_direction</field>
+            <value name="VALUE">
+              <block type="logic_boolean" id="init_dir_val">
+                <field name="BOOL">TRUE</field>
+              </block>
+            </value>
+          </block>
+        </next>
+      </block>
+    </statement>
+
+    <statement name="SUBMARKET">
+      <block type="trade_definition_tradeoptions" id="td_options">
+        <mutation xmlns="http://www.w3.org/1999/xhtml" has_first_barrier="false" has_second_barrier="false" has_prediction="false"></mutation>
+        <field name="DURATIONTYPE_LIST">t</field>
+        <value name="DURATION">
+          <block type="math_number" id="td_duration">
+            <field name="NUM">5</field>
+          </block>
+        </value>
+        <value name="AMOUNT">
+          <block type="variables_get" id="td_amount">
+            <field name="VAR" id="var_stake">stake</field>
+          </block>
+        </value>
+      </block>
+    </statement>
+  </block>
+
+  <block type="before_purchase" id="bp_root" deletable="false" x="0" y="600">
+    <statement name="BEFOREPURCHASE_STATEMENT">
+      <block type="controls_if" id="bp_if">
+        <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+        <value name="IF0">
+          <block type="variables_get" id="bp_cond">
+            <field name="VAR" id="var_dir">trade_direction</field>
+          </block>
+        </value>
+        <statement name="DO0">
+          <block type="variables_set" id="bp_flip_false">
+            <field name="VAR" id="var_dir">trade_direction</field>
+            <value name="VALUE">
+              <block type="logic_boolean" id="bp_false_val">
+                <field name="BOOL">FALSE</field>
+              </block>
+            </value>
+            <next>
+              <block type="purchase" id="bp_buy_call">
+                <field name="PURCHASE_LIST">CALL</field>
+              </block>
+            </next>
+          </block>
+        </statement>
+        <statement name="ELSE">
+          <block type="variables_set" id="bp_flip_true">
+            <field name="VAR" id="var_dir">trade_direction</field>
+            <value name="VALUE">
+              <block type="logic_boolean" id="bp_true_val">
+                <field name="BOOL">TRUE</field>
+              </block>
+            </value>
+            <next>
+              <block type="purchase" id="bp_buy_put">
+                <field name="PURCHASE_LIST">PUT</field>
+              </block>
+            </next>
+          </block>
+        </statement>
+      </block>
+    </statement>
+  </block>
+
+  <block type="after_purchase" id="ap_root" deletable="false" x="0" y="1000">
+    <statement name="AFTERPURCHASE_STATEMENT">
+      <block type="trade_again" id="ap_again"></block>
+    </statement>
+  </block>
+</xml>

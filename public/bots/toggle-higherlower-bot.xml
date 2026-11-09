@@ -1,0 +1,95 @@
+<xml xmlns="https://developers.deriv.com/blockly">
+<variables>
+<variable id="v_side">trade_side</variable>
+</variables>
+<!--  Block 1: Initialization  -->
+<block type="trade_definition" id="init" deletable="false" x="0" y="0">
+<statement name="TRADE_OPTIONS">
+<block type="variables_set" id="set_init">
+<field name="VAR" id="v_side">trade_side</field>
+<value name="VALUE">
+<block type="text" id="t_up">
+<field name="TEXT">HIGHER</field>
+</block>
+</value>
+</block>
+</statement>
+</block>
+<!--  Block 2: Purchase Conditions (Triggers immediately on next tick)  -->
+<block type="before_purchase" id="purchase" deletable="false" x="0" y="200">
+<statement name="BEFOREPURCHASE_STACK">
+<block type="controls_if" id="check_logic">
+<mutation else="1"/>
+<value name="IF0">
+<block type="logic_compare" id="comp_up">
+<field name="OP">EQ</field>
+<value name="A">
+<block type="variables_get" id="get_side1">
+<field name="VAR" id="v_side">trade_side</field>
+</block>
+</value>
+<value name="B">
+<block type="text" id="t_cmp_up">
+<field name="TEXT">HIGHER</field>
+</block>
+</value>
+</block>
+</value>
+<statement name="DO0">
+<block type="purchase" id="buy_up">
+<field name="PURCHASE_LIST">RISE</field>
+</block>
+</statement>
+<statement name="ELSE">
+<block type="purchase" id="buy_down">
+<field name="PURCHASE_LIST">FALL</field>
+</block>
+</statement>
+</block>
+</statement>
+</block>
+<!--  Block 3: Post-Purchase Toggle (Runs right after a trade is sent)  -->
+<block type="after_purchase" id="after" deletable="false" x="0" y="500">
+<statement name="AFTERPURCHASE_STACK">
+<block type="controls_if" id="toggle_logic">
+<mutation else="1"/>
+<value name="IF0">
+<block type="logic_compare" id="comp_up2">
+<field name="OP">EQ</field>
+<value name="A">
+<block type="variables_get" id="get_side2">
+<field name="VAR" id="v_side">trade_side</field>
+</block>
+</value>
+<value name="B">
+<block type="text" id="t_cmp_up2">
+<field name="TEXT">HIGHER</field>
+</block>
+</value>
+</block>
+</value>
+<statement name="DO0">
+<block type="variables_set" id="set_down">
+<field name="VAR" id="v_side">trade_side</field>
+<value name="VALUE">
+<block type="text" id="t_down_val">
+<field name="TEXT">LOWER</field>
+</block>
+</value>
+</block>
+</statement>
+<statement name="ELSE">
+<block type="variables_set" id="set_up_back">
+<field name="VAR" id="v_side">trade_side</field>
+<value name="VALUE">
+<block type="text" id="t_up_val">
+<field name="TEXT">HIGHER</field>
+</block>
+</value>
+</block>
+</statement>
+</block>
+<block type="trade_again" id="loop"/>
+</statement>
+</block>
+</xml>

@@ -1,3 +1,4 @@
+import { DOWNLOADED_BOTS } from './downloaded-bots';
 import { OUR_BOTS } from './our-bots';
 
 export type TPremiumBot = {
@@ -5,7 +6,7 @@ export type TPremiumBot = {
     name: string;
     rating: number;
     description: string;
-    xml?: () => string; // present when the bot loads straight into Bot Builder
+    xml?: () => string | Promise<string>; // present when the bot loads straight into Bot Builder
 };
 
 const SHOWCASE_BOTS: TPremiumBot[] = [
@@ -60,4 +61,4 @@ const SHOWCASE_BOTS: TPremiumBot[] = [
     },
 ];
 
-export const PREMIUM_BOTS: TPremiumBot[] = [...OUR_BOTS, ...SHOWCASE_BOTS];
+export const PREMIUM_BOTS: TPremiumBot[] = [...OUR_BOTS, ...DOWNLOADED_BOTS, ...SHOWCASE_BOTS];

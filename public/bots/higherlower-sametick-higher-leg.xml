@@ -1,0 +1,215 @@
+<xml xmlns="http://www.w3.org/1999/xhtml" is_dbot="true" collection="false">
+  <variables>
+    <variable id="var_stake">stake</variable>
+    <variable id="var_initial">initial_stake</variable>
+    <variable id="var_mult">recovery_multiplier</variable>
+    <variable id="var_tp">take_profit</variable>
+    <variable id="var_sl">stop_loss</variable>
+    <variable id="var_offset">barrier_offset</variable>
+  </variables>
+
+  <block type="trade_definition" id="td_higher" deletable="false" x="0" y="0">
+    <statement name="TRADE_OPTIONS">
+      <block type="trade_definition_market" id="mkt_h" deletable="false" movable="false">
+        <field name="MARKET_LIST">synthetic_index</field>
+        <field name="SUBMARKET_LIST">random_index</field>
+        <field name="SYMBOL_LIST">R_100</field>
+        <next>
+          <block type="trade_definition_tradetype" id="tt_h" deletable="false" movable="false">
+            <field name="TRADETYPECAT_LIST">callput</field>
+            <field name="TRADETYPE_LIST">higherlower</field>
+            <next>
+              <block type="trade_definition_contracttype" id="ct_h" deletable="false" movable="false">
+                <field name="TYPE_LIST">CALL</field>
+                <next>
+                  <block type="trade_definition_candleinterval" id="ci_h" deletable="false" movable="false">
+                    <field name="CANDLEINTERVAL_LIST">60</field>
+                    <next>
+                      <block type="trade_definition_restartbuysell" id="rb_h" deletable="false" movable="false">
+                        <field name="TIME_MACHINE_ENABLED">FALSE</field>
+                        <next>
+                          <block type="trade_definition_restartonerror" id="re_h" deletable="false" movable="false">
+                            <field name="RESTARTONERROR">TRUE</field>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+
+    <statement name="INITIALIZATION">
+      <block type="variables_set" id="init_h1">
+        <field name="VAR" id="var_initial">initial_stake</field>
+        <value name="VALUE">
+          <block type="math_number" id="n_h1"><field name="NUM">1</field></block>
+        </value>
+        <next>
+          <block type="variables_set" id="init_h2">
+            <field name="VAR" id="var_stake">stake</field>
+            <value name="VALUE">
+              <block type="variables_get" id="g_h1"><field name="VAR" id="var_initial">initial_stake</field></block>
+            </value>
+            <next>
+              <block type="variables_set" id="init_h3">
+                <field name="VAR" id="var_mult">recovery_multiplier</field>
+                <value name="VALUE">
+                  <block type="math_number" id="n_h2"><field name="NUM">1</field></block>
+                </value>
+                <next>
+                  <block type="variables_set" id="init_h4">
+                    <field name="VAR" id="var_offset">barrier_offset</field>
+                    <value name="VALUE">
+                      <block type="math_number" id="n_h3"><field name="NUM">1</field></block>
+                    </value>
+                    <next>
+                      <block type="variables_set" id="init_h5">
+                        <field name="VAR" id="var_tp">take_profit</field>
+                        <value name="VALUE">
+                          <block type="math_number" id="n_h4"><field name="NUM">10</field></block>
+                        </value>
+                        <next>
+                          <block type="variables_set" id="init_h6">
+                            <field name="VAR" id="var_sl">stop_loss</field>
+                            <value name="VALUE">
+                              <block type="math_number" id="n_h5"><field name="NUM">10</field></block>
+                            </value>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+
+    <statement name="SUBMARKET">
+      <block type="trade_definition_tradeoptions" id="opts_h">
+        <mutation xmlns="http://www.w3.org/1999/xhtml" has_first_barrier="true" has_second_barrier="false" has_prediction="false"></mutation>
+        <field name="DURATIONTYPE_LIST">t</field>
+        <field name="BARRIEROFFSETTYPE_LIST">-</field>
+        <field name="CURRENCY_LIST">USD</field>
+        <value name="DURATION">
+          <shadow type="math_number" id="d_h"><field name="NUM">5</field></shadow>
+        </value>
+        <value name="BARRIEROFFSET">
+          <shadow type="math_number" id="bo_h"><field name="NUM">1</field></shadow>
+          <block type="variables_get" id="g_h2"><field name="VAR" id="var_offset">barrier_offset</field></block>
+        </value>
+        <value name="AMOUNT">
+          <shadow type="math_number" id="a_h"><field name="NUM">1</field></shadow>
+          <block type="variables_get" id="g_h3"><field name="VAR" id="var_stake">stake</field></block>
+        </value>
+      </block>
+    </statement>
+  </block>
+
+  <block type="before_purchase" id="bp_h" deletable="false" x="0" y="480">
+    <statement name="BEFOREPURCHASE_STACK">
+      <block type="purchase" id="buy_h">
+        <field name="PURCHASE_LIST">CALL</field>
+      </block>
+    </statement>
+  </block>
+
+  <block type="after_purchase" id="ap_h" deletable="false" x="0" y="620">
+    <statement name="AFTERPURCHASE_STACK">
+      <block type="controls_if" id="if_h1">
+        <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+        <value name="IF0">
+          <block type="logic_operation" id="or_h">
+            <field name="OP">OR</field>
+            <value name="A">
+              <block type="logic_compare" id="cmp_h1">
+                <field name="OP">GTE</field>
+                <value name="A">
+                  <block type="total_profit" id="tp_h1"></block>
+                </value>
+                <value name="B">
+                  <block type="variables_get" id="g_h4"><field name="VAR" id="var_tp">take_profit</field></block>
+                </value>
+              </block>
+            </value>
+            <value name="B">
+              <block type="logic_compare" id="cmp_h2">
+                <field name="OP">LTE</field>
+                <value name="A">
+                  <block type="total_profit" id="tp_h2"></block>
+                </value>
+                <value name="B">
+                  <block type="math_single" id="neg_h">
+                    <field name="OP">NEG</field>
+                    <value name="NUM">
+                      <shadow type="math_number"><field name="NUM">1</field></shadow>
+                      <block type="variables_get" id="g_h5"><field name="VAR" id="var_sl">stop_loss</field></block>
+                    </value>
+                  </block>
+                </value>
+              </block>
+            </value>
+          </block>
+        </value>
+        <statement name="DO0">
+          <block type="notify" id="nt_h">
+            <field name="NOTIFICATION_TYPE">success</field>
+            <value name="MESSAGE">
+              <shadow type="text"><field name="TEXT">HIGHER leg stopped: TP or SL reached</field></shadow>
+            </value>
+          </block>
+        </statement>
+        <statement name="ELSE">
+          <block type="controls_if" id="if_h2">
+            <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+            <value name="IF0">
+              <block type="contract_check_result" id="chk_h">
+                <field name="CHECK_RESULT">win</field>
+              </block>
+            </value>
+            <statement name="DO0">
+              <block type="variables_set" id="set_h1">
+                <field name="VAR" id="var_stake">stake</field>
+                <value name="VALUE">
+                  <block type="variables_get" id="g_h6"><field name="VAR" id="var_initial">initial_stake</field></block>
+                </value>
+              </block>
+            </statement>
+            <statement name="ELSE">
+              <block type="variables_set" id="set_h2">
+                <field name="VAR" id="var_stake">stake</field>
+                <value name="VALUE">
+                  <block type="math_arithmetic" id="mul_h">
+                    <field name="OP">MULTIPLY</field>
+                    <value name="A">
+                      <shadow type="math_number"><field name="NUM">1</field></shadow>
+                      <block type="variables_get" id="g_h7"><field name="VAR" id="var_stake">stake</field></block>
+                    </value>
+                    <value name="B">
+                      <shadow type="math_number"><field name="NUM">1</field></shadow>
+                      <block type="variables_get" id="g_h8"><field name="VAR" id="var_mult">recovery_multiplier</field></block>
+                    </value>
+                  </block>
+                </value>
+              </block>
+            </statement>
+            <next>
+              <block type="trade_again" id="ta_h"></block>
+            </next>
+          </block>
+        </statement>
+      </block>
+    </statement>
+  </block>
+
+  <block type="during_purchase" id="dp_h" deletable="false" x="0" y="1100">
+    <statement name="DURING_PURCHASE_STACK"></statement>
+  </block>
+</xml>

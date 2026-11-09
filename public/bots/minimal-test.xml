@@ -1,0 +1,90 @@
+<xml xmlns="https://developers.google.com/blockly/xml" collection="false">
+  <variables>
+    <variable id="v1">stake</variable>
+  </variables>
+  <block type="trade_definition" id="t1" deletable="false" x="0" y="0">
+    <statement name="TRADE_OPTIONS">
+      <block type="trade_definition_market" id="t2" deletable="false" movable="false">
+        <field name="MARKET_LIST">synthetic_index</field>
+        <field name="SUBMARKET_LIST">random_index</field>
+        <field name="SYMBOL_LIST">R_100</field>
+        <next>
+          <block type="trade_definition_tradetype" id="t3" deletable="false" movable="false">
+            <field name="TRADETYPECAT_LIST">digits</field>
+            <field name="TRADETYPE_LIST">overunder</field>
+            <next>
+              <block type="trade_definition_contracttype" id="t4" deletable="false" movable="false">
+                <field name="TYPE_LIST">DIGITOVER</field>
+                <next>
+                  <block type="trade_definition_candleinterval" id="t5" deletable="false" movable="false">
+                    <field name="CANDLEINTERVAL_LIST">60</field>
+                    <next>
+                      <block type="trade_definition_restartbuysell" id="t6" deletable="false" movable="false">
+                        <field name="TIME_MACHINE_ENABLED">FALSE</field>
+                        <next>
+                          <block type="trade_definition_restartonerror" id="t7" deletable="false" movable="false">
+                            <field name="RESTARTONERROR">TRUE</field>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+    <statement name="INITIALIZATION">
+      <block type="variables_set" id="i1">
+        <field name="VAR" id="v1">stake</field>
+        <value name="VALUE">
+          <block type="math_number" id="i1v">
+            <field name="NUM">1</field>
+          </block>
+        </value>
+      </block>
+    </statement>
+    <statement name="SUBMARKET"></statement>
+    <statement name="BEFOREPURCHASE">
+      <block type="before_purchase" id="bp1" deletable="false" movable="false">
+        <statement name="BEFOREPURCHASE_STACK"></statement>
+        <next>
+          <block type="trade_definition_tradeoptions" id="to1">
+            <mutation has_first_barrier="true" has_second_barrier="false" has_prediction="true"></mutation>
+            <field name="DURATIONTYPE_LIST">t</field>
+            <field name="CURRENCY_LIST">USD</field>
+            <value name="DURATION">
+              <block type="math_number" id="to1d">
+                <field name="NUM">1</field>
+              </block>
+            </value>
+            <value name="AMOUNT">
+              <block type="variables_get" id="to1a">
+                <field name="VAR" id="v1">stake</field>
+              </block>
+            </value>
+            <value name="PREDICTION">
+              <block type="math_number" id="to1p">
+                <field name="NUM">2</field>
+              </block>
+            </value>
+            <next>
+              <block type="purchase" id="pur1">
+                <field name="PURCHASE_LIST">DIGITOVER</field>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+    <statement name="AFTERPURCHASE">
+      <block type="after_purchase" id="ap1" deletable="false" movable="false">
+        <statement name="AFTERPURCHASE_STACK">
+          <block type="trade_again" id="ta1"></block>
+        </statement>
+      </block>
+    </statement>
+  </block>
+</xml>

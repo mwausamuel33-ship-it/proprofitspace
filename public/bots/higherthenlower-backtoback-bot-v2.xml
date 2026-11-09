@@ -1,0 +1,117 @@
+<xml xmlns="http://www.w3.org/1999/xhtml" is_dbot="true" collection="false">
+<variables>
+<variable type="" id="stakevar" islocal="false" iscloud="false">stake</variable>
+<variable type="" id="durationvar" islocal="false" iscloud="false">duration</variable>
+</variables>
+<block type="trade_definition" id="td1" x="0" y="0">
+<statement name="TRADE_OPTIONS">
+<block type="trade_definition_market" id="mkt1" deletable="false" movable="false">
+<field name="MARKET_LIST">synthetic_index</field>
+<field name="SUBMARKET_LIST">random_index</field>
+<field name="SYMBOL_LIST">R_100</field>
+<next>
+<block type="trade_definition_tradetype" id="tt1" deletable="false" movable="false">
+<field name="TRADETYPECAT_LIST">callput</field>
+<field name="TRADETYPE_LIST">callput</field>
+<next>
+<block type="trade_definition_contracttype" id="ct1" deletable="false" movable="false">
+<field name="TYPE_LIST">both</field>
+<next>
+<block type="trade_definition_candleinterval" id="ci1" deletable="false" movable="false">
+<field name="CANDLEINTERVAL_LIST">60</field>
+<next>
+<block type="trade_definition_restartbuysell" id="rb1" deletable="false" movable="false">
+<field name="TIME_MACHINE_ENABLED">FALSE</field>
+<next>
+<block type="trade_definition_restartonerror" id="re1" deletable="false" movable="false">
+<field name="RESTARTONERROR">TRUE</field>
+</block>
+</next>
+</block>
+</next>
+</block>
+</next>
+</block>
+</next>
+</block>
+</next>
+</block>
+</statement>
+<statement name="INITIALIZATION">
+<block type="variables_set" id="setstake1">
+<field name="VAR" id="stakevar" variabletype="">stake</field>
+<value name="VALUE">
+<block type="math_number" id="stakeval1">
+<field name="NUM">1</field>
+</block>
+</value>
+<next>
+<block type="variables_set" id="setdur1">
+<field name="VAR" id="durationvar" variabletype="">duration</field>
+<value name="VALUE">
+<block type="math_number" id="durval1">
+<field name="NUM">5</field>
+</block>
+</value>
+</block>
+</next>
+</block>
+</statement>
+<statement name="SUBMARKET">
+<block type="trade_definition_tradeoptions" id="topt1">
+<mutation has_first_barrier="false" has_second_barrier="false" has_prediction="false"></mutation>
+<field name="DURATIONTYPE_LIST">t</field>
+<value name="DURATION">
+<shadow type="math_number" id="dursh1">
+<field name="NUM">5</field>
+</shadow>
+<block type="variables_get" id="durget1">
+<field name="VAR" id="durationvar" variabletype="">duration</field>
+</block>
+</value>
+<value name="AMOUNT">
+<shadow type="math_number" id="amtsh1">
+<field name="NUM">1</field>
+</shadow>
+<block type="variables_get" id="amtget1">
+<field name="VAR" id="stakevar" variabletype="">stake</field>
+</block>
+</value>
+</block>
+</statement>
+</block>
+<block type="before_purchase" id="bp1" x="0" y="500">
+<statement name="BEFOREPURCHASE_STACK">
+<block type="purchase" id="buyhigher1">
+<field name="PURCHASE_LIST">CALL</field>
+<next>
+<block type="purchase" id="buylower1">
+<field name="PURCHASE_LIST">PUT</field>
+</block>
+</next>
+</block>
+</statement>
+</block>
+<block type="after_purchase" id="ap1" x="0" y="800">
+<statement name="AFTERPURCHASE_STACK">
+<block type="controls_if" id="if1">
+<value name="IF0">
+<block type="contract_check_result" id="ccr1">
+<field name="CHECK_RESULT">win</field>
+</block>
+</value>
+<statement name="DO0">
+<block type="notify" id="notifywin1">
+<field name="NOTIFICATION_TYPE">success</field>
+<field name="NOTIFICATION_SOUND">silent</field>
+<value name="MESSAGE">
+<shadow type="text" id="msgwin1">
+<field name="TEXT">Leg won</field>
+</shadow>
+</value>
+</block>
+</statement>
+</block>
+</statement>
+</block>
+</xml>

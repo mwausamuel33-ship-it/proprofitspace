@@ -1,0 +1,345 @@
+<xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true" collection="false">
+<variables>
+<variable id="vInit">initial_stake</variable>
+<variable id="vStake">stake</variable>
+<variable id="vMult">multiplier</variable>
+<variable id="vSeq">seq_index</variable>
+<variable id="vRecov">in_recovery</variable>
+<variable id="vTP">take_profit</variable>
+<variable id="vSL">stop_loss</variable>
+<variable id="vPred">prediction_digit</variable>
+</variables>
+
+<block type="trade_definition" id="b1" deletable="false" x="0" y="0">
+<statement name="TRADE_OPTIONS">
+<block type="trade_definition_market" id="b2" deletable="false" movable="false">
+<field name="MARKET_LIST">synthetic_index</field>
+<field name="SUBMARKET_LIST">random_index</field>
+<field name="SYMBOL_LIST">R_100</field>
+<next>
+<block type="trade_definition_tradetype" id="b3" deletable="false" movable="false">
+<field name="TRADETYPECAT_LIST">digits</field>
+<field name="TRADETYPE_LIST">overunder</field>
+<next>
+<block type="trade_definition_contracttype" id="b4" deletable="false" movable="false">
+<field name="TYPE_LIST">both</field>
+<next>
+<block type="trade_definition_candleinterval" id="b5" deletable="false" movable="false">
+<field name="CANDLEINTERVAL_LIST">60</field>
+<next>
+<block type="trade_definition_restartbuysell" id="b6" deletable="false" movable="false">
+<field name="TIME_MACHINE_ENABLED">FALSE</field>
+<next>
+<block type="trade_definition_restartonerror" id="b7" deletable="false" movable="false">
+<field name="RESTARTONERROR">TRUE</field>
+</block>
+</next>
+</block>
+</next>
+</block>
+</next>
+</block>
+</next>
+</block>
+</next>
+</block>
+</statement>
+<statement name="INITIALIZATION">
+<block type="variables_set" id="b8">
+<field name="VAR" id="vInit">initial_stake</field>
+<value name="VALUE"><block type="math_number" id="b9"><field name="NUM">1</field></block></value>
+<next>
+<block type="variables_set" id="b10">
+<field name="VAR" id="vStake">stake</field>
+<value name="VALUE"><block type="variables_get" id="b11"><field name="VAR" id="vInit">initial_stake</field></block></value>
+<next>
+<block type="variables_set" id="b12">
+<field name="VAR" id="vMult">multiplier</field>
+<value name="VALUE"><block type="math_number" id="b13"><field name="NUM">2.1</field></block></value>
+<next>
+<block type="variables_set" id="b14">
+<field name="VAR" id="vSeq">seq_index</field>
+<value name="VALUE"><block type="math_number" id="b15"><field name="NUM">0</field></block></value>
+<next>
+<block type="variables_set" id="b16">
+<field name="VAR" id="vRecov">in_recovery</field>
+<value name="VALUE"><block type="logic_boolean" id="b17"><field name="BOOL">FALSE</field></block></value>
+<next>
+<block type="variables_set" id="b18">
+<field name="VAR" id="vTP">take_profit</field>
+<value name="VALUE"><block type="math_number" id="b19"><field name="NUM">10</field></block></value>
+<next>
+<block type="variables_set" id="b20">
+<field name="VAR" id="vSL">stop_loss</field>
+<value name="VALUE"><block type="math_number" id="b21"><field name="NUM">10</field></block></value>
+<next>
+<block type="variables_set" id="b22">
+<field name="VAR" id="vPred">prediction_digit</field>
+<value name="VALUE"><block type="math_number" id="b23"><field name="NUM">0</field></block></value>
+</block>
+</next>
+</block>
+</next>
+</block>
+</next>
+</block>
+</next>
+</block>
+</next>
+</block>
+</next>
+</block>
+</next>
+</block>
+</statement>
+<statement name="SUBMARKET">
+<block type="trade_definition_tradeoptions" id="b24">
+<mutation xmlns="http://www.w3.org/1999/xhtml" has_first_barrier="false" has_second_barrier="false" has_prediction="true"></mutation>
+<field name="DURATIONTYPE_LIST">t</field>
+<value name="DURATION">
+<shadow type="math_number" id="b25"><field name="NUM">1</field></shadow>
+</value>
+<value name="AMOUNT">
+<shadow type="math_number" id="b26"><field name="NUM">1</field></shadow>
+<block type="variables_get" id="b27"><field name="VAR" id="vStake">stake</field></block>
+</value>
+<value name="PREDICTION">
+<block type="variables_get" id="b28"><field name="VAR" id="vPred">prediction_digit</field></block>
+</value>
+</block>
+</statement>
+</block>
+
+<block type="before_purchase" id="b29" deletable="false" x="0" y="500">
+<statement name="BEFOREPURCHASE_STACK">
+<block type="controls_if" id="b30">
+<mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+<value name="IF0">
+<block type="variables_get" id="b31"><field name="VAR" id="vRecov">in_recovery</field></block>
+</value>
+<statement name="DO0">
+<block type="variables_set" id="b32">
+<field name="VAR" id="vPred">prediction_digit</field>
+<value name="VALUE"><block type="math_number" id="b33"><field name="NUM">2</field></block></value>
+<next>
+<block type="purchase" id="b34"><field name="PURCHASE_LIST">DIGITOVER</field></block>
+</next>
+</block>
+</statement>
+<statement name="ELSE">
+<block type="controls_if" id="b35">
+<mutation xmlns="http://www.w3.org/1999/xhtml" elseif="4" else="1"></mutation>
+<value name="IF0">
+<block type="logic_compare" id="b36">
+<field name="OP">EQ</field>
+<value name="A"><block type="variables_get" id="b37"><field name="VAR" id="vSeq">seq_index</field></block></value>
+<value name="B"><block type="math_number" id="b38"><field name="NUM">0</field></block></value>
+</block>
+</value>
+<statement name="DO0">
+<block type="variables_set" id="b39">
+<field name="VAR" id="vPred">prediction_digit</field>
+<value name="VALUE"><block type="math_number" id="b39v"><field name="NUM">0</field></block></value>
+<next><block type="purchase" id="b40"><field name="PURCHASE_LIST">DIGITOVER</field></block></next>
+</block>
+</statement>
+<value name="IF1">
+<block type="logic_compare" id="b41">
+<field name="OP">EQ</field>
+<value name="A"><block type="variables_get" id="b42"><field name="VAR" id="vSeq">seq_index</field></block></value>
+<value name="B"><block type="math_number" id="b43"><field name="NUM">1</field></block></value>
+</block>
+</value>
+<statement name="DO1">
+<block type="variables_set" id="b44">
+<field name="VAR" id="vPred">prediction_digit</field>
+<value name="VALUE"><block type="math_number" id="b44v"><field name="NUM">1</field></block></value>
+<next><block type="purchase" id="b45"><field name="PURCHASE_LIST">DIGITOVER</field></block></next>
+</block>
+</statement>
+<value name="IF2">
+<block type="logic_compare" id="b46">
+<field name="OP">EQ</field>
+<value name="A"><block type="variables_get" id="b47"><field name="VAR" id="vSeq">seq_index</field></block></value>
+<value name="B"><block type="math_number" id="b48"><field name="NUM">2</field></block></value>
+</block>
+</value>
+<statement name="DO2">
+<block type="variables_set" id="b49">
+<field name="VAR" id="vPred">prediction_digit</field>
+<value name="VALUE"><block type="math_number" id="b49v"><field name="NUM">9</field></block></value>
+<next><block type="purchase" id="b50"><field name="PURCHASE_LIST">DIGITUNDER</field></block></next>
+</block>
+</statement>
+<value name="IF3">
+<block type="logic_compare" id="b51">
+<field name="OP">EQ</field>
+<value name="A"><block type="variables_get" id="b52"><field name="VAR" id="vSeq">seq_index</field></block></value>
+<value name="B"><block type="math_number" id="b53"><field name="NUM">3</field></block></value>
+</block>
+</value>
+<statement name="DO3">
+<block type="variables_set" id="b54">
+<field name="VAR" id="vPred">prediction_digit</field>
+<value name="VALUE"><block type="math_number" id="b54v"><field name="NUM">8</field></block></value>
+<next><block type="purchase" id="b55"><field name="PURCHASE_LIST">DIGITUNDER</field></block></next>
+</block>
+</statement>
+<value name="IF4">
+<block type="logic_compare" id="b56">
+<field name="OP">EQ</field>
+<value name="A"><block type="variables_get" id="b57"><field name="VAR" id="vSeq">seq_index</field></block></value>
+<value name="B"><block type="math_number" id="b58"><field name="NUM">4</field></block></value>
+</block>
+</value>
+<statement name="DO4">
+<block type="variables_set" id="b59">
+<field name="VAR" id="vPred">prediction_digit</field>
+<value name="VALUE"><block type="math_number" id="b59v"><field name="NUM">0</field></block></value>
+<next><block type="purchase" id="b60"><field name="PURCHASE_LIST">DIGITOVER</field></block></next>
+</block>
+</statement>
+<statement name="ELSE">
+<block type="variables_set" id="b61">
+<field name="VAR" id="vPred">prediction_digit</field>
+<value name="VALUE"><block type="math_number" id="b61v"><field name="NUM">1</field></block></value>
+<next><block type="purchase" id="b62"><field name="PURCHASE_LIST">DIGITOVER</field></block></next>
+</block>
+</statement>
+</block>
+</statement>
+</block>
+</statement>
+</block>
+
+<block type="after_purchase" id="b70" x="0" y="900">
+<statement name="AFTERPURCHASE_STACK">
+<block type="controls_if" id="b71">
+<mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+<value name="IF0">
+<block type="contract_check_result" id="b72"><field name="CHECK_RESULT">loss</field></block>
+</value>
+<statement name="DO0">
+<block type="variables_set" id="b73">
+<field name="VAR" id="vRecov">in_recovery</field>
+<value name="VALUE"><block type="logic_boolean" id="b74"><field name="BOOL">TRUE</field></block></value>
+<next>
+<block type="variables_set" id="b75">
+<field name="VAR" id="vStake">stake</field>
+<value name="VALUE">
+<block type="math_arithmetic" id="b76">
+<field name="OP">MULTIPLY</field>
+<value name="A"><block type="variables_get" id="b77"><field name="VAR" id="vStake">stake</field></block></value>
+<value name="B"><block type="variables_get" id="b78"><field name="VAR" id="vMult">multiplier</field></block></value>
+</block>
+</value>
+</block>
+</next>
+</block>
+</statement>
+<statement name="ELSE">
+<block type="controls_if" id="b80">
+<mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+<value name="IF0">
+<block type="variables_get" id="b81"><field name="VAR" id="vRecov">in_recovery</field></block>
+</value>
+<statement name="DO0">
+<block type="variables_set" id="b82">
+<field name="VAR" id="vRecov">in_recovery</field>
+<value name="VALUE"><block type="logic_boolean" id="b83"><field name="BOOL">FALSE</field></block></value>
+<next>
+<block type="variables_set" id="b84">
+<field name="VAR" id="vStake">stake</field>
+<value name="VALUE"><block type="variables_get" id="b85"><field name="VAR" id="vInit">initial_stake</field></block></value>
+<next>
+<block type="variables_set" id="b86">
+<field name="VAR" id="vSeq">seq_index</field>
+<value name="VALUE">
+<block type="math_modulo" id="b87">
+<value name="DIVIDEND">
+<block type="math_arithmetic" id="b88">
+<field name="OP">ADD</field>
+<value name="A"><block type="variables_get" id="b89"><field name="VAR" id="vSeq">seq_index</field></block></value>
+<value name="B"><block type="math_number" id="b90"><field name="NUM">1</field></block></value>
+</block>
+</value>
+<value name="DIVISOR"><block type="math_number" id="b91"><field name="NUM">6</field></block></value>
+</block>
+</value>
+</block>
+</next>
+</block>
+</next>
+</block>
+</statement>
+<statement name="ELSE">
+<block type="variables_set" id="b92">
+<field name="VAR" id="vStake">stake</field>
+<value name="VALUE"><block type="variables_get" id="b93"><field name="VAR" id="vInit">initial_stake</field></block></value>
+<next>
+<block type="variables_set" id="b94">
+<field name="VAR" id="vSeq">seq_index</field>
+<value name="VALUE">
+<block type="math_modulo" id="b95">
+<value name="DIVIDEND">
+<block type="math_arithmetic" id="b96">
+<field name="OP">ADD</field>
+<value name="A"><block type="variables_get" id="b97"><field name="VAR" id="vSeq">seq_index</field></block></value>
+<value name="B"><block type="math_number" id="b98"><field name="NUM">1</field></block></value>
+</block>
+</value>
+<value name="DIVISOR"><block type="math_number" id="b99"><field name="NUM">6</field></block></value>
+</block>
+</value>
+</block>
+</next>
+</block>
+</statement>
+</block>
+</statement>
+<next>
+<block type="controls_if" id="b100">
+<mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+<value name="IF0">
+<block type="logic_operation" id="b101">
+<field name="OP">OR</field>
+<value name="A">
+<block type="logic_compare" id="b102">
+<field name="OP">GTE</field>
+<value name="A"><block type="total_profit" id="b103"></block></value>
+<value name="B"><block type="variables_get" id="b104"><field name="VAR" id="vTP">take_profit</field></block></value>
+</block>
+</value>
+<value name="B">
+<block type="logic_compare" id="b105">
+<field name="OP">LTE</field>
+<value name="A"><block type="total_profit" id="b106"></block></value>
+<value name="B">
+<block type="math_single" id="b107">
+<field name="OP">NEG</field>
+<value name="NUM"><block type="variables_get" id="b108"><field name="VAR" id="vSL">stop_loss</field></block></value>
+</block>
+</value>
+</block>
+</value>
+</block>
+</value>
+<statement name="DO0">
+<block type="notify" id="b109">
+<field name="NOTIFICATION_TYPE">success</field>
+<field name="NOTIFICATION_SOUND">silent</field>
+<value name="MESSAGE">
+<shadow type="text" id="b110"><field name="TEXT">abc</field></shadow>
+<block type="text" id="b111"><field name="TEXT">Take profit or stop loss reached - bot stopped.</field></block>
+</value>
+</block>
+</statement>
+<statement name="ELSE">
+<block type="trade_again" id="b112"></block>
+</statement>
+</block>
+</next>
+</block>
+</statement>
+</block>
+</xml>

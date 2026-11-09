@@ -1,0 +1,860 @@
+<xml xmlns="https://developers.google.com/blockly/xml" collection="false">
+  <variables>
+    <variable id="v_stake">stake</variable>
+    <variable id="v_initial_stake">initial_stake</variable>
+    <variable id="v_martingale_factor">martingale_factor</variable>
+    <variable id="v_max_stake">max_stake</variable>
+    <variable id="v_digit_history">digit_history</variable>
+    <variable id="v_window_size">window_size</variable>
+    <variable id="v_current_digit">current_digit</variable>
+    <variable id="v_armed">armed</variable>
+    <variable id="v_ticks_since_arm">ticks_since_arm</variable>
+    <variable id="v_trade_signal">trade_signal</variable>
+    <variable id="v_least_digit">least_digit</variable>
+    <variable id="v_count1">count_1</variable>
+    <variable id="v_count2">count_2</variable>
+    <variable id="v_count3">count_3</variable>
+    <variable id="v_cnt">cnt</variable>
+    <variable id="v_target">target_digit</variable>
+    <variable id="v_item">item</variable>
+  </variables>
+
+  <!-- ==================== PROCEDURE: count occurrences of a digit in history ==================== -->
+  <block type="procedures_defreturn" id="proc_count" x="0" y="0">
+    <field name="NAME">count_digit_occurrences</field>
+    <comment pinned="false" h="80" w="160">Counts how many times target_digit appears in digit_history list</comment>
+    <statement name="STACK">
+      <block type="variables_set" id="proc_count_set_cnt">
+        <field name="VAR" id="v_cnt">cnt</field>
+        <value name="VALUE">
+          <block type="math_number" id="proc_count_zero">
+            <field name="NUM">0</field>
+          </block>
+        </value>
+        <next>
+          <block type="controls_forEach" id="proc_count_foreach">
+            <field name="VAR" id="v_item">item</field>
+            <value name="LIST">
+              <block type="variables_get" id="proc_count_get_history">
+                <field name="VAR" id="v_digit_history">digit_history</field>
+              </block>
+            </value>
+            <statement name="DO">
+              <block type="controls_if" id="proc_count_if_match">
+                <value name="IF0">
+                  <block type="logic_compare" id="proc_count_compare">
+                    <field name="OP">EQ</field>
+                    <value name="A">
+                      <block type="variables_get" id="proc_count_get_item">
+                        <field name="VAR" id="v_item">item</field>
+                      </block>
+                    </value>
+                    <value name="B">
+                      <block type="variables_get" id="proc_count_get_target">
+                        <field name="VAR" id="v_target">target_digit</field>
+                      </block>
+                    </value>
+                  </block>
+                </value>
+                <statement name="DO0">
+                  <block type="variables_set" id="proc_count_increment">
+                    <field name="VAR" id="v_cnt">cnt</field>
+                    <value name="VALUE">
+                      <block type="math_arithmetic" id="proc_count_add">
+                        <field name="OP">ADD</field>
+                        <value name="A">
+                          <block type="variables_get" id="proc_count_get_cnt_a">
+                            <field name="VAR" id="v_cnt">cnt</field>
+                          </block>
+                        </value>
+                        <value name="B">
+                          <block type="math_number" id="proc_count_one">
+                            <field name="NUM">1</field>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                  </block>
+                </statement>
+              </block>
+            </statement>
+          </block>
+        </next>
+      </block>
+    </statement>
+    <value name="RETURN">
+      <block type="variables_get" id="proc_count_return">
+        <field name="VAR" id="v_cnt">cnt</field>
+      </block>
+    </value>
+    <mutation>
+      <arg name="target_digit" varid="v_target"></arg>
+    </mutation>
+  </block>
+
+  <!-- ==================== MAIN TRADE DEFINITION ==================== -->
+  <block type="trade_definition" id="trade_def" deletable="false" x="0" y="250">
+    <statement name="TRADE_OPTIONS">
+      <block type="trade_definition_market" id="market_block" deletable="false" movable="false">
+        <field name="MARKET_LIST">synthetic_index</field>
+        <field name="SUBMARKET_LIST">random_index</field>
+        <field name="SYMBOL_LIST">R_100</field>
+        <next>
+          <block type="trade_definition_tradetype" id="tradetype_block" deletable="false" movable="false">
+            <field name="TRADETYPECAT_LIST">digits</field>
+            <field name="TRADETYPE_LIST">overunder</field>
+            <next>
+              <block type="trade_definition_contracttype" id="contracttype_block" deletable="false" movable="false">
+                <field name="TYPE_LIST">DIGITOVER</field>
+                <next>
+                  <block type="trade_definition_candleinterval" id="candle_block" deletable="false" movable="false">
+                    <field name="CANDLEINTERVAL_LIST">60</field>
+                    <next>
+                      <block type="trade_definition_restartbuysell" id="restart_buysell_block" deletable="false" movable="false">
+                        <field name="TIME_MACHINE_ENABLED">FALSE</field>
+                        <next>
+                          <block type="trade_definition_restartonerror" id="restart_error_block" deletable="false" movable="false">
+                            <field name="RESTARTONERROR">TRUE</field>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+
+    <!-- ==================== INITIALIZATION ==================== -->
+    <statement name="INITIALIZATION">
+      <block type="variables_set" id="init_stake">
+        <field name="VAR" id="v_stake">stake</field>
+        <value name="VALUE">
+          <block type="math_number" id="init_stake_val">
+            <field name="NUM">1</field>
+          </block>
+        </value>
+        <next>
+          <block type="variables_set" id="init_initial_stake">
+            <field name="VAR" id="v_initial_stake">initial_stake</field>
+            <value name="VALUE">
+              <block type="variables_get" id="init_initial_stake_get">
+                <field name="VAR" id="v_stake">stake</field>
+              </block>
+            </value>
+            <next>
+              <block type="variables_set" id="init_martingale">
+                <field name="VAR" id="v_martingale_factor">martingale_factor</field>
+                <value name="VALUE">
+                  <block type="math_number" id="init_martingale_val">
+                    <field name="NUM">2</field>
+                  </block>
+                </value>
+                <next>
+                  <block type="variables_set" id="init_max_stake">
+                    <field name="VAR" id="v_max_stake">max_stake</field>
+                    <value name="VALUE">
+                      <block type="math_number" id="init_max_stake_val">
+                        <field name="NUM">50</field>
+                      </block>
+                    </value>
+                    <next>
+                      <block type="variables_set" id="init_window">
+                        <field name="VAR" id="v_window_size">window_size</field>
+                        <value name="VALUE">
+                          <block type="math_number" id="init_window_val">
+                            <field name="NUM">30</field>
+                          </block>
+                        </value>
+                        <next>
+                          <block type="variables_set" id="init_history">
+                            <field name="VAR" id="v_digit_history">digit_history</field>
+                            <value name="VALUE">
+                              <block type="lists_create_with" id="init_history_list">
+                                <mutation items="0"></mutation>
+                              </block>
+                            </value>
+                            <next>
+                              <block type="variables_set" id="init_armed">
+                                <field name="VAR" id="v_armed">armed</field>
+                                <value name="VALUE">
+                                  <block type="logic_boolean" id="init_armed_val">
+                                    <field name="BOOL">FALSE</field>
+                                  </block>
+                                </value>
+                                <next>
+                                  <block type="variables_set" id="init_ticks_since_arm">
+                                    <field name="VAR" id="v_ticks_since_arm">ticks_since_arm</field>
+                                    <value name="VALUE">
+                                      <block type="math_number" id="init_ticks_since_arm_val">
+                                        <field name="NUM">0</field>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+
+    <statement name="SUBMARKET"></statement>
+
+    <!-- ==================== BEFORE PURCHASE (the strategy logic runs every tick) ==================== -->
+    <statement name="BEFOREPURCHASE">
+      <block type="before_purchase" id="before_purchase_block" deletable="false" movable="false">
+        <statement name="BEFOREPURCHASE_STACK">
+
+          <!-- Reset trade signal each tick -->
+          <block type="variables_set" id="reset_signal">
+            <field name="VAR" id="v_trade_signal">trade_signal</field>
+            <value name="VALUE">
+              <block type="logic_boolean" id="reset_signal_val">
+                <field name="BOOL">FALSE</field>
+              </block>
+            </value>
+            <next>
+
+              <!-- Get last digit of the current tick (swap this block for your platform's "Last Digit" analysis block if the id differs) -->
+              <block type="variables_set" id="get_digit">
+                <field name="VAR" id="v_current_digit">current_digit</field>
+                <value name="VALUE">
+                  <block type="lastdigit" id="lastdigit_block"></block>
+                </value>
+                <next>
+
+                  <!-- Maintain rolling window: trim oldest if at capacity, then append current digit -->
+                  <block type="controls_if" id="trim_history_if">
+                    <value name="IF0">
+                      <block type="logic_compare" id="trim_history_compare">
+                        <field name="OP">GTE</field>
+                        <value name="A">
+                          <block type="lists_length" id="trim_history_length">
+                            <value name="VALUE">
+                              <block type="variables_get" id="trim_history_get">
+                                <field name="VAR" id="v_digit_history">digit_history</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                        <value name="B">
+                          <block type="variables_get" id="trim_history_window">
+                            <field name="VAR" id="v_window_size">window_size</field>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                    <statement name="DO0">
+                      <block type="lists_setIndex" id="trim_history_remove">
+                        <mutation at="false"></mutation>
+                        <field name="MODE">REMOVE</field>
+                        <field name="WHERE">FIRST</field>
+                        <value name="LIST">
+                          <block type="variables_get" id="trim_history_remove_get">
+                            <field name="VAR" id="v_digit_history">digit_history</field>
+                          </block>
+                        </value>
+                      </block>
+                    </statement>
+                    <next>
+                      <block type="lists_setIndex" id="append_digit">
+                        <mutation at="false"></mutation>
+                        <field name="MODE">INSERT</field>
+                        <field name="WHERE">LAST</field>
+                        <value name="LIST">
+                          <block type="variables_get" id="append_digit_list">
+                            <field name="VAR" id="v_digit_history">digit_history</field>
+                          </block>
+                        </value>
+                        <value name="TO">
+                          <block type="variables_get" id="append_digit_val">
+                            <field name="VAR" id="v_current_digit">current_digit</field>
+                          </block>
+                        </value>
+                        <next>
+
+                          <!-- Never use 0 or 9 as entry, trigger, or confirmation -->
+                          <block type="controls_if" id="exclude_09_if">
+                            <mutation else="1"></mutation>
+                            <value name="IF0">
+                              <block type="logic_operation" id="exclude_09_or">
+                                <field name="OP">OR</field>
+                                <value name="A">
+                                  <block type="logic_compare" id="exclude_0_compare">
+                                    <field name="OP">EQ</field>
+                                    <value name="A">
+                                      <block type="variables_get" id="exclude_0_get">
+                                        <field name="VAR" id="v_current_digit">current_digit</field>
+                                      </block>
+                                    </value>
+                                    <value name="B">
+                                      <block type="math_number" id="exclude_0_val">
+                                        <field name="NUM">0</field>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </value>
+                                <value name="B">
+                                  <block type="logic_compare" id="exclude_9_compare">
+                                    <field name="OP">EQ</field>
+                                    <value name="A">
+                                      <block type="variables_get" id="exclude_9_get">
+                                        <field name="VAR" id="v_current_digit">current_digit</field>
+                                      </block>
+                                    </value>
+                                    <value name="B">
+                                      <block type="math_number" id="exclude_9_val">
+                                        <field name="NUM">9</field>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </value>
+                              </block>
+                            </value>
+                            <statement name="DO0">
+                              <block type="variables_set" id="reset_armed_on_09">
+                                <field name="VAR" id="v_armed">armed</field>
+                                <value name="VALUE">
+                                  <block type="logic_boolean" id="reset_armed_on_09_val">
+                                    <field name="BOOL">FALSE</field>
+                                  </block>
+                                </value>
+                              </block>
+                            </statement>
+                            <statement name="ELSE">
+
+                              <!-- Digit is 1-8: check entry/trigger logic -->
+                              <block type="controls_if" id="entry_check_if">
+                                <mutation elseif="1"></mutation>
+                                <value name="IF0">
+                                  <block type="logic_operation" id="is_123_or">
+                                    <field name="OP">OR</field>
+                                    <value name="A">
+                                      <block type="logic_operation" id="is_12_or">
+                                        <field name="OP">OR</field>
+                                        <value name="A">
+                                          <block type="logic_compare" id="is_1_compare">
+                                            <field name="OP">EQ</field>
+                                            <value name="A">
+                                              <block type="variables_get" id="is_1_get">
+                                                <field name="VAR" id="v_current_digit">current_digit</field>
+                                              </block>
+                                            </value>
+                                            <value name="B">
+                                              <block type="math_number" id="is_1_val">
+                                                <field name="NUM">1</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                        <value name="B">
+                                          <block type="logic_compare" id="is_2_compare">
+                                            <field name="OP">EQ</field>
+                                            <value name="A">
+                                              <block type="variables_get" id="is_2_get">
+                                                <field name="VAR" id="v_current_digit">current_digit</field>
+                                              </block>
+                                            </value>
+                                            <value name="B">
+                                              <block type="math_number" id="is_2_val">
+                                                <field name="NUM">2</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </value>
+                                    <value name="B">
+                                      <block type="logic_compare" id="is_3_compare">
+                                        <field name="OP">EQ</field>
+                                        <value name="A">
+                                          <block type="variables_get" id="is_3_get">
+                                            <field name="VAR" id="v_current_digit">current_digit</field>
+                                          </block>
+                                        </value>
+                                        <value name="B">
+                                          <block type="math_number" id="is_3_val">
+                                            <field name="NUM">3</field>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </value>
+                                <statement name="DO0">
+                                  <!-- Compute counts of 1, 2, 3 in the rolling window -->
+                                  <block type="variables_set" id="calc_count1">
+                                    <field name="VAR" id="v_count1">count_1</field>
+                                    <value name="VALUE">
+                                      <block type="procedures_callreturn" id="calc_count1_call">
+                                        <mutation name="count_digit_occurrences">
+                                          <arg name="target_digit"></arg>
+                                        </mutation>
+                                        <value name="ARG0">
+                                          <block type="math_number" id="calc_count1_arg">
+                                            <field name="NUM">1</field>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </value>
+                                    <next>
+                                      <block type="variables_set" id="calc_count2">
+                                        <field name="VAR" id="v_count2">count_2</field>
+                                        <value name="VALUE">
+                                          <block type="procedures_callreturn" id="calc_count2_call">
+                                            <mutation name="count_digit_occurrences">
+                                              <arg name="target_digit"></arg>
+                                            </mutation>
+                                            <value name="ARG0">
+                                              <block type="math_number" id="calc_count2_arg">
+                                                <field name="NUM">2</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                        <next>
+                                          <block type="variables_set" id="calc_count3">
+                                            <field name="VAR" id="v_count3">count_3</field>
+                                            <value name="VALUE">
+                                              <block type="procedures_callreturn" id="calc_count3_call">
+                                                <mutation name="count_digit_occurrences">
+                                                  <arg name="target_digit"></arg>
+                                                </mutation>
+                                                <value name="ARG0">
+                                                  <block type="math_number" id="calc_count3_arg">
+                                                    <field name="NUM">3</field>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </value>
+                                            <next>
+                                              <!-- Determine which of 1/2/3 is least appearing -->
+                                              <block type="variables_set" id="set_least_digit_initial">
+                                                <field name="VAR" id="v_least_digit">least_digit</field>
+                                                <value name="VALUE">
+                                                  <block type="math_number" id="set_least_digit_initial_val">
+                                                    <field name="NUM">1</field>
+                                                  </block>
+                                                </value>
+                                                <next>
+                                                  <block type="controls_if" id="find_least_if1">
+                                                    <value name="IF0">
+                                                      <block type="logic_operation" id="find_least_and1">
+                                                        <field name="OP">AND</field>
+                                                        <value name="A">
+                                                          <block type="logic_compare" id="find_least_cmp1a">
+                                                            <field name="OP">LTE</field>
+                                                            <value name="A">
+                                                              <block type="variables_get" id="find_least_get2a">
+                                                                <field name="VAR" id="v_count2">count_2</field>
+                                                              </block>
+                                                            </value>
+                                                            <value name="B">
+                                                              <block type="variables_get" id="find_least_get1a">
+                                                                <field name="VAR" id="v_count1">count_1</field>
+                                                              </block>
+                                                            </value>
+                                                          </block>
+                                                        </value>
+                                                        <value name="B">
+                                                          <block type="logic_compare" id="find_least_cmp1b">
+                                                            <field name="OP">LTE</field>
+                                                            <value name="A">
+                                                              <block type="variables_get" id="find_least_get2b">
+                                                                <field name="VAR" id="v_count2">count_2</field>
+                                                              </block>
+                                                            </value>
+                                                            <value name="B">
+                                                              <block type="variables_get" id="find_least_get3b">
+                                                                <field name="VAR" id="v_count3">count_3</field>
+                                                              </block>
+                                                            </value>
+                                                          </block>
+                                                        </value>
+                                                      </block>
+                                                    </value>
+                                                    <statement name="DO0">
+                                                      <block type="variables_set" id="set_least_digit_2">
+                                                        <field name="VAR" id="v_least_digit">least_digit</field>
+                                                        <value name="VALUE">
+                                                          <block type="math_number" id="set_least_digit_2_val">
+                                                            <field name="NUM">2</field>
+                                                          </block>
+                                                        </value>
+                                                      </block>
+                                                    </statement>
+                                                    <next>
+                                                      <block type="controls_if" id="find_least_if3">
+                                                        <value name="IF0">
+                                                          <block type="logic_operation" id="find_least_and3">
+                                                            <field name="OP">AND</field>
+                                                            <value name="A">
+                                                              <block type="logic_compare" id="find_least_cmp3a">
+                                                                <field name="OP">LT</field>
+                                                                <value name="A">
+                                                                  <block type="variables_get" id="find_least_get3a">
+                                                                    <field name="VAR" id="v_count3">count_3</field>
+                                                                  </block>
+                                                                </value>
+                                                                <value name="B">
+                                                                  <block type="variables_get" id="find_least_get1c">
+                                                                    <field name="VAR" id="v_count1">count_1</field>
+                                                                  </block>
+                                                                </value>
+                                                              </block>
+                                                            </value>
+                                                            <value name="B">
+                                                              <block type="logic_compare" id="find_least_cmp3b">
+                                                                <field name="OP">LT</field>
+                                                                <value name="A">
+                                                                  <block type="variables_get" id="find_least_get3c">
+                                                                    <field name="VAR" id="v_count3">count_3</field>
+                                                                  </block>
+                                                                </value>
+                                                                <value name="B">
+                                                                  <block type="variables_get" id="find_least_get2c">
+                                                                    <field name="VAR" id="v_count2">count_2</field>
+                                                                  </block>
+                                                                </value>
+                                                              </block>
+                                                            </value>
+                                                          </block>
+                                                        </value>
+                                                        <statement name="DO0">
+                                                          <block type="variables_set" id="set_least_digit_3">
+                                                            <field name="VAR" id="v_least_digit">least_digit</field>
+                                                            <value name="VALUE">
+                                                              <block type="math_number" id="set_least_digit_3_val">
+                                                                <field name="NUM">3</field>
+                                                              </block>
+                                                            </value>
+                                                          </block>
+                                                        </statement>
+                                                        <next>
+                                                          <!-- Arm the bot if the current digit IS the least-appearing digit -->
+                                                          <block type="controls_if" id="arm_if">
+                                                            <value name="IF0">
+                                                              <block type="logic_compare" id="arm_compare">
+                                                                <field name="OP">EQ</field>
+                                                                <value name="A">
+                                                                  <block type="variables_get" id="arm_get_current">
+                                                                    <field name="VAR" id="v_current_digit">current_digit</field>
+                                                                  </block>
+                                                                </value>
+                                                                <value name="B">
+                                                                  <block type="variables_get" id="arm_get_least">
+                                                                    <field name="VAR" id="v_least_digit">least_digit</field>
+                                                                  </block>
+                                                                </value>
+                                                              </block>
+                                                            </value>
+                                                            <statement name="DO0">
+                                                              <block type="variables_set" id="arm_set_true">
+                                                                <field name="VAR" id="v_armed">armed</field>
+                                                                <value name="VALUE">
+                                                                  <block type="logic_boolean" id="arm_set_true_val">
+                                                                    <field name="BOOL">TRUE</field>
+                                                                  </block>
+                                                                </value>
+                                                                <next>
+                                                                  <block type="variables_set" id="arm_reset_ticks">
+                                                                    <field name="VAR" id="v_ticks_since_arm">ticks_since_arm</field>
+                                                                    <value name="VALUE">
+                                                                      <block type="math_number" id="arm_reset_ticks_val">
+                                                                        <field name="NUM">0</field>
+                                                                      </block>
+                                                                    </value>
+                                                                  </block>
+                                                                </next>
+                                                              </block>
+                                                            </statement>
+                                                          </block>
+                                                        </next>
+                                                      </block>
+                                                    </next>
+                                                  </block>
+                                                </next>
+                                              </block>
+                                            </next>
+                                          </block>
+                                        </next>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </statement>
+
+                                <!-- ELSE branch: digit is 4-8, this is where we check for trigger/confirmation -->
+                                <statement name="DO1">
+                                  <block type="controls_if" id="armed_check_if">
+                                    <value name="IF0">
+                                      <block type="variables_get" id="armed_check_get">
+                                        <field name="VAR" id="v_armed">armed</field>
+                                      </block>
+                                    </value>
+                                    <statement name="DO0">
+                                      <block type="variables_set" id="increment_ticks_since_arm">
+                                        <field name="VAR" id="v_ticks_since_arm">ticks_since_arm</field>
+                                        <value name="VALUE">
+                                          <block type="math_arithmetic" id="increment_ticks_since_arm_add">
+                                            <field name="OP">ADD</field>
+                                            <value name="A">
+                                              <block type="variables_get" id="increment_ticks_since_arm_get">
+                                                <field name="VAR" id="v_ticks_since_arm">ticks_since_arm</field>
+                                              </block>
+                                            </value>
+                                            <value name="B">
+                                              <block type="math_number" id="increment_ticks_since_arm_one">
+                                                <field name="NUM">1</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                        <next>
+                                          <block type="controls_if" id="confirm_if">
+                                            <mutation else="1"></mutation>
+                                            <value name="IF0">
+                                              <block type="logic_operation" id="confirm_and">
+                                                <field name="OP">AND</field>
+                                                <value name="A">
+                                                  <block type="logic_compare" id="confirm_within2">
+                                                    <field name="OP">LTE</field>
+                                                    <value name="A">
+                                                      <block type="variables_get" id="confirm_get_ticks">
+                                                        <field name="VAR" id="v_ticks_since_arm">ticks_since_arm</field>
+                                                      </block>
+                                                    </value>
+                                                    <value name="B">
+                                                      <block type="math_number" id="confirm_two">
+                                                        <field name="NUM">2</field>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </value>
+                                                <value name="B">
+                                                  <block type="logic_operation" id="confirm_range_and">
+                                                    <field name="OP">AND</field>
+                                                    <value name="A">
+                                                      <block type="logic_compare" id="confirm_gte4">
+                                                        <field name="OP">GTE</field>
+                                                        <value name="A">
+                                                          <block type="variables_get" id="confirm_get_digit_a">
+                                                            <field name="VAR" id="v_current_digit">current_digit</field>
+                                                          </block>
+                                                        </value>
+                                                        <value name="B">
+                                                          <block type="math_number" id="confirm_four">
+                                                            <field name="NUM">4</field>
+                                                          </block>
+                                                        </value>
+                                                      </block>
+                                                    </value>
+                                                    <value name="B">
+                                                      <block type="logic_compare" id="confirm_lte8">
+                                                        <field name="OP">LTE</field>
+                                                        <value name="A">
+                                                          <block type="variables_get" id="confirm_get_digit_b">
+                                                            <field name="VAR" id="v_current_digit">current_digit</field>
+                                                          </block>
+                                                        </value>
+                                                        <value name="B">
+                                                          <block type="math_number" id="confirm_eight">
+                                                            <field name="NUM">8</field>
+                                                          </block>
+                                                        </value>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </value>
+                                            <statement name="DO0">
+                                              <block type="variables_set" id="confirm_set_signal">
+                                                <field name="VAR" id="v_trade_signal">trade_signal</field>
+                                                <value name="VALUE">
+                                                  <block type="logic_boolean" id="confirm_set_signal_val">
+                                                    <field name="BOOL">TRUE</field>
+                                                  </block>
+                                                </value>
+                                                <next>
+                                                  <block type="variables_set" id="confirm_disarm">
+                                                    <field name="VAR" id="v_armed">armed</field>
+                                                    <value name="VALUE">
+                                                      <block type="logic_boolean" id="confirm_disarm_val">
+                                                        <field name="BOOL">FALSE</field>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </next>
+                                              </block>
+                                            </statement>
+                                            <statement name="ELSE">
+                                              <block type="controls_if" id="expire_if">
+                                                <value name="IF0">
+                                                  <block type="logic_compare" id="expire_compare">
+                                                    <field name="OP">GT</field>
+                                                    <value name="A">
+                                                      <block type="variables_get" id="expire_get_ticks">
+                                                        <field name="VAR" id="v_ticks_since_arm">ticks_since_arm</field>
+                                                      </block>
+                                                    </value>
+                                                    <value name="B">
+                                                      <block type="math_number" id="expire_two">
+                                                        <field name="NUM">2</field>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </value>
+                                                <statement name="DO0">
+                                                  <block type="variables_set" id="expire_disarm">
+                                                    <field name="VAR" id="v_armed">armed</field>
+                                                    <value name="VALUE">
+                                                      <block type="logic_boolean" id="expire_disarm_val">
+                                                        <field name="BOOL">FALSE</field>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </statement>
+                                              </block>
+                                            </statement>
+                                          </block>
+                                        </next>
+                                      </block>
+                                    </statement>
+                                  </block>
+                                </statement>
+                              </block>
+                            </statement>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+
+        </statement>
+        <next>
+          <!-- Trade options run every tick regardless of signal (stable pattern) -->
+          <block type="trade_definition_tradeoptions" id="tradeoptions_block">
+            <mutation has_first_barrier="true" has_second_barrier="false" has_prediction="true"></mutation>
+            <field name="DURATIONTYPE_LIST">t</field>
+            <field name="CURRENCY_LIST">USD</field>
+            <value name="DURATION">
+              <block type="math_number" id="duration_val">
+                <field name="NUM">1</field>
+              </block>
+            </value>
+            <value name="AMOUNT">
+              <block type="variables_get" id="amount_get_stake">
+                <field name="VAR" id="v_stake">stake</field>
+              </block>
+            </value>
+            <value name="PREDICTION">
+              <block type="math_number" id="prediction_val">
+                <field name="NUM">2</field>
+              </block>
+            </value>
+            <next>
+              <!-- Purchase only fires when trade_signal is true; otherwise the bot loops to the next tick -->
+              <block type="controls_if" id="final_purchase_if">
+                <value name="IF0">
+                  <block type="variables_get" id="final_purchase_get">
+                    <field name="VAR" id="v_trade_signal">trade_signal</field>
+                  </block>
+                </value>
+                <statement name="DO0">
+                  <block type="purchase" id="purchase_block">
+                    <field name="PURCHASE_LIST">DIGITOVER</field>
+                  </block>
+                </statement>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+
+    <!-- ==================== AFTER PURCHASE: simple martingale on loss, reset on win, cap max stake ==================== -->
+    <statement name="AFTERPURCHASE">
+      <block type="after_purchase" id="after_purchase_block" deletable="false" movable="false">
+        <statement name="AFTERPURCHASE_STACK">
+          <block type="controls_if" id="result_if">
+            <mutation else="1"></mutation>
+            <value name="IF0">
+              <block type="read_details" id="read_win">
+                <field name="PROPERTY">4</field>
+              </block>
+            </value>
+            <statement name="DO0">
+              <block type="variables_set" id="reset_stake_on_win">
+                <field name="VAR" id="v_stake">stake</field>
+                <value name="VALUE">
+                  <block type="variables_get" id="reset_stake_on_win_get">
+                    <field name="VAR" id="v_initial_stake">initial_stake</field>
+                  </block>
+                </value>
+              </block>
+            </statement>
+            <statement name="ELSE">
+              <block type="controls_if" id="increase_stake_if">
+                <value name="IF0">
+                  <block type="logic_compare" id="increase_stake_compare">
+                    <field name="OP">LT</field>
+                    <value name="A">
+                      <block type="variables_get" id="increase_stake_get">
+                        <field name="VAR" id="v_stake">stake</field>
+                      </block>
+                    </value>
+                    <value name="B">
+                      <block type="variables_get" id="increase_stake_max">
+                        <field name="VAR" id="v_max_stake">max_stake</field>
+                      </block>
+                    </value>
+                  </block>
+                </value>
+                <statement name="DO0">
+                  <block type="variables_set" id="increase_stake_set">
+                    <field name="VAR" id="v_stake">stake</field>
+                    <value name="VALUE">
+                      <block type="math_arithmetic" id="increase_stake_mult">
+                        <field name="OP">MULTIPLY</field>
+                        <value name="A">
+                          <block type="variables_get" id="increase_stake_mult_get">
+                            <field name="VAR" id="v_stake">stake</field>
+                          </block>
+                        </value>
+                        <value name="B">
+                          <block type="variables_get" id="increase_stake_factor">
+                            <field name="VAR" id="v_martingale_factor">martingale_factor</field>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                  </block>
+                </statement>
+              </block>
+            </statement>
+            <next>
+              <block type="trade_again" id="trade_again_block"></block>
+            </next>
+          </block>
+        </statement>
+      </block>
+    </statement>
+
+  </block>
+</xml>

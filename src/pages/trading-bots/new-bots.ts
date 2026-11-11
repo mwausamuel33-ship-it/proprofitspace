@@ -1,4 +1,4 @@
-/** New bots shown first in the Trading Bots store. The XML files live in src/xml. */
+/** Bots shown in the Trading Bots store. The XML files live in src/xml. */
 export type TStoreBot = {
     id: string;
     name: string;
@@ -17,32 +17,33 @@ const loadXml = async (name: string): Promise<string> => {
 
 export const NEW_BOTS: TStoreBot[] = [
     {
-        id: 'over1-destroyer',
-        name: 'Over 1 Destroyer',
+        id: 'over1-bot',
+        name: 'Over 1 Bot',
         description:
-            'An Over market bot. Opens on the market you analysed and trades Over 1 only when digits 0 and 1 are both below 10.5%. Enters on last digit 2, 5 or 6 and skips any entry digit running hot. After a loss it recovers with Martingale on Over 3 (change it in the bot settings). Take profit and stop loss built in.',
+            'Trades Over 1 on the market you analysed. You set the stake, take profit, stop loss, martingale and the recovery digit. Enters on last digit 8, 1, 2, 5 or 6 and never on the most frequent digit (the green bar). Change your settings in the first block before you run it.',
         rating: 5,
         is_new: true,
         follow_market: true,
-        xml: () => loadXml('Over1_Destroyer'),
+        xml: () => loadXml('Over1_Bot'),
     },
     {
-        id: 'under8-destroyer',
-        name: 'Under 8 Destroyer',
+        id: 'over2-bot',
+        name: 'Over 2 Bot',
         description:
-            'An Under market bot. Opens on the market you analysed and trades Under 8 only when digits 8 and 9 are both below 10.5%. Enters on last digit 4, 7 or 9 and skips any entry digit running hot. After a loss it recovers with Martingale on Under 6 (change it in the bot settings). Take profit and stop loss built in.',
+            'Trades Over 2 on the market you analysed. You set the stake, take profit, stop loss, martingale and the recovery digit. Enters on last digit 8, 1, 2, 5 or 6 and never on the most frequent digit (the green bar). Change your settings in the first block before you run it.',
         rating: 5,
         is_new: true,
         follow_market: true,
-        xml: () => loadXml('Under8_Destroyer'),
+        xml: () => loadXml('Over2_Bot'),
     },
     {
-        id: 'over1-under8-cycle',
-        name: 'Over1 Under8 Cycle Recovery',
+        id: 'under-bot',
+        name: 'Under Bot',
         description:
-            'Trades Over 1 on the first run and Under 8 on the second, then repeats the cycle with no analysis. After a loss it recovers with Over 2 using a calculated stake until the loss is cleared. Max recovery steps, max stake, take profit and stop loss included.',
+            'Trades Under 8 or Under 7, whichever you set. You also set the stake, take profit, stop loss, martingale and the recovery digit. Enters on last digit 8, 1, 4, 7 or 9 and never on the most frequent digit (the green bar). Change your settings in the first block before you run it.',
         rating: 5,
         is_new: true,
-        xml: () => loadXml('Over1_Under8_Recovery_Bot'),
+        follow_market: true,
+        xml: () => loadXml('Under_Bot'),
     },
 ];

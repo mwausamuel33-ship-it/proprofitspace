@@ -16,8 +16,9 @@ type TTradingBotsProps = {
 const PAGE_SIZE = 24;
 // Cards that have no bot file behind them are placeholders. Set to true to list them anyway.
 const SHOW_PLACEHOLDERS = false;
-// The store is empty on purpose. Set to true to list the bots again.
-const SHOW_BOTS = false;
+// The store lists the current bots. Set SHOW_OLD_BOTS to true to list the earlier imports too.
+const SHOW_BOTS = true;
+const SHOW_OLD_BOTS = false;
 
 const TradingBots = ({ handleTabChange }: TTradingBotsProps) => {
     const [search, setSearch] = useState('');
@@ -29,7 +30,7 @@ const TradingBots = ({ handleTabChange }: TTradingBotsProps) => {
 
     // new bots first, scratch files and placeholders out, then one card per bot (newest version)
     const { listed, versions, hidden_versions } = useMemo(() => {
-        const all: TStoreBot[] = (SHOW_BOTS ? [...NEW_BOTS, ...PREMIUM_BOTS] : []).filter(
+        const all: TStoreBot[] = (SHOW_BOTS ? [...NEW_BOTS, ...(SHOW_OLD_BOTS ? PREMIUM_BOTS : [])] : []).filter(
             bot => (SHOW_PLACEHOLDERS || bot.xml) && !isScratchBot(bot)
         );
         if (show_versions) return { listed: all, versions: {} as Record<string, number>, hidden_versions: 0 };

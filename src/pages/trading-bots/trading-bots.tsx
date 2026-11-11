@@ -16,6 +16,8 @@ type TTradingBotsProps = {
 const PAGE_SIZE = 24;
 // Cards that have no bot file behind them are placeholders. Set to true to list them anyway.
 const SHOW_PLACEHOLDERS = false;
+// The store is empty on purpose. Set to true to list the bots again.
+const SHOW_BOTS = false;
 
 const TradingBots = ({ handleTabChange }: TTradingBotsProps) => {
     const [search, setSearch] = useState('');
@@ -27,7 +29,7 @@ const TradingBots = ({ handleTabChange }: TTradingBotsProps) => {
 
     // new bots first, scratch files and placeholders out, then one card per bot (newest version)
     const { listed, versions, hidden_versions } = useMemo(() => {
-        const all: TStoreBot[] = [...NEW_BOTS, ...PREMIUM_BOTS].filter(
+        const all: TStoreBot[] = (SHOW_BOTS ? [...NEW_BOTS, ...PREMIUM_BOTS] : []).filter(
             bot => (SHOW_PLACEHOLDERS || bot.xml) && !isScratchBot(bot)
         );
         if (show_versions) return { listed: all, versions: {} as Record<string, number>, hidden_versions: 0 };
@@ -101,6 +103,23 @@ const TradingBots = ({ handleTabChange }: TTradingBotsProps) => {
             setLoadingId(null);
         }
     };
+
+    if (!listed.length) {
+        return (
+            <div className='trading-bots'>
+                <div className='trading-bots__hero'>
+                    <h2 className='trading-bots__title'>{localize('Trading Bots')}</h2>
+                    <p className='trading-bots__subtitle'>{localize('There are no bots in the store right now.')}</p>
+                </div>
+                <div className='trading-bots__empty'>
+                    <p>{localize('Build your own in Bot Builder, or import an XML file from the Dashboard.')}</p>
+                </div>
+                <button type='button' className='trading-bots__more' onClick={() => handleTabChange(DBOT_TABS.BOT_BUILDER)}>
+                    {localize('Open Bot Builder')}
+                </button>
+            </div>
+        );
+    }
 
     const visible = filtered.slice(0, limit);
 

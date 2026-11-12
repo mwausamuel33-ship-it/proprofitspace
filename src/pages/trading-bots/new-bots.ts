@@ -46,4 +46,14 @@ export const NEW_BOTS: TStoreBot[] = [
         follow_market: true,
         xml: () => loadXml('Under_Bot'),
     },
+    {
+        id: 'over-under-5-bot',
+        name: 'Over 5 / Under 5 Cycle Bot',
+        description:
+            'Trades Over 5 on the first run, Under 5 on the second, and repeats that cycle. After a loss it recovers on the opposite side (lost on Under 5, it trades Over 5) until it wins, then goes back to the cycle. You set the stake, take profit, stop loss, martingale and max recovery. Change your settings in the first block before you run it.',
+        rating: 5,
+        is_new: true,
+        follow_market: true,
+        xml: () => loadXml('OverUnder5_Bot'),
+    },
 ];

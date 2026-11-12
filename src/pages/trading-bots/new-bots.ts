@@ -40,7 +40,7 @@ export const NEW_BOTS: TStoreBot[] = [
         id: 'under-bot',
         name: 'Under Bot',
         description:
-            'Trades Under 8 or Under 7, whichever you set. You also set the stake, take profit, stop loss and martingale. After a loss it recovers on Under 7 (if you chose 8) or Under 6 (if you chose 7). Enters on last digit 8, 1, 4, 7 or 9 and never on the most frequent digit (the green bar). Change your settings in the first block before you run it.',
+            'Trades Under 8 or Under 7, whichever you set. You also set the stake, take profit, stop loss and martingale. After a loss it recovers on Under 7 or Under 6, whichever you set (Under 7 by default). Enters on last digit 8, 1, 4, 7 or 9 and never on the most frequent digit (the green bar). Change your settings in the first block before you run it.',
         rating: 5,
         is_new: true,
         follow_market: true,

@@ -20,7 +20,7 @@ export const NEW_BOTS: TStoreBot[] = [
         id: 'over1-bot',
         name: 'Over 1 Bot',
         description:
-            'Trades Over 1 on the market you analysed. You set the stake, take profit, stop loss, martingale and the recovery digit. Enters on last digit 8, 1, 2, 5 or 6 and never on the most frequent digit (the green bar). Change your settings in the first block before you run it.',
+            'Trades Over 1 on the market you analysed. You set the stake, take profit, stop loss and martingale. After a loss it recovers on Over 2 or Over 3, whichever you set (Over 3 by default). Enters on last digit 8, 1, 2, 5 or 6 and never on the most frequent digit (the green bar). Change your settings in the first block before you run it.',
         rating: 5,
         is_new: true,
         follow_market: true,
@@ -30,7 +30,7 @@ export const NEW_BOTS: TStoreBot[] = [
         id: 'over2-bot',
         name: 'Over 2 Bot',
         description:
-            'Trades Over 2 on the market you analysed. You set the stake, take profit, stop loss, martingale and the recovery digit. Enters on last digit 8, 1, 2, 5 or 6 and never on the most frequent digit (the green bar). Change your settings in the first block before you run it.',
+            'Trades Over 2 on the market you analysed. You set the stake, take profit, stop loss and martingale. After a loss it recovers on Over 3. Enters on last digit 8, 1, 2, 5 or 6 and never on the most frequent digit (the green bar). Change your settings in the first block before you run it.',
         rating: 5,
         is_new: true,
         follow_market: true,
@@ -40,7 +40,7 @@ export const NEW_BOTS: TStoreBot[] = [
         id: 'under-bot',
         name: 'Under Bot',
         description:
-            'Trades Under 8 or Under 7, whichever you set. You also set the stake, take profit, stop loss, martingale and the recovery digit. Enters on last digit 8, 1, 4, 7 or 9 and never on the most frequent digit (the green bar). Change your settings in the first block before you run it.',
+            'Trades Under 8 or Under 7, whichever you set. You also set the stake, take profit, stop loss and martingale. After a loss it recovers on Under 7 (if you chose 8) or Under 6 (if you chose 7). Enters on last digit 8, 1, 4, 7 or 9 and never on the most frequent digit (the green bar). Change your settings in the first block before you run it.',
         rating: 5,
         is_new: true,
         follow_market: true,

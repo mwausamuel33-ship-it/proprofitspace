@@ -47,13 +47,19 @@
         justify-content: center;
         width: 72px;
         height: 72px;
-        --ring: var(--pps-accent);
+        --ring: var(--pps-muted);
 
-        &.is-hot {
-            --ring: var(--pps-good);
+        &.is-top1 {
+            --ring: #34c38f; // most frequent: green
         }
-        &.is-cold {
-            --ring: var(--pps-bad);
+        &.is-top2 {
+            --ring: #4c9aff; // second most: blue
+        }
+        &.is-low2 {
+            --ring: #f7d046; // second least: yellow
+        }
+        &.is-low1 {
+            --ring: #ef5b6b; // least frequent: red
         }
 
         // pointer above the latest digit
@@ -184,5 +190,38 @@
     &__empty {
         margin: 4px 0;
         color: var(--pps-muted);
+    }
+}
+
+// colour key under the circles
+.pps-dg__key {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 18px;
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--pps-muted);
+
+    i {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin-right: 6px;
+        border-radius: 50%;
+        vertical-align: -1px;
+
+        &.is-top1 {
+            background: #34c38f;
+        }
+        &.is-top2 {
+            background: #4c9aff;
+        }
+        &.is-low2 {
+            background: #f7d046;
+        }
+        &.is-low1 {
+            background: #ef5b6b;
+        }
     }
 }

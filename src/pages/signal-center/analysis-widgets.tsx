@@ -36,6 +36,15 @@ export const DigitCircles = ({ stats, current, window: win, onWindow }: {
   stats: DigitStat[]; current: number | null; window: number; onWindow: (n: number) => void;
 }) => {
   const max = Math.max(...stats.map((s) => s.percentage), 0.0001);
+  // Colour by rank: most frequent green, second most blue, second least yellow, least red.
+  const order = [...stats].sort((a, b) => b.percentage - a.percentage || a.digit - b.digit).map((s) => s.digit);
+  const rank: Record<number, string> = {};
+  if (order.length >= 4 && Math.max(...stats.map((s) => s.percentage)) > 0) {
+    rank[order[0]] = 'is-top1';
+    rank[order[1]] = 'is-top2';
+    rank[order[order.length - 2]] = 'is-low2';
+    rank[order[order.length - 1]] = 'is-low1';
+  }
   return (
     <div className='pps-dg'>
       <div className='pps-dg__tabs' role='tablist' aria-label='Ticks window'>
@@ -45,7 +54,7 @@ export const DigitCircles = ({ stats, current, window: win, onWindow }: {
       </div>
       <div className='pps-dg__grid'>
         {stats.map((s) => (
-          <div key={s.digit} className={cx('pps-dg__item', s.is_hot && 'is-hot', s.is_cold && 'is-cold', s.digit === current && 'is-current')}>
+          <div key={s.digit} className={cx('pps-dg__item', rank[s.digit], s.digit === current && 'is-current')}>
             <svg className='pps-dg__ring' viewBox='0 0 48 48' aria-hidden='true'>
               <circle className='pps-dg__track' cx='24' cy='24' r={RADIUS} />
               <circle className='pps-dg__bar' cx='24' cy='24' r={RADIUS} strokeDasharray={`${(s.percentage / max) * CIRC} ${CIRC}`} />
@@ -55,7 +64,13 @@ export const DigitCircles = ({ stats, current, window: win, onWindow }: {
           </div>
         ))}
       </div>
-      <p className='pps-dg__legend'>Last {win} ticks. Green is the most frequent digit, red the least; the pointer marks the latest digit.</p>
+      <div className='pps-dg__key' aria-label='Colour key'>
+        <span><i className='is-top1' />Most frequent</span>
+        <span><i className='is-top2' />2nd most</span>
+        <span><i className='is-low2' />2nd least</span>
+        <span><i className='is-low1' />Least frequent</span>
+      </div>
+      <p className='pps-dg__legend'>Last {win} ticks. The arrow marks the latest digit.</p>
     </div>
   );
 };

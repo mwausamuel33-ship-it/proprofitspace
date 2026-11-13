@@ -66,4 +66,14 @@ export const NEW_BOTS: TStoreBot[] = [
         follow_market: true,
         xml: () => loadXml('OverUnder5Flip_Bot'),
     },
+    {
+        id: 'over2-under7-bot',
+        name: 'Over 2 / Under 7 Cycle Bot',
+        description:
+            'Trades Over 2 on the first run, Under 7 on the second, and repeats that cycle. Over 2 enters on last digit 2, 5 or 6 and Under 7 on 4, 7 or 9, never on the most frequent digit (the green bar). A loss on Over 2 recovers on Under 6, a loss on Under 7 recovers on Over 3, and while it keeps losing it switches between Over 3 and Under 6 until it wins, then goes back to the cycle. Change your settings in the first block before you run it.',
+        rating: 5,
+        is_new: true,
+        follow_market: true,
+        xml: () => loadXml('Over2Under7_Bot'),
+    },
 ];

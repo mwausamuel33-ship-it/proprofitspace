@@ -84,4 +84,24 @@ export const NEW_BOTS: TStoreBot[] = [
         is_new: true,
         xml: () => loadXml('StepIndex_Bot'),
     },
+    {
+        id: 'even-odd-cycle-bot',
+        name: 'Panther Even Odd Cycle',
+        description:
+            'Trades Even on the first run, Odd on the second, then Even again, and repeats. The cycle never changes, win or lose. Flat stake with take profit and stop loss. Choose which side starts in the first block.',
+        rating: 5,
+        is_new: true,
+        follow_market: true,
+        xml: () => loadXml('EvenOddCycle_Bot'),
+    },
+    {
+        id: 'even-odd-recovery-bot',
+        name: 'Wolf Even Odd Recovery',
+        description:
+            'Trades Even or Odd, your choice. After a loss on Even it waits for two odd digits in a row, then trades Odd (and the reverse after a loss on Odd). If the recovery trades lose it goes back to your normal contract. Martingale stake, take profit and stop loss built in.',
+        rating: 5,
+        is_new: true,
+        follow_market: true,
+        xml: () => loadXml('EvenOddRecovery_Bot'),
+    },
 ];

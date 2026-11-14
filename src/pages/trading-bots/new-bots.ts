@@ -18,9 +18,9 @@ const loadXml = async (name: string): Promise<string> => {
 export const NEW_BOTS: TStoreBot[] = [
     {
         id: 'over1-bot',
-        name: 'Over 1 Bot',
+        name: 'Falcon Over 1',
         description:
-            'Trades Over 1 on the market you analysed. You set the stake, take profit, stop loss and martingale. After a loss it recovers on Over 2 or Over 3, whichever you set (Over 3 by default). Enters on last digit 8, 1, 2, 5 or 6 and never on the most frequent digit (the green bar). Change your settings in the first block before you run it.',
+            'Over 1 with smart entries on 8, 1, 2, 5 and 6. Skips the green bar. Martingale recovery on Over 2 or 3.',
         rating: 5,
         is_new: true,
         follow_market: true,
@@ -28,9 +28,8 @@ export const NEW_BOTS: TStoreBot[] = [
     },
     {
         id: 'over2-bot',
-        name: 'Over 2 Bot',
-        description:
-            'Trades Over 2 on the market you analysed. You set the stake, take profit, stop loss and martingale. After a loss it recovers on Over 3. Enters on last digit 8, 1, 2, 5 or 6 and never on the most frequent digit (the green bar). Change your settings in the first block before you run it.',
+        name: 'Hawk Over 2',
+        description: 'Over 2 with smart entries on 8, 1, 2, 5 and 6. Skips the green bar. Recovers on Over 3.',
         rating: 5,
         is_new: true,
         follow_market: true,
@@ -38,42 +37,41 @@ export const NEW_BOTS: TStoreBot[] = [
     },
     {
         id: 'under-bot',
-        name: 'Under Bot',
+        name: 'Viper Under 8 or 7',
         description:
-            'Trades Under 8 or Under 7, whichever you set. You also set the stake, take profit, stop loss and martingale. After a loss it recovers on Under 7 or Under 6, whichever you set (Under 7 by default). Enters on last digit 8, 1, 4, 7 or 9 and never on the most frequent digit (the green bar). Change your settings in the first block before you run it.',
+            'Under 8 or 7, your choice, with smart entries on 8, 1, 4, 7 and 9. Skips the green bar. Recovers one digit lower.',
         rating: 5,
         is_new: true,
         follow_market: true,
         xml: () => loadXml('Under_Bot'),
     },
     {
-        id: 'over-under-5-bot',
-        name: 'Over 5 / Under 5 Cycle Bot',
+        id: 'over2-manual',
+        name: 'Eagle Over 2 Manual',
         description:
-            'Trades Over 5 on the first run, Under 5 on the second, and repeats that cycle. After a loss it recovers on the opposite side (lost on Under 5, it trades Over 5) until it wins, then goes back to the cycle. You set the stake, take profit, stop loss, martingale and max recovery. Change your settings in the first block before you run it.',
+            'Over 2 on your own entry: press Run when you see it. Three runs, then it stops. After a loss it recovers, then stops.',
         rating: 5,
         is_new: true,
         follow_market: true,
-        xml: () => loadXml('OverUnder5_Bot'),
+        xml: () => loadXml('Over2_Manual'),
     },
     {
-        id: 'over-under-5-flip-bot',
-        name: 'Over 5 / Under 5 Flip Recovery Bot',
+        id: 'under7-manual',
+        name: 'Cobra Under 7 Manual',
         description:
-            'Trades Over 5 on the first run, Under 5 on the second, and repeats that cycle. After a loss it recovers on the opposite side (lost on Under 5, it trades Over 5), and if that loses it switches again, and so on until it wins, then goes back to the cycle. You set the stake, take profit, stop loss, martingale and max recovery. Change your settings in the first block before you run it.',
+            'Under 7 on your own entry: press Run when you see it. Three runs, then it stops. After a loss it recovers, then stops.',
         rating: 5,
         is_new: true,
         follow_market: true,
-        xml: () => loadXml('OverUnder5Flip_Bot'),
+        xml: () => loadXml('Under7_Manual'),
     },
     {
-        id: 'over2-under7-bot',
-        name: 'Over 2 / Under 7 Cycle Bot',
+        id: 'step-index-bot',
+        name: 'Step Index Up/Down Bot',
         description:
-            'Trades Over 2 on the first run, Under 7 on the second, and repeats that cycle. Over 2 enters on last digit 2, 5 or 6 and Under 7 on 4, 7 or 9, never on the most frequent digit (the green bar). A loss on Over 2 recovers on Under 6, a loss on Under 7 recovers on Over 3, and while it keeps losing it switches between Over 3 and Under 6 until it wins, then goes back to the cycle. Change your settings in the first block before you run it.',
+            'Trades Rise or Fall on a Step Index. You analyse the market, set DIRECTION (1 = Rise, 0 = Fall), the stake, take profit, stop loss, martingale and duration in the first block, then press Run. It trades straight away, recovers with martingale after a loss, and can switch direction while recovering if you set it to.',
         rating: 5,
         is_new: true,
-        follow_market: true,
-        xml: () => loadXml('Over2Under7_Bot'),
+        xml: () => loadXml('StepIndex_Bot'),
     },
 ];

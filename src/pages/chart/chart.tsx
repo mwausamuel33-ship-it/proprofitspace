@@ -12,6 +12,14 @@ import { useDevice } from '@deriv-com/ui';
 import ToolbarWidgets from './toolbar-widgets';
 import '@deriv-com/smartcharts-champion/dist/smartcharts.css';
 
+// SmartCharts opens its chart type, indicator and drawing menus in a portal on #modal_root.
+// Create it if the page doesn't have one, otherwise those menus have nowhere to open.
+if (typeof document !== 'undefined' && !document.getElementById('modal_root')) {
+    const modal_root = document.createElement('div');
+    modal_root.id = 'modal_root';
+    document.body.appendChild(modal_root);
+}
+
 const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) => {
     const barriers: [] = [];
     const { common, ui } = useStore();

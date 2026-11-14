@@ -46,6 +46,16 @@ export const NEW_BOTS: TStoreBot[] = [
         xml: () => loadXml('Under_Bot'),
     },
     {
+        id: 'under-bot-v2',
+        name: 'Viper Under 8 or 7 V2',
+        description:
+            'Viper without entry points. Press Run when you see your own entry and it trades Under straight away. Same Under 8 or 7 choice, same recovery, take profit and stop loss as the Viper. It keeps trading until take profit or stop loss is hit.',
+        rating: 5,
+        is_new: true,
+        follow_market: true,
+        xml: () => loadXml('Under_Bot_V2'),
+    },
+    {
         id: 'over2-manual',
         name: 'Eagle Over 2 Manual',
         description:

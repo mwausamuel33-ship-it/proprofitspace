@@ -144,3 +144,20 @@
     left: 0;
     top: 0;
 }
+
+.pps-chart-controls {
+    display: flex;
+    gap: 8px;
+    margin-left: 12px;
+    z-index: 5;
+
+    select {
+        background: rgba(20, 24, 34, 0.95);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 6px;
+        padding: 4px 8px;
+        font-size: 12px;
+        cursor: pointer;
+    }
+}

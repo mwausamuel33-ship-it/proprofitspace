@@ -20,6 +20,31 @@ if (typeof document !== 'undefined' && !document.getElementById('modal_root')) {
     document.body.appendChild(modal_root);
 }
 
+// Simple chart type and interval pickers that work even when the built-in menu does not open.
+const CHART_TYPE_OPTIONS: [string, string][] = [
+    ['mountain', 'Line'],
+    ['line', 'Dot'],
+    ['candle', 'Candles'],
+    ['hollow_candle', 'Hollow candles'],
+    ['colored_bar', 'OHLC'],
+    ['heikinashi', 'Heikin Ashi'],
+];
+const INTERVAL_OPTIONS: [number, string][] = [
+    [0, 'Ticks'],
+    [60, '1 minute'],
+    [120, '2 minutes'],
+    [180, '3 minutes'],
+    [300, '5 minutes'],
+    [600, '10 minutes'],
+    [900, '15 minutes'],
+    [1800, '30 minutes'],
+    [3600, '1 hour'],
+    [7200, '2 hours'],
+    [14400, '4 hours'],
+    [28800, '8 hours'],
+    [86400, '1 day'],
+];
+
 const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) => {
     const barriers: [] = [];
     const { common, ui } = useStore();
@@ -128,7 +153,39 @@ const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) =
                 chartData={{ activeSymbols: chartData.activeSymbols, tradingTimes: chartData.tradingTimes }}
                 settings={settings}
                 symbol={symbol}
-                topWidgets={() => <ChartTitle onChange={onSymbolChange} />}
+                topWidgets={() => (
+                    <>
+                        <ChartTitle onChange={onSymbolChange} />
+                        <div
+                            className='pps-chart-controls'
+                            onMouseDown={e => e.stopPropagation()}
+                            onTouchStart={e => e.stopPropagation()}
+                        >
+                            <select
+                                aria-label='Chart type'
+                                value={chart_type ?? 'mountain'}
+                                onChange={e => updateChartType(e.target.value)}
+                            >
+                                {CHART_TYPE_OPTIONS.map(([value, label]) => (
+                                    <option key={value} value={value}>
+                                        {label}
+                                    </option>
+                                ))}
+                            </select>
+                            <select
+                                aria-label='Time interval'
+                                value={granularity ?? 0}
+                                onChange={e => updateGranularity(Number(e.target.value))}
+                            >
+                                {INTERVAL_OPTIONS.map(([value, label]) => (
+                                    <option key={value} value={value}>
+                                        {label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </>
+                )}
                 isConnectionOpened={is_connection_opened}
                 getMarketsOrder={getMarketsOrder}
                 isLive

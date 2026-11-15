@@ -243,3 +243,39 @@
         color: var(--tb-muted);
     }
 }
+
+// Premium section: each premium card sets its own --tb-accent (border, badge, button) and --tb-tint (soft glow).
+.trading-bots {
+    &__section {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    &__section-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--tb-text);
+    }
+
+    &__section-subtitle {
+        margin: -6px 0 4px;
+        font-size: 13px;
+        color: var(--tb-muted);
+    }
+
+    &__card.is-premium {
+        border-color: var(--tb-accent);
+        border-top-width: 3px;
+        background:
+            linear-gradient(160deg, var(--tb-tint), transparent 65%),
+            var(--tb-surface);
+        box-shadow: 0 0 0 1px var(--tb-tint);
+
+        .trading-bots__name,
+        .trading-bots__category {
+            color: var(--tb-accent);
+        }
+    }
+}

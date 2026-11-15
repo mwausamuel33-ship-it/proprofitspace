@@ -8,6 +8,10 @@ export type TStoreBot = {
     is_new?: boolean;
     /** Load with the market the trader last analysed. */
     follow_market?: boolean;
+    /** Listed in the Premium section. */
+    premium?: boolean;
+    /** Card colour for premium bots, a 6-digit hex like #a78bfa. */
+    accent?: string;
 };
 
 const loadXml = async (name: string): Promise<string> => {
@@ -103,5 +107,65 @@ export const NEW_BOTS: TStoreBot[] = [
         is_new: true,
         follow_market: true,
         xml: () => loadXml('EvenOddRecovery_Bot'),
+    },
+    {
+        id: 'apex-over1-v2',
+        name: 'Apex Over 1 V2',
+        description:
+            'Over 1 when digits 0 and 1 are each below 10.5%. After a loss it recovers on Over 3, then Over 2, then Over 3, with stakes sized to win back the whole loss, then goes back to Over 1. Take profit, stop loss and max stake built in.',
+        rating: 5,
+        is_new: true,
+        follow_market: true,
+        premium: true,
+        accent: '#a78bfa',
+        xml: () => loadXml('Over1_V2_Premium'),
+    },
+    {
+        id: 'atlas-over1-v3',
+        name: 'Atlas Over 1 V3',
+        description:
+            'Over 1 when digits 0 and 1 are each below 10.5%. After a loss it recovers on Over 2 twice, with stakes sized from the Over 2 payout so a win gets back the whole loss, then goes back to Over 1.',
+        rating: 5,
+        is_new: true,
+        follow_market: true,
+        premium: true,
+        accent: '#38bdf8',
+        xml: () => loadXml('Over1_V3_Premium'),
+    },
+    {
+        id: 'nova-under8-v2',
+        name: 'Nova Under 8 V2',
+        description:
+            'Under 8 when digits 8 and 9 are each below 10.5%. After a loss it recovers on Under 6 and, if that loses, on Under 6 again, with stakes sized to win back the whole loss, then goes back to Under 8.',
+        rating: 5,
+        is_new: true,
+        follow_market: true,
+        premium: true,
+        accent: '#34d399',
+        xml: () => loadXml('Under8_V2_Premium'),
+    },
+    {
+        id: 'orion-under8-v3',
+        name: 'Orion Under 8 V3',
+        description:
+            'Under 8 when digits 8 and 9 are each below 10.5%. After a loss it recovers on Under 7 twice, with stakes sized from the Under 7 payout so a win gets back the whole loss, then goes back to Under 8.',
+        rating: 5,
+        is_new: true,
+        follow_market: true,
+        premium: true,
+        accent: '#fb7185',
+        xml: () => loadXml('Under8_V3_Premium'),
+    },
+    {
+        id: 'oracle-auto-analysis',
+        name: 'Oracle Auto Analysis',
+        description:
+            'No self analysis needed. It reads the last digits of the market (10 to 1000 ticks) and plans Over 1 or Under 8, then confirms the entry: a 1 then a higher digit, or an 8 then a lower digit. After a loss it picks the best recovery from Over 2, Over 3, Under 6 and Under 7, and it stops once the recovery is over. Over/Under digits.',
+        rating: 5,
+        is_new: true,
+        follow_market: true,
+        premium: true,
+        accent: '#e879f9',
+        xml: () => loadXml('Premium_Auto_Analysis_Bot'),
     },
 ];

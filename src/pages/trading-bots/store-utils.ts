@@ -1,8 +1,9 @@
 import type { TStoreBot } from './new-bots';
 
-export type TCategory = 'all' | 'digit' | 'evenodd' | 'risefall' | 'hedge' | 'recovery' | 'other';
+export type TCategory = 'all' | 'premium' | 'digit' | 'evenodd' | 'risefall' | 'hedge' | 'recovery' | 'other';
 
 export const CATEGORY_LABELS: Record<Exclude<TCategory, 'all'>, string> = {
+    premium: 'Premium',
     digit: 'Over / Under',
     evenodd: 'Even / Odd',
     risefall: 'Rise / Fall',

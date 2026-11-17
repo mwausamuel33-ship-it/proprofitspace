@@ -172,12 +172,22 @@ export const NEW_BOTS: TStoreBot[] = [
         id: 'oracle-updated-v3',
         name: 'Oracle Updated V3',
         description:
-            'Reads the market and waits for a 1 then a higher digit (Over 1) or an 8 then a lower digit (Under 8), then trades the number of runs in a row you set (3 by default), waits for the next pattern and repeats the cycle. A loss on Over 1 recovers on Under 6 then Over 3, a loss on Under 8 recovers on Over 3 then Under 6, with stakes sized to win back the whole loss, then it waits for the next pattern. Over/Under digits.',
+            'Reads the market and waits for a 1 then a higher digit (Over 1) or an 8 then a lower digit (Under 8), then trades the number of runs in a row you set (3 by default), waits for the next pattern and repeats the cycle. A loss on Over 1 recovers on Under 6 then Over 3, a loss on Under 8 recovers on Over 3 then Under 6, with a martingale stake, then it waits for the next pattern. Over/Under digits.',
         rating: 5,
         is_new: true,
         follow_market: true,
         premium: true,
         accent: '#fb923c',
         xml: () => loadXml('Oracle_Updated_V3'),
+    },
+    {
+        id: 'pendulum-over5-under5',
+        name: 'Pendulum Over 5 Under 5',
+        description:
+            'Trades Over 5, then Under 5, then Over 5 again, and repeats. A loss on Over 5 recovers with Under 5, and a loss on Under 5 also recovers with Under 5, with a bigger stake each time. After the recovery the cycle starts again at Over 5. Take profit and stop loss built in.',
+        rating: 5,
+        is_new: true,
+        follow_market: true,
+        xml: () => loadXml('Pendulum_Bot'),
     },
 ];

@@ -184,7 +184,7 @@ export const NEW_BOTS: TStoreBot[] = [
         id: 'pendulum-over5-under5',
         name: 'Pendulum Over 5 Under 5',
         description:
-            'Trades Over 5, then Under 5, then Over 5 again, and repeats. A loss on Over 5 recovers with Under 5, and a loss on Under 5 also recovers with Under 5, with a bigger stake each time. After the recovery the cycle starts again at Over 5. Take profit and stop loss built in.',
+            'Trades Over 5, then Under 5, then Over 5 again, and repeats. A loss on Under 5 recovers with Over 5, then Under 5, and keeps switching sides until a trade wins. A loss on Over 5 recovers with Under 5 and switches the same way. Stakes use martingale, and after the recovery the cycle starts again at Over 5. Take profit and stop loss built in.',
         rating: 5,
         is_new: true,
         follow_market: true,

@@ -3,3 +3,7 @@ export * from './digits';
 export * from './tick-buffer';
 export * from './status';
 export * from './distribution';
+export * from './payout';
+export * from './backtest';
+export * from './regime';
+export * from './strategies';

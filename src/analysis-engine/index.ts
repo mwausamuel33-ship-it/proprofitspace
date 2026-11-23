@@ -7,3 +7,7 @@ export * from './payout';
 export * from './backtest';
 export * from './regime';
 export * from './strategies';
+export * from './transport';
+export * from './market-feed';
+export * from './payout-provider';
+export * from './snapshot';

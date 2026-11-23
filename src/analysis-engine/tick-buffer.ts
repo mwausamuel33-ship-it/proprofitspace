@@ -55,6 +55,14 @@ export class TickBuffer {
         queued.forEach(t => this.append(t, 'live'));
     }
 
+    /** History could not be loaded: keep what we have and release the queued live ticks. */
+    abortHistoryLoad(): void {
+        this.loadingHistory = false;
+        const queued = this.pending;
+        this.pending = [];
+        queued.forEach(t => this.append(t, 'live'));
+    }
+
     ingestLive(raw: RawTick): IngestResult {
         if (this.loadingHistory) {
             this.pending.push(raw);
